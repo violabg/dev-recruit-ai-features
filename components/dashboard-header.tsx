@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { DashboardNav } from "@/components/dashboard-nav"
 // Make sure the import path is correct
 import { useMobile } from "@/hooks/use-mobile"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function DashboardHeader() {
   const { supabase, user } = useSupabase()
@@ -67,6 +68,7 @@ export function DashboardHeader() {
         </Link>
       </div>
       <div className="ml-auto flex items-center gap-4">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
