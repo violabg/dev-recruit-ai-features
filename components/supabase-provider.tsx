@@ -12,12 +12,14 @@ type SupabaseContext = {
   supabase: SupabaseClient<Database> | null
   user: any
   loading: boolean
+  refreshSession: () => Promise<void>
 }
 
 const SupabaseContext = createContext<SupabaseContext>({
   supabase: null,
   user: null,
   loading: true,
+  refreshSession: async () => {},
 })
 
 export const useSupabase = () => useContext(SupabaseContext)
@@ -34,6 +36,28 @@ export const SupabaseProvider = ({
   // Add a state to track if credentials are missing
   const [credentialsMissing, setCredentialsMissing] = useState(false)
 
+  // Function to refresh the session
+  const refreshSession = async () => {
+    if (!supabase) return
+
+    try {
+      const { data, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error("Error refreshing session:", error)
+        return
+      }
+
+      if (data?.session) {
+        const { data: userData } = await supabase.auth.getUser()
+        setUser(userData?.user || null)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error("Error in refreshSession:", error)
+    }
+  }
+
   // Update the useEffect block to set this state
   useEffect(() => {
     // Get environment variables with fallbacks for development
@@ -49,12 +73,54 @@ export const SupabaseProvider = ({
       return
     }
 
-    const supabaseClient = createClient<Database>(supabaseUrl, supabaseKey)
+    const supabaseClient = createClient<Database>(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: true,
+        storageKey: "supabase-auth",
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
     setSupabase(supabaseClient)
 
+    // Initial session check
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession()
+        if (error) {
+          console.error("Error getting session:", error)
+          setLoading(false)
+          return
+        }
+
+        if (data?.session) {
+          const { data: userData } = await supabaseClient.auth.getUser()
+          setUser(userData?.user || null)
+        }
+        setLoading(false)
+      } catch (error) {
+        console.error("Error in initializeAuth:", error)
+        setLoading(false)
+      }
+    }
+
+    initializeAuth()
+
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email)
       setUser(session?.user ?? null)
-      setLoading(false)
+
+      if (event === "SIGNED_IN") {
+        toast({
+          title: "Accesso effettuato",
+          description: `Benvenuto ${session?.user?.email}`,
+        })
+      } else if (event === "SIGNED_OUT") {
+        toast({
+          title: "Disconnesso",
+          description: "Hai effettuato il logout con successo",
+        })
+      }
     })
 
     return () => {
@@ -64,7 +130,7 @@ export const SupabaseProvider = ({
 
   // Update the return statement to show the fallback when credentials are missing
   return (
-    <SupabaseContext.Provider value={{ supabase, user, loading }}>
+    <SupabaseContext.Provider value={{ supabase, user, loading, refreshSession }}>
       {credentialsMissing ? <SupabaseFallback /> : children}
     </SupabaseContext.Provider>
   )

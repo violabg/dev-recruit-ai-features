@@ -413,13 +413,24 @@ export async function signIn(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
     return { error: error.message }
+  }
+
+  // Set a cookie to ensure the session is properly maintained
+  const session = data.session
+  if (session) {
+    cookies().set("supabase-auth-token", session.access_token, {
+      path: "/",
+      maxAge: session.expires_in,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    })
   }
 
   revalidatePath("/dashboard")

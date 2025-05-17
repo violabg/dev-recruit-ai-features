@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { BarChart3, Briefcase, Plus, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { AuthDebug } from "@/components/auth-debug"
 import type { Database } from "@/lib/database.types"
 
 // Server component for dashboard stats
@@ -147,6 +148,20 @@ async function RecentPositions() {
 
 // Main dashboard page (server component)
 export default async function DashboardPage() {
+  // Get the current user from server-side
+  const cookieStore = cookies()
+  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+    },
+  })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -158,6 +173,13 @@ export default async function DashboardPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Auth Debug - Only visible in development */}
+      {process.env.NODE_ENV !== "production" && (
+        <div className="mb-6">
+          <AuthDebug />
+        </div>
+      )}
 
       {/* Stats cards */}
       <DashboardStats />

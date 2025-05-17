@@ -5,12 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
 import { signIn } from "@/lib/actions"
+import { useSupabase } from "@/components/supabase-provider"
 
 const formSchema = z.object({
   email: z.string().email({
@@ -24,6 +26,8 @@ const formSchema = z.object({
 export function LoginForm() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { refreshSession } = useSupabase()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,6 +54,15 @@ export function LoginForm() {
           variant: "destructive",
         })
         setIsLoading(false)
+      } else {
+        // Refresh the session in the client
+        await refreshSession()
+
+        // Force a refresh of the page data
+        router.refresh()
+
+        // Redirect to dashboard
+        router.push("/dashboard")
       }
     } catch (error: any) {
       toast({

@@ -1,45 +1,43 @@
-"use client"
-
 import type React from "react"
-
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useSupabase } from "@/components/supabase-provider"
+import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { DashboardHeader } from "@/components/dashboard-header"
+import type { Database } from "@/lib/database.types"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { supabase, user, loading } = useSupabase()
-  const router = useRouter()
+  // Server-side authentication check
+  const cookieStore = cookies()
+  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+    },
+  })
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login")
-    }
-  }, [user, loading, router])
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
+  if (!session) {
+    // If no session, redirect to login
+    redirect("/login?error=unauthenticated")
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <DashboardHeader />
-      <div className="flex flex-1">
-        <DashboardNav />
-        <main className="flex-1 p-6">{children}</main>
+      <div className="container flex-1 items-start md:grid md:grid-cols-[220px_1fr] md:gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
+        <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 overflow-y-auto border-r md:sticky md:block">
+          <DashboardNav />
+        </aside>
+        <main className="flex w-full flex-col overflow-hidden p-4 md:py-8">{children}</main>
       </div>
     </div>
   )

@@ -1,39 +1,53 @@
 import Link from "next/link"
-import { BrainCircuit } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
+import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
+import { redirect } from "next/navigation"
+import type { Database } from "@/lib/database.types"
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { error?: string }
+}) {
+  // Check if user is already logged in
+  const cookieStore = cookies()
+  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+    },
+  })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  // If already logged in, redirect to dashboard
+  if (session) {
+    redirect("/dashboard")
+  }
+
+  const errorMessage =
+    searchParams.error === "unauthenticated" ? "Devi effettuare l'accesso per visualizzare questa pagina" : undefined
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col justify-center px-6 py-12">
-        <div className="mx-auto w-full max-w-md">
-          <div className="flex flex-col space-y-2 text-center mb-8">
-            <Link href="/" className="mx-auto">
-              <div className="flex items-center gap-2 font-bold text-xl">
-                <BrainCircuit className="h-6 w-6" />
-                <span>DevRecruit AI</span>
-              </div>
-            </Link>
-            <h1 className="text-2xl font-semibold tracking-tight">Accedi al tuo account</h1>
-            <p className="text-sm text-muted-foreground">Inserisci le tue credenziali per accedere</p>
-          </div>
-
-          <LoginForm />
-
-          <div className="mt-6">
-            <div className="text-center text-sm">
-              Non hai un account?{" "}
-              <Link href="/register" className="font-medium text-primary hover:underline">
-                Registrati
-              </Link>
-            </div>
-            <div className="mt-2 text-center text-sm">
-              <Link href="/reset-password" className="font-medium text-primary hover:underline">
-                Password dimenticata?
-              </Link>
-            </div>
-          </div>
+    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Accedi al tuo account</h1>
+          <p className="text-sm text-muted-foreground">Inserisci le tue credenziali per accedere</p>
+          {errorMessage && (
+            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{errorMessage}</div>
+          )}
         </div>
+        <LoginForm />
+        <p className="px-8 text-center text-sm text-muted-foreground">
+          <Link href="/register" className="hover:text-brand underline underline-offset-4">
+            Non hai un account? Registrati
+          </Link>
+        </p>
       </div>
     </div>
   )
