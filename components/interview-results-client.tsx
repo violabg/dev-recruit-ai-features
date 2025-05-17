@@ -1,0 +1,373 @@
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import { evaluateAnswer, generateOverallEvaluation } from "@/lib/actions"
+
+interface InterviewResultsClientProps {
+  interviewId: string
+  quizQuestions: any[]
+  answers: Record<string, any>
+  candidateName: string
+}
+
+export function InterviewResultsClient({
+  interviewId,
+  quizQuestions,
+  answers,
+  candidateName,
+}: InterviewResultsClientProps) {
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  const [evaluations, setEvaluations] = useState<Record<string, any>>({})
+  const [overallEvaluation, setOverallEvaluation] = useState<any | null>(null)
+  const [overallScore, setOverallScore] = useState<number | null>(null)
+
+  const evaluateAnswers = async () => {
+    setLoading(true)
+    try {
+      const evaluatedQuestions: Record<string, any> = {}
+      let totalScore = 0
+      let maxPossibleScore = 0
+
+      // Evaluate each question
+      for (const question of quizQuestions) {
+        if (!answers[question.id]) continue
+
+        const answer = answers[question.id]
+        const maxScore = 10 // Max score per question
+
+        try {
+          // Call the server action to evaluate the answer
+          const result = await evaluateAnswer(question, question.type === "code_snippet" ? answer.code : answer)
+
+          evaluatedQuestions[question.id] = {
+            evaluation: result.evaluation,
+            score: result.score,
+            maxScore,
+            strengths: result.strengths,
+            weaknesses: result.weaknesses,
+          }
+
+          totalScore += result.score
+          maxPossibleScore += maxScore
+        } catch (error) {
+          console.error("Error evaluating answer:", error)
+          evaluatedQuestions[question.id] = {
+            evaluation: "Errore durante la valutazione automatica.",
+            score: 0,
+            maxScore,
+            strengths: [],
+            weaknesses: [],
+          }
+          maxPossibleScore += maxScore
+        }
+      }
+
+      setEvaluations(evaluatedQuestions)
+
+      // Calculate overall score as percentage
+      const percentageScore = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0
+      setOverallScore(percentageScore)
+
+      // Generate overall evaluation
+      try {
+        const answeredQuestions = quizQuestions.filter((q) => answers[q.id])
+
+        const result = await generateOverallEvaluation(
+          candidateName,
+          answeredQuestions.length,
+          quizQuestions.length,
+          percentageScore,
+          evaluatedQuestions,
+        )
+
+        setOverallEvaluation(result)
+      } catch (error) {
+        console.error("Error generating overall evaluation:", error)
+        setOverallEvaluation({
+          evaluation:
+            "Non è stato possibile generare una valutazione complessiva. Si prega di rivedere manualmente i risultati.",
+        })
+      }
+    } catch (error) {
+      console.error("Error in evaluation process:", error)
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante la valutazione delle risposte",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getAnsweredQuestionsCount = () => {
+    return Object.keys(answers).length
+  }
+
+  const getCorrectAnswersCount = () => {
+    let count = 0
+    for (const question of quizQuestions) {
+      if (
+        question.type === "multiple_choice" &&
+        answers[question.id] !== undefined &&
+        Number.parseInt(answers[question.id]) === Number.parseInt(question.correctAnswer)
+      ) {
+        count++
+      }
+    }
+    return count
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Riepilogo risultati</CardTitle>
+          <CardDescription>
+            {candidateName} ha completato {getAnsweredQuestionsCount()} di {quizQuestions.length} domande
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Completamento</div>
+              <Progress value={(getAnsweredQuestionsCount() / quizQuestions.length) * 100} className="h-2" />
+              <div className="text-sm text-muted-foreground">
+                {getAnsweredQuestionsCount()} di {quizQuestions.length} domande
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Risposte corrette (scelta multipla)</div>
+              <Progress
+                value={
+                  (getCorrectAnswersCount() / quizQuestions.filter((q) => q.type === "multiple_choice").length) * 100
+                }
+                className="h-2"
+              />
+              <div className="text-sm text-muted-foreground">
+                {getCorrectAnswersCount()} di {quizQuestions.filter((q) => q.type === "multiple_choice").length} domande
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Punteggio complessivo</div>
+              <Progress
+                value={overallScore || 0}
+                className={`h-2 ${
+                  overallScore !== null
+                    ? overallScore >= 70
+                      ? "bg-green-500"
+                      : overallScore >= 40
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                    : ""
+                }`}
+              />
+              <div className="text-sm text-muted-foreground">{overallScore !== null ? `${overallScore}%` : "N/A"}</div>
+            </div>
+          </div>
+
+          {!overallEvaluation && (
+            <Button onClick={evaluateAnswers} disabled={loading || getAnsweredQuestionsCount() === 0}>
+              {loading ? "Valutazione in corso..." : "Valuta risposte con AI"}
+            </Button>
+          )}
+
+          {overallEvaluation && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-lg">Valutazione complessiva AI</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="whitespace-pre-wrap">{overallEvaluation.evaluation}</div>
+
+                {overallEvaluation.strengths && (
+                  <div>
+                    <h4 className="font-medium text-green-600 dark:text-green-400 mb-2">Punti di forza principali:</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {overallEvaluation.strengths.map((strength, idx) => (
+                        <li key={idx}>{strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {overallEvaluation.weaknesses && (
+                  <div>
+                    <h4 className="font-medium text-amber-600 dark:text-amber-400 mb-2">Aree di miglioramento:</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {overallEvaluation.weaknesses.map((weakness, idx) => (
+                        <li key={idx}>{weakness}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {overallEvaluation.recommendation && (
+                  <div className="mt-4 p-3 border rounded-md bg-background">
+                    <h4 className="font-medium mb-1">Raccomandazione:</h4>
+                    <p>{overallEvaluation.recommendation}</p>
+                    {overallEvaluation.fitScore && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Punteggio di idoneità:</span>
+                        <div className="flex items-center">
+                          {Array.from({ length: 10 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`w-2 h-4 mx-0.5 rounded-sm ${
+                                i < overallEvaluation.fitScore ? "bg-primary" : "bg-muted"
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 font-medium">{overallEvaluation.fitScore}/10</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="all">
+        <TabsList>
+          <TabsTrigger value="all">Tutte le domande</TabsTrigger>
+          <TabsTrigger value="multiple_choice">Scelta multipla</TabsTrigger>
+          <TabsTrigger value="open_question">Domande aperte</TabsTrigger>
+          <TabsTrigger value="code_snippet">Snippet di codice</TabsTrigger>
+        </TabsList>
+
+        {["all", "multiple_choice", "open_question", "code_snippet"].map((tabValue) => (
+          <TabsContent key={tabValue} value={tabValue} className="space-y-4 pt-4">
+            {quizQuestions
+              .filter((q) => tabValue === "all" || q.type === tabValue)
+              .map((question, index) => {
+                const isAnswered = !!answers[question.id]
+                const evaluation = evaluations[question.id]
+
+                return (
+                  <Card key={question.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">
+                          {index + 1}. {question.question}
+                        </CardTitle>
+                        {evaluation && (
+                          <div
+                            className={`rounded-full px-2 py-1 text-xs font-medium ${
+                              evaluation.score >= 7
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                : evaluation.score >= 4
+                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                            }`}
+                          >
+                            {evaluation.score}/{evaluation.maxScore}
+                          </div>
+                        )}
+                      </div>
+                      <CardDescription>
+                        {question.type === "multiple_choice"
+                          ? "Risposta multipla"
+                          : question.type === "open_question"
+                            ? "Domanda aperta"
+                            : "Snippet di codice"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {isAnswered ? (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <div className="font-medium">Risposta del candidato:</div>
+                            {question.type === "multiple_choice" && (
+                              <div
+                                className={`rounded-md border p-3 ${
+                                  Number.parseInt(answers[question.id]) === Number.parseInt(question.correctAnswer)
+                                    ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                                    : "border-red-500 bg-red-50 dark:bg-red-950/20"
+                                }`}
+                              >
+                                {question.options[Number.parseInt(answers[question.id])]}
+                              </div>
+                            )}
+
+                            {question.type === "open_question" && (
+                              <div className="rounded-md border p-3 whitespace-pre-wrap">{answers[question.id]}</div>
+                            )}
+
+                            {question.type === "code_snippet" && (
+                              <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
+                                <code>{answers[question.id].code}</code>
+                              </pre>
+                            )}
+                          </div>
+
+                          {question.type === "multiple_choice" && (
+                            <div className="space-y-2">
+                              <div className="font-medium">Risposta corretta:</div>
+                              <div className="rounded-md border border-green-500 bg-green-50 p-3 dark:bg-green-950/20">
+                                {question.options[Number.parseInt(question.correctAnswer)]}
+                              </div>
+                              {question.explanation && (
+                                <div className="text-sm text-muted-foreground">{question.explanation}</div>
+                              )}
+                            </div>
+                          )}
+
+                          {evaluation && (
+                            <div className="space-y-2">
+                              <div className="font-medium">Valutazione AI:</div>
+                              <div className="rounded-md border p-3 whitespace-pre-wrap">{evaluation.evaluation}</div>
+
+                              {evaluation.strengths && evaluation.strengths.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="font-medium text-green-600 dark:text-green-400">Punti di forza:</div>
+                                  <ul className="list-disc pl-5 space-y-1 mt-1">
+                                    {evaluation.strengths.map((strength, idx) => (
+                                      <li key={idx} className="text-sm">
+                                        {strength}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {evaluation.weaknesses && evaluation.weaknesses.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="font-medium text-amber-600 dark:text-amber-400">
+                                    Aree di miglioramento:
+                                  </div>
+                                  <ul className="list-disc pl-5 space-y-1 mt-1">
+                                    {evaluation.weaknesses.map((weakness, idx) => (
+                                      <li key={idx} className="text-sm">
+                                        {weakness}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">Nessuna risposta</div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  )
+}
