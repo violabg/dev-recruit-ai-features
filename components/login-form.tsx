@@ -54,15 +54,18 @@ export function LoginForm() {
           variant: "destructive",
         })
         setIsLoading(false)
-      } else {
-        // Refresh the session in the client
-        await refreshSession()
+      } else if (result?.success) {
+        // Show success toast
+        toast({
+          title: "Accesso effettuato",
+          description: "Reindirizzamento alla dashboard...",
+        })
 
-        // Force a refresh of the page data
-        router.refresh()
-
-        // Redirect to dashboard
-        router.push("/dashboard")
+        // Wait a moment to ensure cookies are set
+        setTimeout(() => {
+          // Force a hard navigation to dashboard instead of client-side routing
+          window.location.href = "/dashboard"
+        }, 500)
       }
     } catch (error: any) {
       toast({

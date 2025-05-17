@@ -422,19 +422,27 @@ export async function signIn(formData: FormData) {
     return { error: error.message }
   }
 
-  // Set a cookie to ensure the session is properly maintained
-  const session = data.session
-  if (session) {
-    cookies().set("supabase-auth-token", session.access_token, {
+  // Set cookies directly to ensure they're available immediately
+  const cookieStore = cookies()
+  if (data.session) {
+    // Set auth cookie with the session token
+    cookieStore.set("sb-access-token", data.session.access_token, {
       path: "/",
-      maxAge: session.expires_in,
+      maxAge: data.session.expires_in,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    })
+
+    cookieStore.set("sb-refresh-token", data.session.refresh_token, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
     })
   }
 
-  revalidatePath("/dashboard")
-  redirect("/dashboard")
+  // Return success without redirect to handle it client-side
+  return { success: true }
 }
 
 export async function signUp(formData: FormData) {

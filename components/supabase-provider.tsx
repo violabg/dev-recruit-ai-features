@@ -86,17 +86,56 @@ export const SupabaseProvider = ({
     // Initial session check
     const initializeAuth = async () => {
       try {
-        const { data, error } = await supabaseClient.auth.getSession()
-        if (error) {
-          console.error("Error getting session:", error)
+        // First try to get session from existing auth state
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession()
+
+        if (sessionError) {
+          console.error("Error getting session:", sessionError)
           setLoading(false)
           return
         }
 
-        if (data?.session) {
+        if (sessionData?.session) {
+          console.log("Session found in auth state")
           const { data: userData } = await supabaseClient.auth.getUser()
           setUser(userData?.user || null)
+          setLoading(false)
+          return
         }
+
+        // If no session in auth state, check for cookies
+        const cookies = document.cookie.split(";").reduce(
+          (acc, cookie) => {
+            const [key, value] = cookie.trim().split("=")
+            acc[key] = value
+            return acc
+          },
+          {} as Record<string, string>,
+        )
+
+        const accessToken = cookies["sb-access-token"]
+        const refreshToken = cookies["sb-refresh-token"]
+
+        if (accessToken) {
+          console.log("Found access token in cookies, setting session")
+          try {
+            // Set the session from cookies
+            const { data, error } = await supabaseClient.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || "",
+            })
+
+            if (error) {
+              console.error("Error setting session from cookies:", error)
+            } else if (data?.user) {
+              console.log("Session set successfully from cookies")
+              setUser(data.user)
+            }
+          } catch (err) {
+            console.error("Error in session recovery:", err)
+          }
+        }
+
         setLoading(false)
       } catch (error) {
         console.error("Error in initializeAuth:", error)

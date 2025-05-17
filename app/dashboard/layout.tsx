@@ -13,7 +13,22 @@ export default async function DashboardLayout({
 }) {
   // Server-side authentication check
   const cookieStore = cookies()
+
+  // Check for auth cookies directly
+  const accessToken = cookieStore.get("sb-access-token")?.value
+  const refreshToken = cookieStore.get("sb-refresh-token")?.value
+
+  // If no auth cookies, redirect to login
+  if (!accessToken && !refreshToken) {
+    redirect("/login?error=unauthenticated")
+  }
+
+  // Initialize Supabase with the tokens if available
   const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value
@@ -21,23 +36,36 @@ export default async function DashboardLayout({
     },
   })
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // If we have tokens, try to get the session
+  if (accessToken) {
+    try {
+      // Set the auth cookie in the client
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || "",
+      })
 
-  if (!session) {
-    // If no session, redirect to login
-    redirect("/login?error=unauthenticated")
+      // Get the user to verify the session is valid
+      const { data, error } = await supabase.auth.getUser(accessToken)
+
+      if (error || !data.user) {
+        console.error("Auth error in dashboard layout:", error)
+        redirect("/login?error=session_expired")
+      }
+    } catch (error) {
+      console.error("Error verifying session:", error)
+      redirect("/login?error=auth_error")
+    }
+  } else {
+    redirect("/login?error=no_session")
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <DashboardHeader />
-      <div className="container flex-1 items-start md:grid md:grid-cols-[220px_1fr] md:gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
-        <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 overflow-y-auto border-r md:sticky md:block">
-          <DashboardNav />
-        </aside>
-        <main className="flex w-full flex-col overflow-hidden p-4 md:py-8">{children}</main>
+      <div className="flex flex-1">
+        <DashboardNav />
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   )

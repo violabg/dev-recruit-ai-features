@@ -29,8 +29,23 @@ export default async function LoginPage({
     redirect("/dashboard")
   }
 
-  const errorMessage =
-    searchParams.error === "unauthenticated" ? "Devi effettuare l'accesso per visualizzare questa pagina" : undefined
+  // Update the error message handling in the login page
+  const getErrorMessage = (errorCode?: string) => {
+    switch (errorCode) {
+      case "unauthenticated":
+        return "Devi effettuare l'accesso per visualizzare questa pagina"
+      case "session_expired":
+        return "La tua sessione è scaduta. Effettua nuovamente l'accesso"
+      case "auth_error":
+        return "Si è verificato un errore di autenticazione. Riprova"
+      case "no_session":
+        return "Nessuna sessione trovata. Effettua l'accesso"
+      default:
+        return undefined
+    }
+  }
+
+  const errorMessage = getErrorMessage(searchParams.error)
 
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
