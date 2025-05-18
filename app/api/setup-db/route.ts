@@ -1,16 +1,20 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import type { Database } from "@/lib/database.types"
+import type { Database } from "@/lib/database.types";
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     // Initialize Supabase client with admin privileges
-    const supabaseAdmin = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    })
+    const supabaseAdmin = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
 
     // Create tables if they don't exist
     const tables = [
@@ -89,14 +93,16 @@ export async function GET() {
           );
         `,
       },
-    ]
+    ];
 
     // Execute table creation queries
     for (const table of tables) {
-      const { error } = await supabaseAdmin.rpc("execute_sql", { query: table.query })
+      const { error } = await supabaseAdmin.rpc("execute_sql", {
+        query: table.query,
+      });
       if (error) {
-        console.error(`Error creating ${table.name} table:`, error)
-        throw error
+        console.error(`Error creating ${table.name} table:`, error);
+        throw error;
       }
     }
 
@@ -163,13 +169,15 @@ export async function GET() {
       },
 
       // Similar policies for other tables...
-    ]
+    ];
 
     // Execute policy creation queries
     for (const policy of policies) {
-      const { error } = await supabaseAdmin.rpc("execute_sql", { query: policy.query })
+      const { error } = await supabaseAdmin.rpc("execute_sql", {
+        query: policy.query,
+      });
       if (error) {
-        console.error(`Error creating ${policy.name}:`, error)
+        console.error(`Error creating ${policy.name}:`, error);
         // Continue with other policies even if one fails
       }
     }
@@ -181,19 +189,25 @@ export async function GET() {
       "ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;",
       "ALTER TABLE quizzes ENABLE ROW LEVEL SECURITY;",
       "ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;",
-    ]
+    ];
 
     for (const query of enableRLS) {
-      const { error } = await supabaseAdmin.rpc("execute_sql", { query })
+      const { error } = await supabaseAdmin.rpc("execute_sql", { query });
       if (error) {
-        console.error(`Error enabling RLS:`, error)
+        console.error(`Error enabling RLS:`, error);
         // Continue with other tables even if one fails
       }
     }
 
-    return NextResponse.json({ success: true, message: "Database setup completed successfully" })
+    return NextResponse.json({
+      success: true,
+      message: "Database setup completed successfully",
+    });
   } catch (error: any) {
-    console.error("Database setup error:", error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    console.error("Database setup error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }

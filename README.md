@@ -8,9 +8,9 @@ A brief description of the project.
 
 ### Prerequisites
 
-*   Node.js
-*   npm or yarn
-*   Supabase account
+- Node.js
+- npm or yarn
+- Supabase account
 
 ### Installation
 
@@ -30,7 +30,9 @@ A brief description of the project.
 
     \`\`\`bash
     npm install
+
     # or
+
     yarn install
     \`\`\`
 
@@ -41,15 +43,17 @@ A brief description of the project.
 3.  Set the environment variables:
 
     \`\`\`bash
-    SUPABASE_URL=<your_supabase_url>
-    SUPABASE_ANON_KEY=<your_supabase_anon_key>
+    NEXT_PUBLIC_SUPABASE_URL=<your_supabase_url>
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=<your_supabase_anon_key>
     \`\`\`
 
 ### Running the Application
 
 \`\`\`bash
 npm run dev
+
 # or
+
 yarn dev
 \`\`\`
 
