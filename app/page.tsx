@@ -1,28 +1,10 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, BrainCircuit, CheckCircle, Users } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button";
+import { ArrowRight, BrainCircuit, CheckCircle, Users } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="border-b">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl">
-            <BrainCircuit className="h-6 w-6" />
-            <span>DevRecruit AI</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/login">
-              <Button variant="ghost">Accedi</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Registrati</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
       <main className="flex-1">
         <section className="py-20 md:py-32 bg-linear-to-b from-background to-muted/30">
           <div className="container px-4 md:px-6">
@@ -33,8 +15,9 @@ export default function Home() {
                     Selezione tecnica potenziata dall&apos;AI
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Valuta le competenze tecniche dei candidati con quiz personalizzati e colloqui in tempo reale
-                    supportati dall&apos;intelligenza artificiale.
+                    Valuta le competenze tecniche dei candidati con quiz
+                    personalizzati e colloqui in tempo reale supportati
+                    dall&apos;intelligenza artificiale.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -61,13 +44,17 @@ export default function Home() {
                     </div>
                     <div className="space-y-3 text-sm">
                       <div className="p-3 bg-muted rounded-md">
-                        <p className="font-medium">Domanda 1: Cosa è un closure in JavaScript?</p>
+                        <p className="font-medium">
+                          Domanda 1: Cosa è un closure in JavaScript?
+                        </p>
                         <div className="mt-2 space-y-1 text-muted-foreground">
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 rounded-full border flex items-center justify-center">
                               <div className="w-2 h-2 rounded-full bg-primary" />
                             </div>
-                            <span>Una funzione che ha accesso al proprio scope</span>
+                            <span>
+                              Una funzione che ha accesso al proprio scope
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 rounded-full border" />
@@ -80,7 +67,10 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="p-3 bg-muted rounded-md">
-                        <p className="font-medium">Domanda 2: Identifica l&apos;errore nel seguente codice:</p>
+                        <p className="font-medium">
+                          Domanda 2: Identifica l&apos;errore nel seguente
+                          codice:
+                        </p>
                         <pre className="mt-2 p-2 bg-black text-white text-xs rounded overflow-x-auto">
                           {`function fetchData() {
   return fetch('/api/data')
@@ -98,9 +88,12 @@ export default function Home() {
         <section className="py-12 md:py-16 bg-background">
           <div className="container px-4 md:px-6">
             <div className="text-center space-y-3 mb-12">
-              <h2 className="text-3xl font-bold tracking-tighter">Perché scegliere DevRecruit AI</h2>
+              <h2 className="text-3xl font-bold tracking-tighter">
+                Perché scegliere DevRecruit AI
+              </h2>
               <p className="text-muted-foreground md:text-lg max-w-[800px] mx-auto">
-                Ottimizza il processo di selezione tecnica con strumenti avanzati e intelligenti
+                Ottimizza il processo di selezione tecnica con strumenti
+                avanzati e intelligenti
               </p>
             </div>
             <div className="grid gap-8 md:grid-cols-3">
@@ -108,9 +101,12 @@ export default function Home() {
                 <div className="bg-primary/10 p-3 rounded-full">
                   <BrainCircuit className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">Quiz personalizzati con AI</h3>
+                <h3 className="text-xl font-bold">
+                  Quiz personalizzati con AI
+                </h3>
                 <p className="text-muted-foreground">
-                  Genera automaticamente quiz tecnici su misura per ogni posizione e livello di esperienza.
+                  Genera automaticamente quiz tecnici su misura per ogni
+                  posizione e livello di esperienza.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center space-y-2 p-4">
@@ -119,7 +115,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold">Colloqui in tempo reale</h3>
                 <p className="text-muted-foreground">
-                  Monitora le risposte dei candidati in tempo reale durante i colloqui tecnici.
+                  Monitora le risposte dei candidati in tempo reale durante i
+                  colloqui tecnici.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center space-y-2 p-4">
@@ -128,7 +125,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold">Valutazione oggettiva</h3>
                 <p className="text-muted-foreground">
-                  Valuta le competenze tecniche in modo oggettivo e riduci i bias nel processo di selezione.
+                  Valuta le competenze tecniche in modo oggettivo e riduci i
+                  bias nel processo di selezione.
                 </p>
               </div>
             </div>
@@ -155,5 +153,5 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

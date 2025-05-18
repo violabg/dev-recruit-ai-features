@@ -1,11 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,119 +10,188 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { signIn } from "@/lib/actions/auth";
-import { useSupabase } from "@/lib/supabase/supabase-provider";
-import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { GithubIcon } from "../icons/github";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 import PasswordInput from "../ui/password-input";
+import { Separator } from "../ui/separator";
 
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Inserisci un indirizzo email valido.",
-  }),
-  password: z.string().min(6, {
-    message: "La password deve contenere almeno 6 caratteri.",
-  }),
+const loginSchema = z.object({
+  email: z.string().email({ message: "Email non valida" }),
+  password: z.string().min(6, { message: "Minimo 6 caratteri" }),
 });
+type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function LoginForm() {
+export function LoginForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
   const [isLoading, setIsLoading] = useState(false);
-  const { refreshSession } = useSupabase();
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+  const router = useRouter();
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+    mode: "onChange",
   });
+  const supabase = createClient();
+  const { handleSubmit, setError } = form;
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleLogin = async (values: LoginFormValues) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      if (error) throw error;
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      setError("email", {
+        message: error instanceof Error ? error.message : "An error occurred",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("email", values.email);
-      formData.append("password", values.password);
-
-      const result = await signIn(formData);
-
-      if (result?.error) {
-        toast.error("Errore di accesso", {
-          description: result.error,
-        });
-        setIsLoading(false);
-      } else if (result?.success) {
-        // Show success toast
-        toast.success("Accesso effettuato", {
-          description: "Reindirizzamento alla dashboard...",
-        });
-
-        // Wait a moment to ensure cookies are set
-        setTimeout(() => {
-          // Force a hard navigation to dashboard instead of client-side routing
-          window.location.href = "/dashboard";
-        }, 500);
-      }
-    } catch (error: any) {
-      toast.error("Errore di accesso", {
-        description: error.message || "Credenziali non valide",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${window.location.origin}/auth/oauth?next=/dashboard`,
+        },
       });
+
+      if (error) throw error;
+    } catch (error: unknown) {
+      console.log("error :>> ", error);
+      //  setError(error instanceof Error ? error.message : 'An error occurred')
       setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="nome@esempio.com"
-                  type="email"
-                  autoComplete="email"
-                  disabled={isLoading}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <PasswordInput
-                  placeholder="••••••••"
-                  type="password"
-                  autoComplete="current-password"
-                  disabled={isLoading}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Accesso in corso...
-            </>
-          ) : (
-            "Accedi"
-          )}
-        </Button>
-      </form>
-    </Form>
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card className="gradient-border glass-card">
+        <CardHeader>
+          <CardTitle className="text-2xl">Accedi</CardTitle>
+          <CardDescription>
+            Inserisci la tua email per accedere al tuo account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form
+              onSubmit={handleSubmit(handleLogin)}
+              className="space-y-4"
+              autoComplete="off"
+            >
+              <FormField
+                name="email"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="m@example.com"
+                        autoComplete="email"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="password"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center">
+                      <FormLabel>Password</FormLabel>
+                      <Link
+                        href="/auth/forgot-password"
+                        className="inline-block ml-auto text-sm hover:underline underline-offset-4"
+                      >
+                        Password dimenticata?
+                      </Link>
+                    </div>
+                    <FormControl>
+                      <PasswordInput
+                        autoComplete="current-password"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !form.formState.isValid}
+              >
+                {isLoading ? "Accesso in corso..." : "Accedi"}
+              </Button>
+              <div className="mt-4 text-sm text-center">
+                Non hai un account?{" "}
+                <Link
+                  href="/auth/sign-up"
+                  className="underline underline-offset-4"
+                >
+                  Registrati
+                </Link>
+              </div>
+            </form>
+          </Form>
+          <Separator className="my-4" />
+          <form onSubmit={handleSocialLogin}>
+            <div className="flex flex-col gap-6">
+              {/* {error && <p className=\"text-destructive-500 text-sm\">{error}</p>} */}
+              <Button
+                type="submit"
+                className="flex justify-center items-center gap-2 bg-background hover:bg-accent border border-input w-full text-black dark:text-white transition-colors hover:text-accent-foreground"
+                disabled={isLoading}
+              >
+                <GithubIcon className="w-5 h-5" />
+                <span className="font-medium">
+                  {isLoading ? "Logging in..." : "Login con GitHub"}
+                </span>
+              </Button>
+            </div>
+          </form>
+          <Separator className="my-4" />
+          <p className="px-8 text-center text-sm text-muted-foreground">
+            <Link
+              href="/register"
+              className="hover:text-brand underline underline-offset-4"
+            >
+              Non hai un account? Registrati
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -13,32 +13,20 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMobile } from "@/hooks/use-mobile";
 import { useSupabase } from "@/lib/supabase/supabase-provider";
-import { BrainCircuit, LogOut, Menu, User } from "lucide-react";
+import { BrainCircuit, Loader2, LogOut, Menu, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { DashboardNav } from "./dashboard-nav";
 
 export function DashboardHeader() {
-  const { supabase, user } = useSupabase();
+  const { supabase, user, loading } = useSupabase();
+  console.log("🚀 ~ DashboardHeader ~ user:", user);
   const router = useRouter();
   const isMobile = useMobile();
 
   const handleSignOut = async () => {
-    if (!supabase) return;
-
-    try {
-      await supabase.auth.signOut();
-      toast.success("Disconnesso", {
-        description: "Hai effettuato il logout con successo",
-      });
-      router.push("/");
-      router.refresh();
-    } catch (error) {
-      toast.error("Errore", {
-        description: "Si è verificato un errore durante il logout",
-      });
-    }
+    await supabase.auth.signOut();
+    router.push("/auth/login");
   };
 
   return (
@@ -64,29 +52,41 @@ export function DashboardHeader() {
       </div>
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-              <span className="sr-only">Profilo utente</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/profile">Profilo</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">Impostazioni</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Logout</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {loading ? (
+          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+        ) : (
+          <>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">Profilo utente</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/profile">Profilo</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/settings">Impostazioni</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild>
+                <Link href="/auth/login">Accedi</Link>
+              </Button>
+            )}
+          </>
+        )}
       </div>
     </header>
   );

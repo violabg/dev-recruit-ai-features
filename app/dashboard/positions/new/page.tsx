@@ -1,34 +1,20 @@
 import { NewPositionForm } from "@/components/positions/new-position-form";
-import type { Database } from "@/lib/database.types";
-import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 
 // Server component for new position page
 export default async function NewPositionPage() {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-
-  // Get the current user to verify authentication
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  console.log("🚀 ~ NewPositionPage ~ user:", user);
 
   if (!user) {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center">
         <p className="text-lg font-medium">Accesso richiesto</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Effettua l'accesso per creare una nuova posizione
+          Effettua l&apos;accesso per creare una nuova posizione
         </p>
       </div>
     );

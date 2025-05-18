@@ -38,14 +38,10 @@ const signUpSchema = z
       .string()
       .min(2, { message: "Cognome deve essere almeno 2 caratteri" })
       .max(30, { message: "Cognome deve essere massimo 30 caratteri" }),
-    user_name: z
+    company: z
       .string()
-      .min(3, { message: "Username deve essere almeno 3 caratteri" })
-      .max(20, { message: "Username deve essere massimo 20 caratteri" })
-      .regex(/^[a-zA-Z0-9_-]+$/, {
-        message:
-          "Username può contenere solo lettere, numeri, underscore e trattini",
-      }),
+      .min(3, { message: "Nome azienda deve essere almeno 3 caratteri" })
+      .max(100, { message: "Nome azienda deve essere massimo 100 caratteri" }),
     email: z.string().email({ message: "Email non valida" }),
     password: z.string().min(6, { message: "Minimo 6 caratteri" }),
     repeatPassword: z.string().min(6, { message: "Minimo 6 caratteri" }),
@@ -67,7 +63,7 @@ export function SignUpForm({
     defaultValues: {
       first_name: "",
       last_name: "",
-      user_name: "",
+      company: "",
       email: "",
       password: "",
       repeatPassword: "",
@@ -86,7 +82,7 @@ export function SignUpForm({
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            user_name: values.user_name,
+            company: values.company,
             name: `${values.first_name} ${values.last_name}`,
             full_name: `${values.first_name} ${values.last_name}`,
           },
@@ -156,16 +152,16 @@ export function SignUpForm({
                 )}
               />
               <FormField
-                name="user_name"
+                name="company"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Nome Azienda</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
-                        placeholder="johndoe"
-                        autoComplete="user_name"
+                        placeholder="Nome Azienda"
+                        autoComplete="organization"
                         disabled={isLoading}
                         {...field}
                       />
