@@ -1,43 +1,54 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { BrainCircuit, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { useToast } from "@/components/ui/use-toast"
-import { InterviewQuestion } from "@/components/interview/interview-question"
-import { InterviewComplete } from "@/components/interview/interview-complete"
-import { startInterview, submitAnswer, completeInterview } from "@/lib/actions/interviews"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import type { Database } from "@/lib/database.types"
+import { InterviewComplete } from "@/components/interview/interview-complete";
+import { InterviewQuestion } from "@/components/interview/interview-question";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+  completeInterview,
+  startInterview,
+  submitAnswer,
+} from "@/lib/actions/interviews";
+import type { Database } from "@/lib/database.types";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { BrainCircuit, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Interview {
-  id: string
-  quiz_id: string
-  candidate_id: string
-  status: string
-  started_at: string | null
-  completed_at: string | null
-  token: string
-  answers?: Record<string, any>
+  id: string;
+  quiz_id: string;
+  candidate_id: string;
+  status: string;
+  started_at: string | null;
+  completed_at: string | null;
+  token: string;
+  answers?: Record<string, any>;
 }
 
 interface Quiz {
-  id: string
-  title: string
-  questions: any[]
-  time_limit: number | null
+  id: string;
+  title: string;
+  questions: any[];
+  time_limit: number | null;
   position: {
-    title: string
-  }
+    title: string;
+  };
 }
 
 interface Candidate {
-  id: string
-  name: string
-  email: string
+  id: string;
+  name: string;
+  email: string;
 }
 
 export function InterviewClient({
@@ -45,55 +56,60 @@ export function InterviewClient({
   quiz,
   candidate,
 }: {
-  interview: Interview
-  quiz: Quiz
-  candidate: Candidate
+  interview: Interview;
+  quiz: Quiz;
+  candidate: Candidate;
 }) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [loading, setLoading] = useState(true)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, any>>(interview.answers || {})
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(quiz.time_limit ? quiz.time_limit * 60 : null)
-  const [isCompleted, setIsCompleted] = useState(interview.status === "completed")
-  const [isStarted, setIsStarted] = useState(interview.status === "in_progress")
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, any>>(
+    interview.answers || {}
+  );
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(
+    quiz.time_limit ? quiz.time_limit * 60 : null
+  );
+  const [isCompleted, setIsCompleted] = useState(
+    interview.status === "completed"
+  );
+  const [isStarted, setIsStarted] = useState(
+    interview.status === "in_progress"
+  );
 
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClientComponentClient<Database>();
 
   const handleCompleteInterview = useCallback(async () => {
     try {
-      await completeInterview(interview.token)
-      setIsCompleted(true)
+      await completeInterview(interview.token);
+      setIsCompleted(true);
     } catch (error: any) {
-      toast({
-        title: "Errore",
+      toast.error("Errore", {
         description: error.message || "Impossibile completare l'intervista",
-        variant: "destructive",
-      })
+      });
     }
-  }, [interview.token, toast])
+  }, [interview.token]);
 
   useEffect(() => {
     // Timer for time limit
-    if (!timeRemaining || !isStarted || isCompleted) return
+    if (!timeRemaining || !isStarted || isCompleted) return;
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev === null || prev <= 1) {
-          clearInterval(timer)
-          handleCompleteInterview()
-          return 0
+          clearInterval(timer);
+          handleCompleteInterview();
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [timeRemaining, isStarted, isCompleted, handleCompleteInterview])
+    return () => clearInterval(timer);
+  }, [timeRemaining, isStarted, isCompleted, handleCompleteInterview]);
 
   // Set up real-time subscription for monitoring
   useEffect(() => {
-    if (!supabase || !interview) return
+    if (!supabase || !interview) return;
 
     // Subscribe to changes on this interview
     const channel = supabase
@@ -109,38 +125,36 @@ export function InterviewClient({
         (payload: any) => {
           // Update local state if the interview is updated
           if (payload.new.status === "completed") {
-            setIsCompleted(true)
+            setIsCompleted(true);
           }
-        },
+        }
       )
-      .subscribe()
+      .subscribe();
 
-    setLoading(false)
+    setLoading(false);
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [supabase, interview])
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, interview]);
 
   const handleStartInterview = async () => {
     try {
-      await startInterview(interview.token)
-      setIsStarted(true)
+      await startInterview(interview.token);
+      setIsStarted(true);
 
       // Broadcast the event to the real-time channel
       await supabase.channel(`interview_${interview.id}`).send({
         type: "broadcast",
         event: "interview_started",
         payload: { interview_id: interview.id },
-      })
+      });
     } catch (error: any) {
-      toast({
-        title: "Errore",
+      toast.error("Errore", {
         description: error.message || "Impossibile avviare l'intervista",
-        variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleAnswer = async (questionId: string, answer: any) => {
     try {
@@ -148,36 +162,38 @@ export function InterviewClient({
       setAnswers((prev) => ({
         ...prev,
         [questionId]: answer,
-      }))
+      }));
 
       // Save answer to server
-      await submitAnswer(interview.token, questionId, answer)
+      await submitAnswer(interview.token, questionId, answer);
 
       // Broadcast the answer to the real-time channel
       await supabase.channel(`interview_${interview.id}`).send({
         type: "broadcast",
         event: "answer_submitted",
-        payload: { question_id: questionId, answer, interview_id: interview.id },
-      })
+        payload: {
+          question_id: questionId,
+          answer,
+          interview_id: interview.id,
+        },
+      });
 
       // Move to next question if not the last one
       if (quiz && currentQuestionIndex < quiz.questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1)
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
       }
     } catch (error: any) {
-      toast({
-        title: "Errore",
+      toast.error("Errore", {
         description: error.message || "Impossibile salvare la risposta",
-        variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const formatTimeRemaining = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
   if (loading) {
     return (
@@ -187,11 +203,11 @@ export function InterviewClient({
           <p className="text-lg font-medium">Caricamento intervista...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (isCompleted) {
-    return <InterviewComplete />
+    return <InterviewComplete />;
   }
 
   if (!isStarted) {
@@ -203,9 +219,12 @@ export function InterviewClient({
               <BrainCircuit className="h-6 w-6" />
               <h2 className="text-xl font-bold">DevRecruit AI</h2>
             </div>
-            <CardTitle className="text-center text-2xl">Benvenuto al colloquio tecnico</CardTitle>
+            <CardTitle className="text-center text-2xl">
+              Benvenuto al colloquio tecnico
+            </CardTitle>
             <CardDescription className="text-center">
-              Stai per iniziare il quiz per la posizione di {quiz.position.title}
+              Stai per iniziare il quiz per la posizione di{" "}
+              {quiz.position.title}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -223,7 +242,9 @@ export function InterviewClient({
                 {quiz.time_limit && (
                   <div className="flex justify-between">
                     <span>Limite di tempo:</span>
-                    <span className="font-medium">{quiz.time_limit} minuti</span>
+                    <span className="font-medium">
+                      {quiz.time_limit} minuti
+                    </span>
                   </div>
                 )}
               </div>
@@ -233,22 +254,31 @@ export function InterviewClient({
               <h3 className="font-medium">Istruzioni</h3>
               <ul className="mt-2 space-y-2 text-sm">
                 <li>• Leggi attentamente ogni domanda prima di rispondere</li>
-                <li>• Puoi navigare tra le domande utilizzando i pulsanti avanti/indietro</li>
+                <li>
+                  • Puoi navigare tra le domande utilizzando i pulsanti
+                  avanti/indietro
+                </li>
                 <li>• Le tue risposte vengono salvate automaticamente</li>
                 {quiz.time_limit && (
                   <li>
-                    • Hai {quiz.time_limit} minuti per completare il quiz, dopodiché verrà inviato automaticamente
+                    • Hai {quiz.time_limit} minuti per completare il quiz,
+                    dopodiché verrà inviato automaticamente
                   </li>
                 )}
-                <li>• Clicca su "Completa" quando hai finito di rispondere a tutte le domande</li>
+                <li>
+                  • Clicca su "Completa" quando hai finito di rispondere a tutte
+                  le domande
+                </li>
               </ul>
             </div>
 
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-900 dark:bg-yellow-950">
-              <h3 className="font-medium text-yellow-800 dark:text-yellow-300">Importante</h3>
+              <h3 className="font-medium text-yellow-800 dark:text-yellow-300">
+                Importante
+              </h3>
               <p className="mt-1 text-sm text-yellow-800 dark:text-yellow-300">
-                Non chiudere o aggiornare questa pagina durante il quiz. Farlo potrebbe causare la perdita delle tue
-                risposte.
+                Non chiudere o aggiornare questa pagina durante il quiz. Farlo
+                potrebbe causare la perdita delle tue risposte.
               </p>
             </div>
           </CardContent>
@@ -259,7 +289,7 @@ export function InterviewClient({
           </CardFooter>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -274,10 +304,16 @@ export function InterviewClient({
             {timeRemaining !== null && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="font-mono">{formatTimeRemaining(timeRemaining)}</span>
+                <span className="font-mono">
+                  {formatTimeRemaining(timeRemaining)}
+                </span>
               </div>
             )}
-            <Button variant="outline" size="sm" onClick={handleCompleteInterview}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCompleteInterview}
+            >
               Completa
             </Button>
           </div>
@@ -294,14 +330,19 @@ export function InterviewClient({
               </div>
               <div className="text-sm font-medium">{candidate.name}</div>
             </div>
-            <Progress value={((currentQuestionIndex + 1) / quiz.questions.length) * 100} className="h-2" />
+            <Progress
+              value={((currentQuestionIndex + 1) / quiz.questions.length) * 100}
+              className="h-2"
+            />
           </div>
 
           {quiz.questions[currentQuestionIndex] && (
             <InterviewQuestion
               question={quiz.questions[currentQuestionIndex]}
               questionNumber={currentQuestionIndex + 1}
-              onAnswer={(answer) => handleAnswer(quiz.questions[currentQuestionIndex].id, answer)}
+              onAnswer={(answer) =>
+                handleAnswer(quiz.questions[currentQuestionIndex].id, answer)
+              }
               currentAnswer={answers[quiz.questions[currentQuestionIndex].id]}
             />
           )}
@@ -316,7 +357,9 @@ export function InterviewClient({
             </Button>
             {currentQuestionIndex < quiz.questions.length - 1 ? (
               <Button
-                onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                onClick={() =>
+                  setCurrentQuestionIndex(currentQuestionIndex + 1)
+                }
                 disabled={!answers[quiz.questions[currentQuestionIndex].id]}
               >
                 Successiva
@@ -328,5 +371,5 @@ export function InterviewClient({
         </div>
       </main>
     </div>
-  )
+  );
 }

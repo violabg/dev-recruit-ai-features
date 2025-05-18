@@ -1,25 +1,33 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { BrainCircuit, Loader2 } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BrainCircuit, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent } from "@/components/ui/card"
-import { useSupabase } from "@/components/supabase-provider"
-import { useToast } from "@/components/ui/use-toast"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
+import { useSupabase } from "@/components/supabase-provider";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { groq } from "@ai-sdk/groq";
+import { generateText } from "ai";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -33,29 +41,28 @@ const formSchema = z.object({
   difficulty: z.number().min(1).max(5),
   timeLimit: z.number().min(0).max(120),
   enableTimeLimit: z.boolean(),
-})
+});
 
 interface Position {
-  id: string
-  title: string
-  description: string | null
-  experience_level: string
-  skills: string[]
-  soft_skills: string[] | null
+  id: string;
+  title: string;
+  description: string | null;
+  experience_level: string;
+  skills: string[];
+  soft_skills: string[] | null;
 }
 
 export default function GenerateQuizPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string };
 }) {
-  const router = useRouter()
-  const { supabase, user } = useSupabase()
-  const { toast } = useToast()
-  const [position, setPosition] = useState<Position | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [generatedQuiz, setGeneratedQuiz] = useState<any>(null)
+  const router = useRouter();
+  const { supabase, user } = useSupabase();
+  const [position, setPosition] = useState<Position | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [generatedQuiz, setGeneratedQuiz] = useState<any>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,57 +77,66 @@ export default function GenerateQuizPage({
       timeLimit: 30,
       enableTimeLimit: true,
     },
-  })
+  });
 
   useEffect(() => {
     async function fetchPosition() {
-      if (!supabase) return
+      if (!supabase) return;
 
       try {
-        setLoading(true)
-        const { data, error } = await supabase.from("positions").select("*").eq("id", params.id).single()
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("positions")
+          .select("*")
+          .eq("id", params.id)
+          .single();
 
-        if (error) throw error
-        setPosition(data)
+        if (error) throw error;
+        setPosition(data);
 
         // Set default title based on position
         if (data) {
-          form.setValue("title", `Quiz per ${data.title} (${data.experience_level})`)
+          form.setValue(
+            "title",
+            `Quiz per ${data.title} (${data.experience_level})`
+          );
         }
       } catch (error: any) {
-        toast({
-          title: "Errore",
+        toast.error("Errore", {
           description: "Impossibile caricare i dati della posizione",
-          variant: "destructive",
-        })
-        router.push("/dashboard/positions")
+        });
+        router.push("/dashboard/positions");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchPosition()
-  }, [supabase, params.id, router, toast, form])
+    fetchPosition();
+  }, [supabase, params.id, router, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!supabase || !user || !position) {
-      toast({
-        title: "Errore",
+      toast.error("Errore", {
         description: "Dati mancanti per generare il quiz",
-        variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setGenerating(true)
+    setGenerating(true);
 
     try {
       // Prepare the prompt for the AI
       const prompt = `
-Genera un quiz tecnico per una posizione di "${position.title}" con livello "${position.experience_level}".
+Genera un quiz tecnico per una posizione di "${position.title}" con livello "${
+        position.experience_level
+      }".
 
 Competenze richieste: ${position.skills.join(", ")}
-${position.description ? `Descrizione della posizione: ${position.description}` : ""}
+${
+  position.description
+    ? `Descrizione della posizione: ${position.description}`
+    : ""
+}
 
 Parametri del quiz:
 - Numero di domande: ${values.questionCount}
@@ -128,7 +144,11 @@ Parametri del quiz:
 - Tipi di domande da includere:
   ${values.includeMultipleChoice ? "- Domande a risposta multipla" : ""}
   ${values.includeOpenQuestions ? "- Domande aperte" : ""}
-  ${values.includeCodeSnippets ? "- Snippet di codice e sfide di programmazione" : ""}
+  ${
+    values.includeCodeSnippets
+      ? "- Snippet di codice e sfide di programmazione"
+      : ""
+  }
 
 Istruzioni aggiuntive: ${values.instructions || "Nessuna"}
 
@@ -165,26 +185,27 @@ Genera un quiz in formato JSON con la seguente struttura:
 }
 
 Assicurati che le domande siano pertinenti alle competenze richieste e al livello di esperienza.
-`
+`;
 
       // Generate quiz using AI
       const { text } = await generateText({
-        model: openai("gpt-4o"),
+        model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
         prompt,
         system:
           "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera quiz pertinenti, sfidanti ma equi, con domande chiare e risposte corrette. Rispondi SOLO con il JSON richiesto, senza testo aggiuntivo.",
-      })
+      });
 
       // Parse the generated JSON
-      let quizData
+      let quizData;
       try {
         // Extract JSON from the response if needed
-        const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/\{[\s\S]*\}/)
-        const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text
-        quizData = JSON.parse(jsonString)
+        const jsonMatch =
+          text.match(/```json\n([\s\S]*?)\n```/) || text.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
+        quizData = JSON.parse(jsonString);
       } catch (error) {
-        console.error("Error parsing JSON:", error)
-        throw new Error("Impossibile analizzare il quiz generato")
+        console.error("Error parsing JSON:", error);
+        throw new Error("Impossibile analizzare il quiz generato");
       }
 
       // Save the quiz to the database
@@ -197,29 +218,28 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
           time_limit: values.enableTimeLimit ? values.timeLimit : null,
           created_by: user.id,
         })
-        .select()
+        .select();
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast({
-        title: "Quiz generato",
+      toast.success("Quiz generato", {
         description: "Il quiz è stato generato e salvato con successo",
-      })
+      });
 
       if (data && data[0]) {
-        router.push(`/dashboard/quizzes/${data[0].id}`)
+        router.push(`/dashboard/quizzes/${data[0].id}`);
       } else {
-        router.push(`/dashboard/positions/${position.id}`)
+        router.push(`/dashboard/positions/${position.id}`);
       }
     } catch (error: any) {
-      console.error("Error generating quiz:", error)
-      toast({
-        title: "Errore",
-        description: error.message || "Si è verificato un errore durante la generazione del quiz",
-        variant: "destructive",
-      })
+      console.error("Error generating quiz:", error);
+      toast.error("Errore", {
+        description:
+          error.message ||
+          "Si è verificato un errore durante la generazione del quiz",
+      });
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
   }
 
@@ -228,7 +248,7 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
       <div className="flex h-[400px] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
-    )
+    );
   }
 
   if (!position) {
@@ -239,14 +259,16 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
           <Link href="/dashboard/positions">Torna alle posizioni</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Genera Quiz AI</h1>
-        <p className="text-muted-foreground">Crea un quiz personalizzato per la posizione {position.title}</p>
+        <p className="text-muted-foreground">
+          Crea un quiz personalizzato per la posizione {position.title}
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -262,7 +284,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormDescription>Un titolo descrittivo per il quiz</FormDescription>
+                    <FormDescription>
+                      Un titolo descrittivo per il quiz
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -281,7 +305,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>Istruzioni specifiche per l&apos;AI che genera il quiz</FormDescription>
+                    <FormDescription>
+                      Istruzioni specifiche per l&apos;AI che genera il quiz
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -303,7 +329,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                           onValueChange={(value) => field.onChange(value[0])}
                         />
                       </FormControl>
-                      <FormDescription>Seleziona il numero di domande (3-20)</FormDescription>
+                      <FormDescription>
+                        Seleziona il numero di domande (3-20)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -316,7 +344,15 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                     <FormItem>
                       <FormLabel>
                         Difficoltà:{" "}
-                        {["Molto facile", "Facile", "Media", "Difficile", "Molto difficile"][field.value - 1]}
+                        {
+                          [
+                            "Molto facile",
+                            "Facile",
+                            "Media",
+                            "Difficile",
+                            "Molto difficile",
+                          ][field.value - 1]
+                        }
                       </FormLabel>
                       <FormControl>
                         <Slider
@@ -327,7 +363,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                           onValueChange={(value) => field.onChange(value[0])}
                         />
                       </FormControl>
-                      <FormDescription>Seleziona il livello di difficoltà (1-5)</FormDescription>
+                      <FormDescription>
+                        Seleziona il livello di difficoltà (1-5)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -344,10 +382,15 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
                           <FormLabel>Domande a risposta multipla</FormLabel>
-                          <FormDescription>Domande con opzioni predefinite</FormDescription>
+                          <FormDescription>
+                            Domande con opzioni predefinite
+                          </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -359,10 +402,15 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
                           <FormLabel>Domande aperte</FormLabel>
-                          <FormDescription>Domande che richiedono risposte testuali</FormDescription>
+                          <FormDescription>
+                            Domande che richiedono risposte testuali
+                          </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -374,10 +422,15 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
                           <FormLabel>Snippet di codice</FormLabel>
-                          <FormDescription>Sfide di programmazione e analisi di codice</FormDescription>
+                          <FormDescription>
+                            Sfide di programmazione e analisi di codice
+                          </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -391,11 +444,16 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Limite di tempo</FormLabel>
-                      <FormDescription>Imposta un limite di tempo per il completamento del quiz</FormDescription>
+                      <FormDescription>
+                        Imposta un limite di tempo per il completamento del quiz
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -407,7 +465,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                   name="timeLimit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Limite di tempo: {field.value} minuti</FormLabel>
+                      <FormLabel>
+                        Limite di tempo: {field.value} minuti
+                      </FormLabel>
                       <FormControl>
                         <Slider
                           min={5}
@@ -417,7 +477,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                           onValueChange={(value) => field.onChange(value[0])}
                         />
                       </FormControl>
-                      <FormDescription>Seleziona il limite di tempo in minuti</FormDescription>
+                      <FormDescription>
+                        Seleziona il limite di tempo in minuti
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -425,7 +487,11 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
               )}
 
               <div className="flex gap-4">
-                <Button type="button" variant="outline" onClick={() => router.back()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                >
                   Annulla
                 </Button>
                 <Button type="submit" disabled={generating}>
@@ -459,7 +525,8 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                   <span className="font-medium">Titolo:</span> {position.title}
                 </div>
                 <div>
-                  <span className="font-medium">Livello:</span> {position.experience_level}
+                  <span className="font-medium">Livello:</span>{" "}
+                  {position.experience_level}
                 </div>
                 <div>
                   <span className="font-medium">Competenze:</span>
@@ -477,7 +544,9 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                 {position.description && (
                   <div>
                     <span className="font-medium">Descrizione:</span>
-                    <p className="mt-1 text-sm text-muted-foreground">{position.description}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {position.description}
+                    </p>
                   </div>
                 )}
               </div>
@@ -489,25 +558,36 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
                     <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
                       1
                     </span>
-                    <span>L&apos;AI analizza le competenze e il livello richiesti per la posizione</span>
+                    <span>
+                      L&apos;AI analizza le competenze e il livello richiesti
+                      per la posizione
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
                       2
                     </span>
-                    <span>Genera domande pertinenti in base ai parametri selezionati</span>
+                    <span>
+                      Genera domande pertinenti in base ai parametri selezionati
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
                       3
                     </span>
-                    <span>Crea un mix bilanciato di domande teoriche, pratiche e sfide di codice</span>
+                    <span>
+                      Crea un mix bilanciato di domande teoriche, pratiche e
+                      sfide di codice
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
                       4
                     </span>
-                    <span>Puoi modificare il quiz generato prima di inviarlo ai candidati</span>
+                    <span>
+                      Puoi modificare il quiz generato prima di inviarlo ai
+                      candidati
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -516,5 +596,5 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
         </Card>
       </div>
     </div>
-  )
+  );
 }

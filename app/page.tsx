@@ -24,7 +24,7 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="py-20 md:py-32 bg-gradient-to-b from-background to-muted/30">
+        <section className="py-20 md:py-32 bg-linear-to-b from-background to-muted/30">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="flex flex-col justify-center space-y-4">
@@ -52,7 +52,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="mx-auto lg:mx-0 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur-3xl opacity-20" />
+                <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-purple-500 rounded-lg blur-3xl opacity-20" />
                 <div className="relative bg-card border rounded-lg shadow-lg p-6">
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-lg font-semibold">

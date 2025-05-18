@@ -1,18 +1,25 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { BrainCircuit, Loader2 } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BrainCircuit, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
-import { useSupabase } from "@/components/supabase-provider"
+import { useSupabase } from "@/components/supabase-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -27,13 +34,12 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "La password deve contenere almeno 6 caratteri.",
   }),
-})
+});
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { supabase } = useSupabase()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const { supabase } = useSupabase();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,19 +49,17 @@ export default function RegisterPage() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!supabase) {
-      toast({
-        title: "Errore",
+      toast.error("Errore", {
         description: "Impossibile connettersi al database",
-        variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       // Register the user
@@ -68,10 +72,10 @@ export default function RegisterPage() {
             company: values.company,
           },
         },
-      })
+      });
 
       if (authError) {
-        throw authError
+        throw authError;
       }
 
       if (authData.user) {
@@ -81,28 +85,26 @@ export default function RegisterPage() {
           full_name: values.fullName,
           company: values.company,
           role: "recruiter", // Default role for new users
-        })
+        });
 
         if (profileError) {
-          throw profileError
+          throw profileError;
         }
       }
 
-      toast({
-        title: "Registrazione completata",
+      toast.success("Registrazione completata", {
         description: "Il tuo account è stato creato con successo",
-      })
+      });
 
-      router.push("/dashboard")
-      router.refresh()
+      router.push("/dashboard");
+      router.refresh();
     } catch (error: any) {
-      toast({
-        title: "Errore di registrazione",
-        description: error.message || "Si è verificato un errore durante la registrazione",
-        variant: "destructive",
-      })
+      toast.error("Errore di registrazione", {
+        description:
+          error.message || "Si è verificato un errore durante la registrazione",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -117,8 +119,12 @@ export default function RegisterPage() {
                 <span>DevRecruit AI</span>
               </div>
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight">Crea un account</h1>
-            <p className="text-sm text-muted-foreground">Registrati per iniziare a utilizzare DevRecruit AI</p>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Crea un account
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Registrati per iniziare a utilizzare DevRecruit AI
+            </p>
           </div>
 
           <Form {...form}>
@@ -130,7 +136,11 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Nome completo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Mario Rossi" disabled={isLoading} {...field} />
+                      <Input
+                        placeholder="Mario Rossi"
+                        disabled={isLoading}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,7 +153,11 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Azienda</FormLabel>
                     <FormControl>
-                      <Input placeholder="Acme Inc." disabled={isLoading} {...field} />
+                      <Input
+                        placeholder="Acme Inc."
+                        disabled={isLoading}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -187,7 +201,11 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full mt-6" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full mt-6"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -202,12 +220,15 @@ export default function RegisterPage() {
 
           <div className="mt-6 text-center text-sm">
             Hai già un account?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:underline"
+            >
               Accedi
             </Link>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { BrainCircuit, LogOut, Menu, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { useSupabase } from "@/components/shared/supabase-provider";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,38 +10,36 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useSupabase } from "@/components/shared/supabase-provider"
-import { useToast } from "@/components/ui/use-toast"
-import { useMobile } from "@/hooks/use-mobile"
-import { ThemeToggle } from "@/components/layout/theme-toggle"
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useMobile } from "@/hooks/use-mobile";
+import { BrainCircuit, LogOut, Menu, User } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { DashboardNav } from "./dashboard-nav";
 
 export function DashboardHeader() {
-  const { supabase, user } = useSupabase()
-  const router = useRouter()
-  const { toast } = useToast()
-  const isMobile = useMobile()
+  const { supabase, user } = useSupabase();
+  const router = useRouter();
+  const isMobile = useMobile();
 
   const handleSignOut = async () => {
-    if (!supabase) return
+    if (!supabase) return;
 
     try {
-      await supabase.auth.signOut()
-      toast({
-        title: "Disconnesso",
+      await supabase.auth.signOut();
+      toast.success("Disconnesso", {
         description: "Hai effettuato il logout con successo",
-      })
-      router.push("/")
-      router.refresh()
+      });
+      router.push("/");
+      router.refresh();
     } catch (error) {
-      toast({
-        title: "Errore",
+      toast.error("Errore", {
         description: "Si è verificato un errore durante il logout",
-        variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
@@ -92,8 +89,5 @@ export function DashboardHeader() {
         </DropdownMenu>
       </div>
     </header>
-  )
+  );
 }
-
-// Fix circular dependency by importing DashboardNav here
-import { DashboardNav } from "./dashboard-nav"

@@ -244,7 +244,7 @@ export default async function PositionDetailPage({
                         <Badge
                           variant={
                             candidate.status === "pending"
-                              ? "outline"
+                              ? "outline-solid"
                               : candidate.status === "completed"
                               ? "default"
                               : "secondary"

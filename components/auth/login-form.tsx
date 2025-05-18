@@ -1,17 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Loader2 } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
-import { signIn } from "@/lib/actions/auth"
-import { useSupabase } from "@/components/shared/supabase-provider"
+import { useSupabase } from "@/components/shared/supabase-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { signIn } from "@/lib/actions/auth";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -20,12 +27,11 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "La password deve contenere almeno 6 caratteri.",
   }),
-})
+});
 
 export function LoginForm() {
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const { refreshSession } = useSupabase()
+  const [isLoading, setIsLoading] = useState(false);
+  const { refreshSession } = useSupabase();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -33,45 +39,40 @@ export function LoginForm() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const formData = new FormData()
-      formData.append("email", values.email)
-      formData.append("password", values.password)
+      const formData = new FormData();
+      formData.append("email", values.email);
+      formData.append("password", values.password);
 
-      const result = await signIn(formData)
+      const result = await signIn(formData);
 
       if (result?.error) {
-        toast({
-          title: "Errore di accesso",
+        toast.error("Errore di accesso", {
           description: result.error,
-          variant: "destructive",
-        })
-        setIsLoading(false)
+        });
+        setIsLoading(false);
       } else if (result?.success) {
         // Show success toast
-        toast({
-          title: "Accesso effettuato",
+        toast.success("Accesso effettuato", {
           description: "Reindirizzamento alla dashboard...",
-        })
+        });
 
         // Wait a moment to ensure cookies are set
         setTimeout(() => {
           // Force a hard navigation to dashboard instead of client-side routing
-          window.location.href = "/dashboard"
-        }, 500)
+          window.location.href = "/dashboard";
+        }, 500);
       }
     } catch (error: any) {
-      toast({
-        title: "Errore di accesso",
+      toast.error("Errore di accesso", {
         description: error.message || "Credenziali non valide",
-        variant: "destructive",
-      })
-      setIsLoading(false)
+      });
+      setIsLoading(false);
     }
   }
 
@@ -128,5 +129,5 @@ export function LoginForm() {
         </Button>
       </form>
     </Form>
-  )
+  );
 }

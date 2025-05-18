@@ -142,12 +142,12 @@ export default async function InterviewDetailPage({
             <Badge
               variant={
                 interview.status === "pending"
-                  ? "outline"
+                  ? "outline-solid"
                   : interview.status === "completed"
                   ? "default"
                   : interview.status === "in_progress"
                   ? "secondary"
-                  : "outline"
+                  : "outline-solid"
               }
             >
               {interview.status === "pending"

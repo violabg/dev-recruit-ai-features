@@ -1,16 +1,22 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import type { Database } from "@/lib/database.types"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type { Database } from "@/lib/database.types";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface InterviewMonitorProps {
-  interviewId: string
-  quizQuestions: any[]
-  answers: Record<string, any>
-  status: string
+  interviewId: string;
+  quizQuestions: any[];
+  answers: Record<string, any>;
+  status: string;
 }
 
 export function InterviewMonitor({
@@ -19,12 +25,13 @@ export function InterviewMonitor({
   answers: initialAnswers,
   status,
 }: InterviewMonitorProps) {
-  const { toast } = useToast()
-  const [answers, setAnswers] = useState<Record<string, any>>(initialAnswers)
-  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
+  const [answers, setAnswers] = useState<Record<string, any>>(initialAnswers);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(
+    null
+  );
+  const [isConnected, setIsConnected] = useState(false);
 
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClientComponentClient<Database>();
 
   // Set up real-time subscription for monitoring
   useEffect(() => {
@@ -36,41 +43,39 @@ export function InterviewMonitor({
           setAnswers((prev) => ({
             ...prev,
             [payload.payload.question_id]: payload.payload.answer,
-          }))
-          setCurrentQuestionId(payload.payload.question_id)
+          }));
+          setCurrentQuestionId(payload.payload.question_id);
         }
       })
       .on("broadcast", { event: "interview_started" }, (payload: any) => {
         if (payload.payload.interview_id === interviewId) {
-          toast({
-            title: "Intervista iniziata",
+          toast.error("Intervista iniziata", {
             description: "Il candidato ha iniziato l'intervista",
-          })
+          });
         }
       })
       .on("broadcast", { event: "interview_completed" }, (payload: any) => {
         if (payload.payload.interview_id === interviewId) {
-          toast({
-            title: "Intervista completata",
+          toast.success("Intervista completata", {
             description: "Il candidato ha completato l'intervista",
-          })
-          setAnswers(payload.payload.answers)
+          });
+          setAnswers(payload.payload.answers);
         }
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
-          setIsConnected(true)
+          setIsConnected(true);
         }
-      })
+      });
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [interviewId, toast, supabase])
+      supabase.removeChannel(channel);
+    };
+  }, [interviewId, supabase]);
 
   const getAnsweredQuestionsCount = () => {
-    return Object.keys(answers).length
-  }
+    return Object.keys(answers).length;
+  };
 
   return (
     <div className="space-y-4">
@@ -79,11 +84,19 @@ export function InterviewMonitor({
         <div className="flex items-center gap-2">
           <div
             className={`h-2 w-2 rounded-full ${
-              isConnected ? "bg-green-500" : status === "completed" ? "bg-blue-500" : "bg-yellow-500"
+              isConnected
+                ? "bg-green-500"
+                : status === "completed"
+                ? "bg-blue-500"
+                : "bg-yellow-500"
             }`}
           />
           <span className="text-sm">
-            {isConnected ? "Connesso" : status === "completed" ? "Intervista completata" : "In attesa del candidato"}
+            {isConnected
+              ? "Connesso"
+              : status === "completed"
+              ? "Intervista completata"
+              : "In attesa del candidato"}
           </span>
         </div>
       </div>
@@ -92,14 +105,15 @@ export function InterviewMonitor({
         <CardHeader>
           <CardTitle>Progresso</CardTitle>
           <CardDescription>
-            {getAnsweredQuestionsCount()} di {quizQuestions.length} domande completate
+            {getAnsweredQuestionsCount()} di {quizQuestions.length} domande
+            completate
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-10 gap-2">
             {quizQuestions.map((question, index) => {
-              const isAnswered = !!answers[question.id]
-              const isActive = question.id === currentQuestionId
+              const isAnswered = !!answers[question.id];
+              const isActive = question.id === currentQuestionId;
 
               return (
                 <div
@@ -108,14 +122,14 @@ export function InterviewMonitor({
                     isAnswered
                       ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400"
                       : isActive
-                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400"
-                        : "border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400"
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400"
+                      : "border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400"
                   }`}
                   title={`Domanda ${index + 1}`}
                 >
                   {index + 1}
                 </div>
-              )
+              );
             })}
           </div>
         </CardContent>
@@ -123,8 +137,8 @@ export function InterviewMonitor({
 
       <div className="space-y-4">
         {quizQuestions.map((question, index) => {
-          const isAnswered = !!answers[question.id]
-          const isActive = question.id === currentQuestionId
+          const isAnswered = !!answers[question.id];
+          const isActive = question.id === currentQuestionId;
 
           return (
             <Card
@@ -133,8 +147,8 @@ export function InterviewMonitor({
                 isActive
                   ? "border-blue-500 shadow-md dark:border-blue-700"
                   : isAnswered
-                    ? "border-green-200 dark:border-green-900"
-                    : ""
+                  ? "border-green-200 dark:border-green-900"
+                  : ""
               }`}
             >
               <CardHeader className="pb-2">
@@ -156,8 +170,8 @@ export function InterviewMonitor({
                   {question.type === "multiple_choice"
                     ? "Risposta multipla"
                     : question.type === "open_question"
-                      ? "Domanda aperta"
-                      : "Snippet di codice"}
+                    ? "Domanda aperta"
+                    : "Snippet di codice"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -166,12 +180,18 @@ export function InterviewMonitor({
                     <div className="font-medium">Risposta del candidato:</div>
                     {question.type === "multiple_choice" && (
                       <div className="rounded-md border p-3">
-                        {question.options[Number.parseInt(answers[question.id])]}
+                        {
+                          question.options[
+                            Number.parseInt(answers[question.id])
+                          ]
+                        }
                       </div>
                     )}
 
                     {question.type === "open_question" && (
-                      <div className="rounded-md border p-3 whitespace-pre-wrap">{answers[question.id]}</div>
+                      <div className="rounded-md border p-3 whitespace-pre-wrap">
+                        {answers[question.id]}
+                      </div>
                     )}
 
                     {question.type === "code_snippet" && (
@@ -187,9 +207,9 @@ export function InterviewMonitor({
                 )}
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

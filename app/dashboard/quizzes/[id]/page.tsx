@@ -1,15 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
-import { useSupabase } from "@/components/supabase-provider"
-import { ArrowLeft, Clock, Edit, Loader2, Send, Trash } from "lucide-react"
+import { useSupabase } from "@/components/supabase-provider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,123 +11,126 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Clock, Edit, Loader2, Send, Trash } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Quiz {
-  id: string
-  title: string
-  position_id: string
-  questions: any[]
-  time_limit: number | null
-  created_at: string
-  created_by: string
+  id: string;
+  title: string;
+  position_id: string;
+  questions: any[];
+  time_limit: number | null;
+  created_at: string;
+  created_by: string;
 }
 
 interface Position {
-  id: string
-  title: string
-  experience_level: string
+  id: string;
+  title: string;
+  experience_level: string;
 }
 
-export default function QuizDetailPage({
-  params,
-}: {
-  params: { id: string }
-}) {
-  const router = useRouter()
-  const { supabase, user } = useSupabase()
-  const { toast } = useToast()
-  const [quiz, setQuiz] = useState<Quiz | null>(null)
-  const [position, setPosition] = useState<Position | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(false)
+export default function QuizDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const { supabase, user } = useSupabase();
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [position, setPosition] = useState<Position | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchQuizData() {
-      if (!supabase || !user) return
+      if (!supabase || !user) return;
 
       try {
-        setLoading(true)
+        setLoading(true);
 
         // Fetch quiz details
         const { data: quizData, error: quizError } = await supabase
           .from("quizzes")
           .select("*")
           .eq("id", params.id)
-          .single()
+          .single();
 
-        if (quizError) throw quizError
-        if (!quizData) throw new Error("Quiz non trovato")
+        if (quizError) throw quizError;
+        if (!quizData) throw new Error("Quiz non trovato");
 
-        setQuiz(quizData)
+        setQuiz(quizData);
 
         // Fetch position details
         const { data: positionData, error: positionError } = await supabase
           .from("positions")
           .select("id, title, experience_level")
           .eq("id", quizData.position_id)
-          .single()
+          .single();
 
-        if (positionError) throw positionError
-        setPosition(positionData)
+        if (positionError) throw positionError;
+        setPosition(positionData);
       } catch (error: any) {
-        toast({
-          title: "Errore",
+        toast.error("Errore", {
           description: error.message || "Impossibile caricare i dati del quiz",
-          variant: "destructive",
-        })
-        router.push("/dashboard/quizzes")
+        });
+        router.push("/dashboard/quizzes");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchQuizData()
-  }, [supabase, user, params.id, router, toast])
+    fetchQuizData();
+  }, [supabase, user, params.id, router]);
 
   const handleDelete = async () => {
-    if (!supabase || !quiz) return
+    if (!supabase || !quiz) return;
 
     try {
-      setDeleting(true)
+      setDeleting(true);
 
       // Delete the quiz
-      const { error } = await supabase.from("quizzes").delete().eq("id", quiz.id)
+      const { error } = await supabase
+        .from("quizzes")
+        .delete()
+        .eq("id", quiz.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast({
-        title: "Quiz eliminato",
+      toast.success("Quiz eliminato", {
         description: "Il quiz è stato eliminato con successo",
-      })
+      });
 
-      router.push("/dashboard/quizzes")
+      router.push("/dashboard/quizzes");
     } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.message || "Si è verificato un errore durante l'eliminazione",
-        variant: "destructive",
-      })
+      toast.error("Errore", {
+        description:
+          error.message || "Si è verificato un errore durante l'eliminazione",
+      });
     } finally {
-      setDeleting(false)
+      setDeleting(false);
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat("it-IT", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-    }).format(date)
-  }
+    }).format(date);
+  };
 
   if (loading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
-    )
+    );
   }
 
   if (!quiz || !position) {
@@ -147,7 +141,7 @@ export default function QuizDetailPage({
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -173,7 +167,9 @@ export default function QuizDetailPage({
                 {quiz.time_limit} minuti
               </Badge>
             )}
-            <span className="text-sm text-muted-foreground">Creato il {formatDate(quiz.created_at)}</span>
+            <span className="text-sm text-muted-foreground">
+              Creato il {formatDate(quiz.created_at)}
+            </span>
           </div>
         </div>
         <div className="flex gap-2">
@@ -200,7 +196,8 @@ export default function QuizDetailPage({
               <AlertDialogHeader>
                 <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Questa azione non può essere annullata. Il quiz verrà eliminato permanentemente.
+                  Questa azione non può essere annullata. Il quiz verrà
+                  eliminato permanentemente.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -237,15 +234,18 @@ export default function QuizDetailPage({
               <Card key={index}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Badge variant="outline" className="h-6 w-6 rounded-full p-0 flex items-center justify-center">
+                    <Badge
+                      variant="outline"
+                      className="h-6 w-6 rounded-full p-0 flex items-center justify-center"
+                    >
                       {index + 1}
                     </Badge>
                     <span>
                       {question.type === "multiple_choice"
                         ? "Risposta multipla"
                         : question.type === "open_question"
-                          ? "Domanda aperta"
-                          : "Snippet di codice"}
+                        ? "Domanda aperta"
+                        : "Snippet di codice"}
                     </span>
                   </CardTitle>
                 </CardHeader>
@@ -259,45 +259,52 @@ export default function QuizDetailPage({
                     <div>
                       <h3 className="font-medium">Opzioni:</h3>
                       <div className="mt-2 space-y-2">
-                        {question.options.map((option: string, optIndex: number) => (
-                          <div
-                            key={optIndex}
-                            className={`flex items-center gap-2 rounded-md border p-2 ${
-                              Number.parseInt(question.correctAnswer) === optIndex
-                                ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                                : ""
-                            }`}
-                          >
+                        {question.options.map(
+                          (option: string, optIndex: number) => (
                             <div
-                              className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                                Number.parseInt(question.correctAnswer) === optIndex
-                                  ? "border-green-500 bg-green-500 text-white"
+                              key={optIndex}
+                              className={`flex items-center gap-2 rounded-md border p-2 ${
+                                Number.parseInt(question.correctAnswer) ===
+                                optIndex
+                                  ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                                   : ""
                               }`}
                             >
-                              {Number.parseInt(question.correctAnswer) === optIndex && (
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="h-3 w-3"
-                                >
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                              )}
+                              <div
+                                className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                                  Number.parseInt(question.correctAnswer) ===
+                                  optIndex
+                                    ? "border-green-500 bg-green-500 text-white"
+                                    : ""
+                                }`}
+                              >
+                                {Number.parseInt(question.correctAnswer) ===
+                                  optIndex && (
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="h-3 w-3"
+                                  >
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                )}
+                              </div>
+                              <span>{option}</span>
                             </div>
-                            <span>{option}</span>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                       {question.explanation && (
                         <div className="mt-2">
                           <h3 className="font-medium">Spiegazione:</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">{question.explanation}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {question.explanation}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -311,11 +318,13 @@ export default function QuizDetailPage({
                         <div className="mt-2">
                           <h3 className="font-medium">Parole chiave:</h3>
                           <div className="mt-1 flex flex-wrap gap-1">
-                            {question.keywords.map((keyword: string, kwIndex: number) => (
-                              <Badge key={kwIndex} variant="secondary">
-                                {keyword}
-                              </Badge>
-                            ))}
+                            {question.keywords.map(
+                              (keyword: string, kwIndex: number) => (
+                                <Badge key={kwIndex} variant="secondary">
+                                  {keyword}
+                                </Badge>
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -344,16 +353,25 @@ export default function QuizDetailPage({
                         <div>
                           <h3 className="font-medium">Test case:</h3>
                           <div className="mt-1 space-y-2">
-                            {question.testCases.map((testCase: any, tcIndex: number) => (
-                              <div key={tcIndex} className="rounded-md border p-2 text-sm">
-                                <div>
-                                  <span className="font-medium">Input:</span> {testCase.input}
+                            {question.testCases.map(
+                              (testCase: any, tcIndex: number) => (
+                                <div
+                                  key={tcIndex}
+                                  className="rounded-md border p-2 text-sm"
+                                >
+                                  <div>
+                                    <span className="font-medium">Input:</span>{" "}
+                                    {testCase.input}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">
+                                      Output atteso:
+                                    </span>{" "}
+                                    {testCase.expectedOutput}
+                                  </div>
                                 </div>
-                                <div>
-                                  <span className="font-medium">Output atteso:</span> {testCase.expectedOutput}
-                                </div>
-                              </div>
-                            ))}
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -378,12 +396,16 @@ export default function QuizDetailPage({
                 <div>
                   <h3 className="font-medium">Limite di tempo</h3>
                   <p className="text-sm text-muted-foreground">
-                    {quiz.time_limit ? `${quiz.time_limit} minuti` : "Nessun limite"}
+                    {quiz.time_limit
+                      ? `${quiz.time_limit} minuti`
+                      : "Nessun limite"}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-medium">Numero di domande</h3>
-                  <p className="text-sm text-muted-foreground">{quiz.questions.length}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {quiz.questions.length}
+                  </p>
                 </div>
                 <div>
                   <h3 className="font-medium">Posizione</h3>
@@ -403,7 +425,9 @@ export default function QuizDetailPage({
             <CardContent>
               <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Nessun candidato ha ancora completato questo quiz</p>
+                  <p className="text-sm text-muted-foreground">
+                    Nessun candidato ha ancora completato questo quiz
+                  </p>
                   <Button className="mt-2" size="sm" asChild>
                     <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
                       <Send className="mr-2 h-4 w-4" />
@@ -417,5 +441,5 @@ export default function QuizDetailPage({
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
