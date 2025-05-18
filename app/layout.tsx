@@ -1,5 +1,5 @@
-import { SupabaseProvider } from "@/components/supabase-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SupabaseProvider } from "@/lib/supabase/supabase-provider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";

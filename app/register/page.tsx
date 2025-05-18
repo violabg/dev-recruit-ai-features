@@ -8,7 +8,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { useSupabase } from "@/components/supabase-provider";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -19,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { toast } from "sonner";
 
 const formSchema = z.object({

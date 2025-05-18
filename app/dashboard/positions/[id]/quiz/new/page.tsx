@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { useSupabase } from "@/components/supabase-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { toast } from "sonner";

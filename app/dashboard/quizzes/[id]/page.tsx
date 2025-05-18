@@ -1,6 +1,5 @@
 "use client";
 
-import { useSupabase } from "@/components/supabase-provider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { ArrowLeft, Clock, Edit, Loader2, Send, Trash } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

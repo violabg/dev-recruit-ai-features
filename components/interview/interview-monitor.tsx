@@ -7,8 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Database } from "@/lib/database.types";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +30,7 @@ export function InterviewMonitor({
   );
   const [isConnected, setIsConnected] = useState(false);
 
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   // Set up real-time subscription for monitoring
   useEffect(() => {

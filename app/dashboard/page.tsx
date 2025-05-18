@@ -1,4 +1,3 @@
-import { AuthDebug } from "@/components/auth/auth-debug";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -210,13 +209,6 @@ export default async function DashboardPage() {
           </Link>
         </Button>
       </div>
-
-      {/* Auth Debug - Only visible in development */}
-      {process.env.NODE_ENV !== "production" && (
-        <div className="mb-6">
-          <AuthDebug />
-        </div>
-      )}
 
       {/* Stats cards */}
       <DashboardStats />

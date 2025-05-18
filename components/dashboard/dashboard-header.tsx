@@ -1,7 +1,6 @@
 "use client";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { useSupabase } from "@/components/shared/supabase-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMobile } from "@/hooks/use-mobile";
+import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { BrainCircuit, LogOut, Menu, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

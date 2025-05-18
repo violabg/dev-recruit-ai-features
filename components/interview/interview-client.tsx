@@ -17,8 +17,7 @@ import {
   startInterview,
   submitAnswer,
 } from "@/lib/actions/interviews";
-import type { Database } from "@/lib/database.types";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { BrainCircuit, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -76,7 +75,7 @@ export function InterviewClient({
     interview.status === "in_progress"
   );
 
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   const handleCompleteInterview = useCallback(async () => {
     try {

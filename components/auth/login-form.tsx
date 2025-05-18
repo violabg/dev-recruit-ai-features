@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { useSupabase } from "@/components/shared/supabase-provider";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,7 +17,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { signIn } from "@/lib/actions/auth";
+import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { toast } from "sonner";
+import PasswordInput from "../ui/password-input";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -105,7 +106,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input
+                <PasswordInput
                   placeholder="••••••••"
                   type="password"
                   autoComplete="current-password"
