@@ -1,55 +1,64 @@
-import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
-import { InterviewClient } from "@/components/interview-client"
-import type { Database } from "@/lib/database.types"
+import { InterviewClient } from "@/components/interview/interview-client";
+import type { Database } from "@/lib/database.types";
+import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
 // Server component for interview page
 export default async function InterviewPage({
   params,
 }: {
-  params: { token: string }
+  params: { token: string };
 }) {
-  const cookieStore = cookies()
-  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
+  const cookieStore = cookies();
+  const supabase = createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
       },
-    },
-  })
+    }
+  );
 
   // Fetch interview details
   const { data: interview, error: interviewError } = await supabase
     .from("interviews")
     .select("*")
     .eq("token", params.token)
-    .single()
+    .single();
 
   if (interviewError || !interview) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
         <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-          <h1 className="text-center text-2xl font-bold">Intervista non trovata</h1>
+          <h1 className="text-center text-2xl font-bold">
+            Intervista non trovata
+          </h1>
           <p className="mt-2 text-center text-muted-foreground">
-            Il link che hai seguito non è valido o l&apos;intervista è stata cancellata.
+            Il link che hai seguito non è valido o l&apos;intervista è stata
+            cancellata.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Fetch quiz details
   const { data: quiz, error: quizError } = await supabase
     .from("quizzes")
-    .select(`
+    .select(
+      `
       id, 
       title, 
       questions,
       time_limit,
       position:positions(title)
-    `)
+    `
+    )
     .eq("id", interview.quiz_id)
-    .single()
+    .single();
 
   if (quizError || !quiz) {
     return (
@@ -61,7 +70,7 @@ export default async function InterviewPage({
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Fetch candidate details
@@ -69,20 +78,24 @@ export default async function InterviewPage({
     .from("candidates")
     .select("id, name, email")
     .eq("id", interview.candidate_id)
-    .single()
+    .single();
 
   if (candidateError || !candidate) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
         <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-          <h1 className="text-center text-2xl font-bold">Candidato non trovato</h1>
+          <h1 className="text-center text-2xl font-bold">
+            Candidato non trovato
+          </h1>
           <p className="mt-2 text-center text-muted-foreground">
             Il candidato associato a questa intervista non è stato trovato.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
-  return <InterviewClient interview={interview} quiz={quiz} candidate={candidate} />
+  return (
+    <InterviewClient interview={interview} quiz={quiz} candidate={candidate} />
+  );
 }

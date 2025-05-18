@@ -1,45 +1,49 @@
-import Link from "next/link"
-import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Edit, BrainCircuit, Plus, Users } from "lucide-react"
-import { DeletePositionButton } from "@/components/delete-position-button"
-import type { Database } from "@/lib/database.types"
+import { DeletePositionButton } from "@/components/positions/delete-position-button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Database } from "@/lib/database.types";
+import { createClient } from "@supabase/supabase-js";
+import { BrainCircuit, Edit, Plus, Users } from "lucide-react";
+import { cookies } from "next/headers";
+import Link from "next/link";
 
 // Format date helper
 function formatDate(dateString: string) {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
   return new Intl.DateTimeFormat("it-IT", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(date)
+  }).format(date);
 }
 
 // Server component for position detail page
 export default async function PositionDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string };
 }) {
-  const cookieStore = cookies()
-  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
+  const cookieStore = cookies();
+  const supabase = createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
       },
-    },
-  })
+    }
+  );
 
   // Fetch position details
   const { data: position, error: positionError } = await supabase
     .from("positions")
     .select("*")
     .eq("id", params.id)
-    .single()
+    .single();
 
   if (positionError || !position) {
     return (
@@ -49,7 +53,7 @@ export default async function PositionDetailPage({
           <Link href="/dashboard/positions">Torna alle posizioni</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   // Fetch quizzes for this position
@@ -57,14 +61,14 @@ export default async function PositionDetailPage({
     .from("quizzes")
     .select("*")
     .eq("position_id", params.id)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   // Fetch candidates for this position
   const { data: candidates } = await supabase
     .from("candidates")
     .select("*")
     .eq("position_id", params.id)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   return (
     <div className="space-y-6">
@@ -73,8 +77,12 @@ export default async function PositionDetailPage({
           <h1 className="text-3xl font-bold">{position.title}</h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="outline">{position.experience_level}</Badge>
-            {position.contract_type && <Badge variant="outline">{position.contract_type}</Badge>}
-            <span className="text-sm text-muted-foreground">Creata il {formatDate(position.created_at)}</span>
+            {position.contract_type && (
+              <Badge variant="outline">{position.contract_type}</Badge>
+            )}
+            <span className="text-sm text-muted-foreground">
+              Creata il {formatDate(position.created_at)}
+            </span>
           </div>
         </div>
         <div className="flex gap-2">
@@ -104,7 +112,9 @@ export default async function PositionDetailPage({
                 {position.description ? (
                   <p className="whitespace-pre-line">{position.description}</p>
                 ) : (
-                  <p className="text-muted-foreground">Nessuna descrizione disponibile</p>
+                  <p className="text-muted-foreground">
+                    Nessuna descrizione disponibile
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -164,17 +174,25 @@ export default async function PositionDetailPage({
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{Object.keys(quiz.questions).length} domande</span>
                         <span className="text-muted-foreground">
-                          {quiz.time_limit ? `${quiz.time_limit} minuti` : "Nessun limite di tempo"}
+                          {Object.keys(quiz.questions).length} domande
+                        </span>
+                        <span className="text-muted-foreground">
+                          {quiz.time_limit
+                            ? `${quiz.time_limit} minuti`
+                            : "Nessun limite di tempo"}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/quizzes/${quiz.id}`}>Visualizza</Link>
+                          <Link href={`/dashboard/quizzes/${quiz.id}`}>
+                            Visualizza
+                          </Link>
                         </Button>
                         <Button variant="secondary" size="sm" asChild>
-                          <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>Invita candidati</Link>
+                          <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
+                            Invita candidati
+                          </Link>
                         </Button>
                       </div>
                     </div>
@@ -185,7 +203,9 @@ export default async function PositionDetailPage({
           ) : (
             <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">Nessun quiz creato per questa posizione</p>
+                <p className="text-sm text-muted-foreground">
+                  Nessun quiz creato per questa posizione
+                </p>
                 <Button className="mt-2" size="sm" asChild>
                   <Link href={`/dashboard/positions/${position.id}/quiz/new`}>
                     <BrainCircuit className="mr-2 h-4 w-4" />
@@ -218,31 +238,39 @@ export default async function PositionDetailPage({
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{candidate.email}</span>
+                        <span className="text-muted-foreground">
+                          {candidate.email}
+                        </span>
                         <Badge
                           variant={
                             candidate.status === "pending"
                               ? "outline"
                               : candidate.status === "completed"
-                                ? "default"
-                                : "secondary"
+                              ? "default"
+                              : "secondary"
                           }
                         >
                           {candidate.status === "pending"
                             ? "In attesa"
                             : candidate.status === "completed"
-                              ? "Completato"
-                              : candidate.status === "invited"
-                                ? "Invitato"
-                                : candidate.status}
+                            ? "Completato"
+                            : candidate.status === "invited"
+                            ? "Invitato"
+                            : candidate.status}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/candidates/${candidate.id}`}>Dettagli</Link>
+                          <Link href={`/dashboard/candidates/${candidate.id}`}>
+                            Dettagli
+                          </Link>
                         </Button>
                         <Button variant="secondary" size="sm" asChild>
-                          <Link href={`/dashboard/candidates/${candidate.id}/invite`}>Invia quiz</Link>
+                          <Link
+                            href={`/dashboard/candidates/${candidate.id}/invite`}
+                          >
+                            Invia quiz
+                          </Link>
                         </Button>
                       </div>
                     </div>
@@ -253,9 +281,13 @@ export default async function PositionDetailPage({
           ) : (
             <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">Nessun candidato aggiunto per questa posizione</p>
+                <p className="text-sm text-muted-foreground">
+                  Nessun candidato aggiunto per questa posizione
+                </p>
                 <Button className="mt-2" size="sm" asChild>
-                  <Link href={`/dashboard/positions/${position.id}/candidates/new`}>
+                  <Link
+                    href={`/dashboard/positions/${position.id}/candidates/new`}
+                  >
                     <Users className="mr-2 h-4 w-4" />
                     Aggiungi candidato
                   </Link>
@@ -266,5 +298,5 @@ export default async function PositionDetailPage({
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

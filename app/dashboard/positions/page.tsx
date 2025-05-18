@@ -1,55 +1,70 @@
-import Link from "next/link"
-import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { SearchPositions } from "@/components/search-positions"
-import type { Database } from "@/lib/database.types"
+import { SearchPositions } from "@/components/positions/search-positions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { Database } from "@/lib/database.types";
+import { createClient } from "@supabase/supabase-js";
+import { Plus } from "lucide-react";
+import { cookies } from "next/headers";
+import Link from "next/link";
 
 // Format date helper
 function formatDate(dateString: string) {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
   return new Intl.DateTimeFormat("it-IT", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(date)
+  }).format(date);
 }
 
 // Server component for positions page
 export default async function PositionsPage({
   searchParams,
 }: {
-  searchParams: { q?: string }
+  searchParams: { q?: string };
 }) {
-  const cookieStore = cookies()
-  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
+  const cookieStore = cookies();
+  const supabase = createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
       },
-    },
-  })
+    }
+  );
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    return null
+    return null;
   }
 
   // Fetch positions
-  let query = supabase.from("positions").select("*").eq("created_by", user.id).order("created_at", { ascending: false })
+  let query = supabase
+    .from("positions")
+    .select("*")
+    .eq("created_by", user.id)
+    .order("created_at", { ascending: false });
 
   // Apply search filter if provided
   if (searchParams.q) {
-    query = query.ilike("title", `%${searchParams.q}%`)
+    query = query.ilike("title", `%${searchParams.q}%`);
   }
 
-  const { data: positions } = await query
+  const { data: positions } = await query;
 
   return (
     <div className="space-y-6">
@@ -82,7 +97,9 @@ export default async function PositionsPage({
             <TableBody>
               {positions.map((position) => (
                 <TableRow key={position.id}>
-                  <TableCell className="font-medium">{position.title}</TableCell>
+                  <TableCell className="font-medium">
+                    {position.title}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{position.experience_level}</Badge>
                   </TableCell>
@@ -93,13 +110,19 @@ export default async function PositionsPage({
                           {skill}
                         </Badge>
                       ))}
-                      {position.skills.length > 3 && <Badge variant="secondary">+{position.skills.length - 3}</Badge>}
+                      {position.skills.length > 3 && (
+                        <Badge variant="secondary">
+                          +{position.skills.length - 3}
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{formatDate(position.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/positions/${position.id}`}>Dettagli</Link>
+                      <Link href={`/dashboard/positions/${position.id}`}>
+                        Dettagli
+                      </Link>
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -111,7 +134,9 @@ export default async function PositionsPage({
         <div className="flex h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              {searchParams.q ? "Nessuna posizione trovata" : "Nessuna posizione creata"}
+              {searchParams.q
+                ? "Nessuna posizione trovata"
+                : "Nessuna posizione creata"}
             </p>
             {!searchParams.q && (
               <Button className="mt-2" size="sm" asChild>
@@ -125,5 +150,5 @@ export default async function PositionsPage({
         </div>
       )}
     </div>
-  )
+  );
 }

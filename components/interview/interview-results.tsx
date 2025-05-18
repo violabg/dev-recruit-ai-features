@@ -1,15 +1,20 @@
-"use client"
+"use client";
 
-import { InterviewResultsClient } from "@/components/interview/interview-results-client"
+import { InterviewResultsClient } from "./interview-results-client";
 
 interface InterviewResultsProps {
-  interviewId: string
-  quizQuestions: any[]
-  answers: Record<string, any>
-  candidateName: string
+  interviewId: string;
+  quizQuestions: any[];
+  answers: Record<string, any>;
+  candidateName: string;
 }
 
-export function InterviewResults({ interviewId, quizQuestions, answers, candidateName }: InterviewResultsProps) {
+export function InterviewResults({
+  interviewId,
+  quizQuestions,
+  answers,
+  candidateName,
+}: InterviewResultsProps) {
   return (
     <InterviewResultsClient
       interviewId={interviewId}
@@ -17,5 +22,5 @@ export function InterviewResults({ interviewId, quizQuestions, answers, candidat
       answers={answers}
       candidateName={candidateName}
     />
-  )
+  );
 }

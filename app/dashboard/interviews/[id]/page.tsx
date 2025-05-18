@@ -1,59 +1,69 @@
-import Link from "next/link"
-import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { InterviewMonitor } from "@/components/interview-monitor"
-import { InterviewResults } from "@/components/interview-results"
-import type { Database } from "@/lib/database.types"
+import { InterviewMonitor } from "@/components/interview/interview-monitor";
+import { InterviewResults } from "@/components/interview/interview-results";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Database } from "@/lib/database.types";
+import { createClient } from "@supabase/supabase-js";
+import { ArrowLeft } from "lucide-react";
+import { cookies } from "next/headers";
+import Link from "next/link";
 
 // Format date helper
 function formatDate(dateString: string | null) {
-  if (!dateString) return "N/A"
-  const date = new Date(dateString)
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
   return new Intl.DateTimeFormat("it-IT", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date)
+  }).format(date);
 }
 
 // Calculate duration helper
 function calculateDuration(startDate: string | null, endDate: string | null) {
-  if (!startDate) return "N/A"
-  const start = new Date(startDate)
-  const end = endDate ? new Date(endDate) : new Date()
-  const durationMs = end.getTime() - start.getTime()
-  const minutes = Math.floor(durationMs / 60000)
-  const seconds = Math.floor((durationMs % 60000) / 1000)
-  return `${minutes}m ${seconds}s`
+  if (!startDate) return "N/A";
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date();
+  const durationMs = end.getTime() - start.getTime();
+  const minutes = Math.floor(durationMs / 60000);
+  const seconds = Math.floor((durationMs % 60000) / 1000);
+  return `${minutes}m ${seconds}s`;
 }
 
 export default async function InterviewDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string };
 }) {
-  const cookieStore = cookies()
-  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
+  const cookieStore = cookies();
+  const supabase = createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
       },
-    },
-  })
+    }
+  );
 
   // Fetch interview details
   const { data: interview, error: interviewError } = await supabase
     .from("interviews")
     .select("*")
     .eq("id", params.id)
-    .single()
+    .single();
 
   if (interviewError || !interview) {
     return (
@@ -63,21 +73,23 @@ export default async function InterviewDetailPage({
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   // Fetch quiz details
   const { data: quiz, error: quizError } = await supabase
     .from("quizzes")
-    .select(`
+    .select(
+      `
       id, 
       title, 
       questions,
       time_limit,
       position:positions(title)
-    `)
+    `
+    )
     .eq("id", interview.quiz_id)
-    .single()
+    .single();
 
   if (quizError || !quiz) {
     return (
@@ -87,7 +99,7 @@ export default async function InterviewDetailPage({
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   // Fetch candidate details
@@ -95,7 +107,7 @@ export default async function InterviewDetailPage({
     .from("candidates")
     .select("id, name, email")
     .eq("id", interview.candidate_id)
-    .single()
+    .single();
 
   if (candidateError || !candidate) {
     return (
@@ -105,11 +117,11 @@ export default async function InterviewDetailPage({
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   // Set active tab based on interview status
-  const activeTab = interview.status === "completed" ? "results" : "monitor"
+  const activeTab = interview.status === "completed" ? "results" : "monitor";
 
   return (
     <div className="space-y-6">
@@ -132,19 +144,19 @@ export default async function InterviewDetailPage({
                 interview.status === "pending"
                   ? "outline"
                   : interview.status === "completed"
-                    ? "default"
-                    : interview.status === "in_progress"
-                      ? "secondary"
-                      : "outline"
+                  ? "default"
+                  : interview.status === "in_progress"
+                  ? "secondary"
+                  : "outline"
               }
             >
               {interview.status === "pending"
                 ? "In attesa"
                 : interview.status === "completed"
-                  ? "Completato"
-                  : interview.status === "in_progress"
-                    ? "In corso"
-                    : interview.status}
+                ? "Completato"
+                : interview.status === "in_progress"
+                ? "In corso"
+                : interview.status}
             </Badge>
           </div>
         </div>
@@ -159,7 +171,9 @@ export default async function InterviewDetailPage({
             <div className="flex items-center gap-2">
               <div>
                 <div className="font-medium">{candidate.name}</div>
-                <div className="text-sm text-muted-foreground">{candidate.email}</div>
+                <div className="text-sm text-muted-foreground">
+                  {candidate.email}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -187,7 +201,12 @@ export default async function InterviewDetailPage({
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <span>{calculateDuration(interview.started_at, interview.completed_at)}</span>
+              <span>
+                {calculateDuration(
+                  interview.started_at,
+                  interview.completed_at
+                )}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -196,7 +215,10 @@ export default async function InterviewDetailPage({
       <Tabs defaultValue={activeTab}>
         <TabsList>
           <TabsTrigger value="monitor">Monitoraggio</TabsTrigger>
-          <TabsTrigger value="results" disabled={interview.status !== "completed"}>
+          <TabsTrigger
+            value="results"
+            disabled={interview.status !== "completed"}
+          >
             Risultati
           </TabsTrigger>
         </TabsList>
@@ -220,15 +242,20 @@ export default async function InterviewDetailPage({
             <Card>
               <CardHeader>
                 <CardTitle>Risultati non disponibili</CardTitle>
-                <CardDescription>L&apos;intervista non è ancora stata completata</CardDescription>
+                <CardDescription>
+                  L&apos;intervista non è ancora stata completata
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p>I risultati saranno disponibili una volta che il candidato avrà completato il quiz.</p>
+                <p>
+                  I risultati saranno disponibili una volta che il candidato
+                  avrà completato il quiz.
+                </p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
