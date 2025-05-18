@@ -35,10 +35,93 @@ export async function createCandidate(formData: FormData) {
   }
 
   revalidatePath(`/dashboard/positions/${positionId}`);
+  revalidatePath("/dashboard/candidates");
 
   if (data && data[0]) {
     return { success: true, candidateId: data[0].id };
   } else {
     throw new Error("Failed to create candidate");
   }
+}
+
+// Delete candidate
+export async function deleteCandidate(id: string) {
+  const supabase = await createClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  // First, check if the candidate belongs to the user
+  const { data: candidate, error: fetchError } = await supabase
+    .from("candidates")
+    .select("*")
+    .eq("id", id)
+    .eq("created_by", user.id)
+    .single();
+
+  if (fetchError || !candidate) {
+    throw new Error("Candidate not found or you don't have permission");
+  }
+
+  // Delete the candidate
+  const { error } = await supabase.from("candidates").delete().eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/candidates");
+  if (candidate.position_id) {
+    revalidatePath(`/dashboard/positions/${candidate.position_id}`);
+  }
+
+  return { success: true };
+}
+
+// Update candidate status
+export async function updateCandidateStatus(id: string, status: string) {
+  const supabase = await createClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  // First, check if the candidate belongs to the user
+  const { data: candidate, error: fetchError } = await supabase
+    .from("candidates")
+    .select("*")
+    .eq("id", id)
+    .eq("created_by", user.id)
+    .single();
+
+  if (fetchError || !candidate) {
+    throw new Error("Candidate not found or you don't have permission");
+  }
+
+  // Update the candidate status
+  const { error } = await supabase
+    .from("candidates")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/candidates");
+  revalidatePath(`/dashboard/candidates/${id}`);
+  if (candidate.position_id) {
+    revalidatePath(`/dashboard/positions/${candidate.position_id}`);
+  }
+
+  return { success: true };
 }

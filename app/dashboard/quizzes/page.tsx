@@ -13,24 +13,13 @@ import { ArrowUpDown, Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { fetchQuizzesData } from "./quizzes-actions";
 
-// Format date helper
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
 export default async function QuizzesPage({
   searchParams,
 }: {
   searchParams: any;
 }) {
-  // Await searchParams if it's a Promise (Next.js server component requirement)
-  const params =
-    typeof searchParams.then === "function" ? await searchParams : searchParams;
+  const params = await searchParams;
+
   const search = params?.search || "";
   const sort = params?.sort || "newest";
   const filter = params?.filter || "all";

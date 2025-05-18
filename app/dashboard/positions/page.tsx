@@ -27,8 +27,11 @@ function formatDate(dateString: string) {
 export default async function PositionsPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: any;
 }) {
+  // Await searchParams if it's a Promise (Next.js server component requirement)
+  const params =
+    typeof searchParams.then === "function" ? await searchParams : searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -46,8 +49,8 @@ export default async function PositionsPage({
     .order("created_at", { ascending: false });
 
   // Apply search filter if provided
-  if (searchParams.q) {
-    query = query.ilike("title", `%${searchParams.q}%`);
+  if (params?.q) {
+    query = query.ilike("title", `%${params.q}%`);
   }
 
   const { data: positions } = await query;
@@ -65,7 +68,7 @@ export default async function PositionsPage({
       </div>
 
       <div className="flex items-center gap-4">
-        <SearchPositions defaultValue={searchParams.q} />
+        <SearchPositions defaultValue={params?.q} />
       </div>
 
       {positions && positions.length > 0 ? (
@@ -120,11 +123,11 @@ export default async function PositionsPage({
         <div className="flex h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              {searchParams.q
+              {params?.q
                 ? "Nessuna posizione trovata"
                 : "Nessuna posizione creata"}
             </p>
-            {!searchParams.q && (
+            {!params?.q && (
               <Button className="mt-2" size="sm" asChild>
                 <Link href="/dashboard/positions/new">
                   <Plus className="mr-2 h-4 w-4" />
