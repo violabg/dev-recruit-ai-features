@@ -1,3 +1,4 @@
+import { Quiz } from "@/app/dashboard/quizzes/quizzes-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,17 +11,6 @@ import {
 import { Clock, Eye, Send } from "lucide-react";
 import Link from "next/link";
 
-interface QuizCardProps {
-  id: string;
-  title: string;
-  positionTitle?: string;
-  experienceLevel?: string;
-  questionCount: number;
-  timeLimit?: number | null;
-  createdAt: string;
-  compact?: boolean;
-}
-
 // Format date helper
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -31,41 +21,38 @@ function formatDate(dateString: string) {
   }).format(date);
 }
 
+type Props = {
+  quiz: Quiz;
+};
+
 export function QuizCard({
-  id,
-  title,
-  positionTitle,
-  experienceLevel,
-  questionCount,
-  timeLimit,
-  createdAt,
-  compact = false,
-}: QuizCardProps) {
+  quiz: { id, title, positions, time_limit, questions, created_at },
+}: Props) {
   return (
-    <Card className="flex h-full flex-col">
-      <CardHeader className={compact ? "pb-2" : undefined}>
+    <Card className="flex flex-col">
+      <CardHeader className="pb-2">
         <CardTitle className="line-clamp-1 text-lg">{title}</CardTitle>
       </CardHeader>
-      <CardContent className={compact ? "pb-2" : undefined}>
+      <CardContent className="pb-2">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            {positionTitle && <Badge variant="outline">{positionTitle}</Badge>}
-            {experienceLevel && (
-              <Badge variant="outline">{experienceLevel}</Badge>
+            {positions && <Badge variant="outline">{positions?.title}</Badge>}
+            {positions && (
+              <Badge variant="outline">{positions.experience_level}</Badge>
             )}
-            {timeLimit && (
+            {time_limit && (
               <Badge variant="secondary">
                 <Clock className="mr-1 h-3 w-3" />
-                {timeLimit} minuti
+                {time_limit} minuti
               </Badge>
             )}
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              {questionCount} domande
+              {questions.length} domande
             </span>
             <span className="text-muted-foreground">
-              {formatDate(createdAt)}
+              {formatDate(created_at)}
             </span>
           </div>
         </div>
