@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BrainCircuit, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -24,9 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { generateQuiz } from "@/lib/actions/quizzes";
 import { useSupabase } from "@/lib/supabase/supabase-provider";
-import { groq } from "@ai-sdk/groq";
-import { generateText } from "ai";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -62,7 +60,6 @@ export default function GenerateQuizPage({
   const [position, setPosition] = useState<Position | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [generatedQuiz, setGeneratedQuiz] = useState<any>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -115,7 +112,7 @@ export default function GenerateQuizPage({
   }, [supabase, params.id, router, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!supabase || !user || !position) {
+    if (!user || !position) {
       toast.error("Errore", {
         description: "Dati mancanti per generare il quiz",
       });
@@ -125,112 +122,28 @@ export default function GenerateQuizPage({
     setGenerating(true);
 
     try {
-      // Prepare the prompt for the AI
-      const prompt = `
-Genera un quiz tecnico per una posizione di "${position.title}" con livello "${
-        position.experience_level
-      }".
+      const formData = new FormData();
+      formData.append("position_id", position.id);
+      formData.append("title", values.title);
+      formData.append("instructions", values.instructions || "");
+      formData.append("question_count", values.questionCount.toString());
+      formData.append("difficulty", values.difficulty.toString());
+      formData.append(
+        "include_multiple_choice",
+        values.includeMultipleChoice.toString()
+      );
+      formData.append(
+        "include_open_questions",
+        values.includeOpenQuestions.toString()
+      );
+      formData.append(
+        "include_code_snippets",
+        values.includeCodeSnippets.toString()
+      );
+      formData.append("enable_time_limit", values.enableTimeLimit.toString());
+      formData.append("time_limit", values.timeLimit.toString());
 
-Competenze richieste: ${position.skills.join(", ")}
-${
-  position.description
-    ? `Descrizione della posizione: ${position.description}`
-    : ""
-}
-
-Parametri del quiz:
-- Numero di domande: ${values.questionCount}
-- Difficoltà (1-5): ${values.difficulty}
-- Tipi di domande da includere:
-  ${values.includeMultipleChoice ? "- Domande a risposta multipla" : ""}
-  ${values.includeOpenQuestions ? "- Domande aperte" : ""}
-  ${
-    values.includeCodeSnippets
-      ? "- Snippet di codice e sfide di programmazione"
-      : ""
-  }
-
-Istruzioni aggiuntive: ${values.instructions || "Nessuna"}
-
-Genera un quiz in formato JSON con la seguente struttura:
-{
-  "questions": [
-    {
-      "id": "1",
-      "type": "multiple_choice",
-      "question": "Testo della domanda",
-      "options": ["Opzione 1", "Opzione 2", "Opzione 3", "Opzione 4"],
-      "correctAnswer": "Indice della risposta corretta (0-based)",
-      "explanation": "Spiegazione della risposta corretta"
-    },
-    {
-      "id": "2",
-      "type": "open_question",
-      "question": "Testo della domanda aperta",
-      "sampleAnswer": "Esempio di risposta corretta",
-      "keywords": ["parola chiave 1", "parola chiave 2"]
-    },
-    {
-      "id": "3",
-      "type": "code_snippet",
-      "question": "Descrizione del problema di codice",
-      "language": "javascript/python/etc",
-      "codeSnippet": "// Codice da completare o analizzare",
-      "sampleSolution": "// Soluzione di esempio",
-      "testCases": [
-        { "input": "input di esempio", "expectedOutput": "output atteso" }
-      ]
-    }
-  ]
-}
-
-Assicurati che le domande siano pertinenti alle competenze richieste e al livello di esperienza.
-`;
-
-      // Generate quiz using AI
-      const { text } = await generateText({
-        model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-        prompt,
-        system:
-          "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera quiz pertinenti, sfidanti ma equi, con domande chiare e risposte corrette. Rispondi SOLO con il JSON richiesto, senza testo aggiuntivo.",
-      });
-
-      // Parse the generated JSON
-      let quizData;
-      try {
-        // Extract JSON from the response if needed
-        const jsonMatch =
-          text.match(/```json\n([\s\S]*?)\n```/) || text.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-        quizData = JSON.parse(jsonString);
-      } catch (error) {
-        console.error("Error parsing JSON:", error);
-        throw new Error("Impossibile analizzare il quiz generato");
-      }
-
-      // Save the quiz to the database
-      const { data, error } = await supabase
-        .from("quizzes")
-        .insert({
-          title: values.title,
-          position_id: position.id,
-          questions: quizData.questions,
-          time_limit: values.enableTimeLimit ? values.timeLimit : null,
-          created_by: user.id,
-        })
-        .select();
-
-      if (error) throw error;
-
-      toast.success("Quiz generato", {
-        description: "Il quiz è stato generato e salvato con successo",
-      });
-
-      if (data && data[0]) {
-        router.push(`/dashboard/quizzes/${data[0].id}`);
-      } else {
-        router.push(`/dashboard/positions/${position.id}`);
-      }
+      await generateQuiz(formData);
     } catch (error: any) {
       console.error("Error generating quiz:", error);
       toast.error("Errore", {
@@ -238,7 +151,6 @@ Assicurati che le domande siano pertinenti alle competenze richieste e al livell
           error.message ||
           "Si è verificato un errore durante la generazione del quiz",
       });
-    } finally {
       setGenerating(false);
     }
   }
