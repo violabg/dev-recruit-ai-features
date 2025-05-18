@@ -7,7 +7,6 @@ export default async function NewPositionPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  console.log("🚀 ~ NewPositionPage ~ user:", user);
 
   if (!user) {
     return (

@@ -3,10 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Database } from "@/lib/database.types";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { BrainCircuit, Edit, Plus, Users } from "lucide-react";
-import { cookies } from "next/headers";
 import Link from "next/link";
 
 // Format date helper
@@ -25,19 +23,7 @@ export default async function PositionDetailPage({
 }: {
   params: { id: string };
 }) {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-
+  const supabase = await createClient();
   // Fetch position details
   const { data: position, error: positionError } = await supabase
     .from("positions")

@@ -221,3 +221,27 @@ AS $$
     AND created_by = auth.uid()
   )
 $$;
+
+-- Create a function to count quizzes by position
+CREATE OR REPLACE FUNCTION count_quizzes_by_position()
+RETURNS TABLE (
+  position_id TEXT,
+  position_title TEXT,
+  count BIGINT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    p.id::TEXT as position_id,
+    p.title as position_title,
+    COUNT(q.id) as count
+  FROM 
+    positions p
+  LEFT JOIN 
+    quizzes q ON p.id = q.position_id
+  GROUP BY 
+    p.id, p.title
+  ORDER BY 
+    count DESC;
+END;
+$$ LANGUAGE plpgsql;

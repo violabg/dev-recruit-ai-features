@@ -20,7 +20,6 @@ import { DashboardNav } from "./dashboard-nav";
 
 export function DashboardHeader() {
   const { supabase, user, loading } = useSupabase();
-  console.log("🚀 ~ DashboardHeader ~ user:", user);
   const router = useRouter();
   const isMobile = useMobile();
 

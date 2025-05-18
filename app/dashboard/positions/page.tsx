@@ -9,10 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Database } from "@/lib/database.types";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { Plus } from "lucide-react";
-import { cookies } from "next/headers";
 import Link from "next/link";
 
 // Format date helper
@@ -31,19 +29,7 @@ export default async function PositionsPage({
 }: {
   searchParams: { q?: string };
 }) {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -10,10 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Database } from "@/lib/database.types";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
-import { cookies } from "next/headers";
 import Link from "next/link";
 
 // Format date helper
@@ -45,18 +43,7 @@ export default async function InterviewDetailPage({
 }: {
   params: { id: string };
 }) {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   // Fetch interview details
   const { data: interview, error: interviewError } = await supabase
