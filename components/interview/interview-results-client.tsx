@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { evaluateAnswer, generateOverallEvaluation } from "@/lib/actions";
+import {
+  evaluateAnswer,
+  generateOverallEvaluation,
+} from "@/lib/actions/evaluations";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -22,7 +25,6 @@ interface InterviewResultsClientProps {
 }
 
 export function InterviewResultsClient({
-  interviewId,
   quizQuestions,
   answers,
   candidateName,

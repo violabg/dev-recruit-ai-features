@@ -38,13 +38,20 @@ interface Position {
   experience_level: string;
 }
 
-export default function QuizDetailPage({ params }: { params: { id: string } }) {
+import React from "react";
+
+export default function QuizDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { supabase, user } = useSupabase();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [position, setPosition] = useState<Position | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const unwrappedParams = React.use(params);
 
   useEffect(() => {
     async function fetchQuizData() {
@@ -57,7 +64,7 @@ export default function QuizDetailPage({ params }: { params: { id: string } }) {
         const { data: quizData, error: quizError } = await supabase
           .from("quizzes")
           .select("*")
-          .eq("id", params.id)
+          .eq("id", unwrappedParams.id)
           .single();
 
         if (quizError) throw quizError;
@@ -85,7 +92,7 @@ export default function QuizDetailPage({ params }: { params: { id: string } }) {
     }
 
     fetchQuizData();
-  }, [supabase, user, params.id, router]);
+  }, [supabase, user, unwrappedParams.id, router]);
 
   const handleDelete = async () => {
     if (!supabase || !quiz) return;

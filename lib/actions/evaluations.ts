@@ -136,6 +136,8 @@ export async function evaluateAnswer(question: any, answer: any) {
               2. Efficienza dell'algoritmo
               3. Leggibilità e stile del codice
               4. Gestione degli errori
+
+              Restituisci SOLO un oggetto JSON valido che rispetti esattamente questo schema: { evaluation: string, score: number, strengths: string[], weaknesses: string[] }. Non includere testo aggiuntivo, markdown o spiegazioni.
               `;
   }
 

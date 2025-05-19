@@ -41,15 +41,16 @@ function calculateDuration(startDate: string | null, endDate: string | null) {
 export default async function InterviewDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const unwrappedParams = await params;
   const supabase = await createClient();
 
   // Fetch interview details
   const { data: interview, error: interviewError } = await supabase
     .from("interviews")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", unwrappedParams.id)
     .single();
 
   if (interviewError || !interview) {
@@ -129,12 +130,12 @@ export default async function InterviewDetailPage({
             <Badge
               variant={
                 interview.status === "pending"
-                  ? "outline-solid"
+                  ? "outline"
                   : interview.status === "completed"
                   ? "default"
                   : interview.status === "in_progress"
                   ? "secondary"
-                  : "outline-solid"
+                  : "outline"
               }
             >
               {interview.status === "pending"
