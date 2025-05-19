@@ -19,7 +19,6 @@ import {
 } from "@/lib/actions/interviews";
 import { createClient } from "@/lib/supabase/client";
 import { BrainCircuit, Clock } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -59,7 +58,6 @@ export function InterviewClient({
   quiz: Quiz;
   candidate: Candidate;
 }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>(
@@ -265,8 +263,8 @@ export function InterviewClient({
                   </li>
                 )}
                 <li>
-                  • Clicca su "Completa" quando hai finito di rispondere a tutte
-                  le domande
+                  • Clicca su &quot;Completa&quot; quando hai finito di
+                  rispondere a tutte le domande
                 </li>
               </ul>
             </div>

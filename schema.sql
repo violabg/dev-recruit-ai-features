@@ -57,6 +57,10 @@ CREATE TABLE IF NOT EXISTS interviews (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS interviews_candidate_id_idx ON public.interviews(candidate_id);
+CREATE INDEX IF NOT EXISTS interviews_quiz_id_idx ON public.interviews(quiz_id);
+CREATE INDEX IF NOT EXISTS interviews_token_idx ON public.interviews(token);
+
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE positions ENABLE ROW LEVEL SECURITY;
@@ -245,3 +249,43 @@ BEGIN
     count DESC;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Create function to generate unique tokens
+CREATE OR REPLACE FUNCTION generate_unique_token()
+RETURNS VARCHAR AS $$
+DECLARE
+  token VARCHAR;
+  exists_already BOOLEAN;
+BEGIN
+  LOOP
+    -- Generate a random token
+    token := encode(gen_random_bytes(12), 'hex');
+    
+    -- Check if token already exists
+    SELECT EXISTS (
+      SELECT 1 FROM public.interviews WHERE interviews.token = token
+    ) INTO exists_already;
+    
+    -- Exit loop if token is unique
+    EXIT WHEN NOT exists_already;
+  END LOOP;
+  
+  RETURN token;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to automatically generate tokens
+CREATE OR REPLACE FUNCTION set_interview_token()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.token IS NULL THEN
+    NEW.token := generate_unique_token();
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER set_interview_token_trigger
+BEFORE INSERT ON public.interviews
+FOR EACH ROW
+EXECUTE FUNCTION set_interview_token();

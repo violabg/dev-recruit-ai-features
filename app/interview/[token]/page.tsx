@@ -1,7 +1,5 @@
 import { InterviewClient } from "@/components/interview/interview-client";
-import type { Database } from "@/lib/database.types";
-import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 
 // Server component for interview page
 export default async function InterviewPage({
@@ -9,18 +7,7 @@ export default async function InterviewPage({
 }: {
   params: { token: string };
 }) {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   // Fetch interview details
   const { data: interview, error: interviewError } = await supabase
@@ -96,6 +83,10 @@ export default async function InterviewPage({
   }
 
   return (
-    <InterviewClient interview={interview} quiz={quiz} candidate={candidate} />
+    <InterviewClient
+      interview={interview}
+      quiz={quiz as any}
+      candidate={candidate}
+    />
   );
 }
