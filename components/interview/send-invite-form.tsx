@@ -25,7 +25,7 @@ const emailFormSchema = z.object({
     message: "Please enter at least one email address.",
   }),
   message: z.string().optional(),
-  sendEmail: z.boolean().default(true),
+  sendEmail: z.boolean(),
 });
 
 type EmailFormValues = z.infer<typeof emailFormSchema>;

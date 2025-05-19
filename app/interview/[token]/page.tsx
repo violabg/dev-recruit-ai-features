@@ -1,3 +1,4 @@
+import { Quiz } from "@/app/dashboard/quizzes/quizzes-actions";
 import { InterviewClient } from "@/components/interview/interview-client";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,7 +46,7 @@ export default async function InterviewPage({
     `
     )
     .eq("id", interview.quiz_id)
-    .single();
+    .single<Quiz>();
 
   if (quizError || !quiz) {
     return (
@@ -83,10 +84,6 @@ export default async function InterviewPage({
   }
 
   return (
-    <InterviewClient
-      interview={interview}
-      quiz={quiz as any}
-      candidate={candidate}
-    />
+    <InterviewClient interview={interview} quiz={quiz} candidate={candidate} />
   );
 }

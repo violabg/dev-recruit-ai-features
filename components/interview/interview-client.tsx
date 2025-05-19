@@ -1,5 +1,6 @@
 "use client";
 
+import { Quiz } from "@/app/dashboard/quizzes/quizzes-actions";
 import { InterviewComplete } from "@/components/interview/interview-complete";
 import { InterviewQuestion } from "@/components/interview/interview-question";
 import { Button } from "@/components/ui/button";
@@ -31,16 +32,6 @@ interface Interview {
   completed_at: string | null;
   token: string;
   answers?: Record<string, any>;
-}
-
-interface Quiz {
-  id: string;
-  title: string;
-  questions: any[];
-  time_limit: number | null;
-  position: {
-    title: string;
-  };
 }
 
 interface Candidate {
@@ -221,7 +212,7 @@ export function InterviewClient({
             </CardTitle>
             <CardDescription className="text-center">
               Stai per iniziare il quiz per la posizione di{" "}
-              {quiz.position.title}
+              {quiz.positions?.title}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
