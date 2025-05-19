@@ -44,7 +44,7 @@ export function DashboardHeader() {
             </SheetContent>
           </Sheet>
         )}
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <BrainCircuit className="h-6 w-6" />
           <span>DevRecruit AI</span>
         </Link>

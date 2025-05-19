@@ -1,8 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 import { ArrowRight, BrainCircuit, CheckCircle, Users } from "lucide-react";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
@@ -21,7 +26,7 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link href="/register">
+                  <Link href={user ? "/dashboard" : "/login"}>
                     <Button size="lg" className="gap-1.5">
                       Inizia ora
                       <ArrowRight className="h-4 w-4" />
