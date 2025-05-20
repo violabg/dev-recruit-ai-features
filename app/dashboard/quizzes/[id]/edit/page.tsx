@@ -1,33 +1,11 @@
-// Server actions are not imported here anymore, handled via API or form actions in client
+import EditQuizForm from "@/app/dashboard/quizzes/[id]/edit/edit-quiz-form";
+import { questionSchema } from "@/lib/actions/quiz-schemas";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
-import EditQuizForm from "@/app/dashboard/quizzes/[id]/edit/edit-quiz-form";
 
 export const dynamic = "force-dynamic";
-
-const questionSchema = z.object({
-  id: z.string(),
-  type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
-  question: z.string(),
-  options: z.array(z.string()).optional(),
-  correctAnswer: z.string().optional(),
-  explanation: z.string().optional(),
-  sampleAnswer: z.string().optional(),
-  keywords: z.array(z.string()).optional(),
-  language: z.string().optional(),
-  codeSnippet: z.string().optional(),
-  sampleSolution: z.string().optional(),
-  testCases: z
-    .array(
-      z.object({
-        input: z.string(),
-        expectedOutput: z.string(),
-      })
-    )
-    .optional(),
-});
 
 const quizSchema = z.object({
   id: z.string(),
@@ -39,7 +17,11 @@ const quizSchema = z.object({
   created_by: z.string(),
 });
 
-export default async function EditQuizPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditQuizPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const awaitedParams = await params;
   const supabase = await createClient();
   const { data: quiz, error } = await supabase
@@ -62,10 +44,7 @@ export default async function EditQuizPage({ params }: { params: Promise<{ id: s
 
   return (
     <Suspense fallback={<div>Caricamento...</div>}>
-      <EditQuizForm
-        quiz={parsedQuiz.data}
-        position={position}
-      />
+      <EditQuizForm quiz={parsedQuiz.data} position={position} />
     </Suspense>
   );
 }

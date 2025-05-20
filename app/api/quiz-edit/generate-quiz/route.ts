@@ -1,31 +1,65 @@
+import { quizDataSchema } from "@/lib/actions/quiz-schemas";
 import { generateNewQuizAction } from "@/lib/actions/quizzes";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-export async function POST(req: Request) {
+const generateQuizRequestSchema = z.object({
+  positionId: z.string(),
+  quizTitle: z.string(),
+  questionCount: z.number(),
+  difficulty: z.number(),
+  previousQuestions: z.array(z.object({ question: z.string() })).optional(),
+  includeMultipleChoice: z.boolean(),
+  includeOpenQuestions: z.boolean(),
+  includeCodeSnippets: z.boolean(),
+});
+
+export type GenerateQuizRequest = z.infer<typeof generateQuizRequestSchema>;
+export type GenerateQuizResponse = z.infer<typeof quizDataSchema>;
+
+export async function POST(
+  req: Request
+): Promise<NextResponse<GenerateQuizResponse | { error: string }>> {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as GenerateQuizRequest;
+    const validationResult = generateQuizRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid request body",
+          details: validationResult.error.format(),
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       positionId,
       quizTitle,
-      experienceLevel,
-      skills,
       questionCount,
       difficulty,
       previousQuestions,
-    } = body;
-    // Optionally use previousQuestions to instruct the AI to generate a different quiz
-    const aiQuiz = await generateNewQuizAction(
+      includeMultipleChoice,
+      includeOpenQuestions,
+      includeCodeSnippets,
+    } = validationResult.data;
+
+    const aiQuiz = await generateNewQuizAction({
       positionId,
       quizTitle,
-      experienceLevel,
-      skills,
       questionCount,
       difficulty,
-      previousQuestions
-    );
-    // Optionally, you can add logic to ensure the new quiz is different from previousQuestions
+      includeMultipleChoice,
+      includeOpenQuestions,
+      includeCodeSnippets,
+      previousQuestions,
+    });
+
     return NextResponse.json(aiQuiz);
   } catch (e) {
-    return new NextResponse((e as Error).message, { status: 500 });
+    const errorMessage =
+      e instanceof Error ? e.message : "An unknown error occurred";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

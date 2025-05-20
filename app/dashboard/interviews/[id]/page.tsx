@@ -11,21 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-
-// Format date helper
-function formatDate(dateString: string | null) {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
 
 // Calculate duration helper
 function calculateDuration(startDate: string | null, endDate: string | null) {
@@ -174,11 +162,11 @@ export default async function InterviewDetailPage({
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Inizio:</span>
-                <span>{formatDate(interview.started_at)}</span>
+                <span>{formatDate(interview.started_at, true)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Fine:</span>
-                <span>{formatDate(interview.completed_at)}</span>
+                <span>{formatDate(interview.completed_at, true)}</span>
               </div>
             </div>
           </CardContent>

@@ -4,25 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/utils";
 import { BrainCircuit, Edit, Plus, Users } from "lucide-react";
 import Link from "next/link";
 
-// Format date helper
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-// Server component for position detail page
 export default async function PositionDetailPage({
-  params,
+  params: incomingParams, // Renamed to avoid confusion
 }: {
   params: { id: string };
 }) {
+  const params = await incomingParams; // Await the params object
+
   const supabase = await createClient();
   // Fetch position details
   const { data: position, error: positionError } = await supabase
@@ -230,7 +222,7 @@ export default async function PositionDetailPage({
                         <Badge
                           variant={
                             candidate.status === "pending"
-                              ? "outline-solid"
+                              ? "outline"
                               : candidate.status === "completed"
                               ? "default"
                               : "secondary"

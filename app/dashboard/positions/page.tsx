@@ -10,18 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-
-// Format date helper
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
 
 // Server component for positions page
 export default async function PositionsPage({

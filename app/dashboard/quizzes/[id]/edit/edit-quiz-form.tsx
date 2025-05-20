@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  GenerateQuizRequest,
+  GenerateQuizResponse,
+} from "@/app/api/quiz-edit/generate-quiz/route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,9 +58,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     name: "questions",
   });
 
-  // --- Server actions must be called via fetch to API routes or server actions ---
-  // Placeholder for onSubmit, handleRegenerateQuestion, handleRegenerateQuiz
-  // You need to implement API calls or use form actions for these features
   const onSubmit = async (data: QuizForm) => {
     try {
       const formData = new FormData();
@@ -91,7 +92,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           skills: position.skills,
           type: current.type,
           previousQuestions: form.getValues("questions"),
-          currentIndex: index,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -109,21 +109,36 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
   const handleRegenerateQuiz = async () => {
     setAiQuizLoading(true);
     try {
+      const currentQuestions = form.getValues("questions");
+      const includeMultipleChoice = currentQuestions.some(
+        (q) => q.type === "multiple_choice"
+      );
+      const includeOpenQuestions = currentQuestions.some(
+        (q) => q.type === "open_question"
+      );
+      const includeCodeSnippets = currentQuestions.some(
+        (q) => q.type === "code_snippet"
+      );
+
+      const body = {
+        positionId: position.id,
+        quizTitle: quiz.title,
+        // experienceLevel and skills are fetched by the server action
+        questionCount: fields.length,
+        difficulty: 3, // Or get from somewhere if dynamic
+        previousQuestions: currentQuestions,
+        includeMultipleChoice,
+        includeOpenQuestions,
+        includeCodeSnippets,
+      } as GenerateQuizRequest;
+
       const res = await fetch("/api/quiz-edit/generate-quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          positionId: position.id,
-          quizTitle: quiz.title,
-          experienceLevel: position.experience_level,
-          skills: position.skills,
-          questionCount: fields.length,
-          difficulty: 3,
-          previousQuestions: form.getValues("questions"),
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
-      const aiQuiz = await res.json();
+      const aiQuiz = (await res.json()) as GenerateQuizResponse;
       form.setValue("questions", aiQuiz.questions);
       toast.success("Quiz rigenerato dall'AI");
     } catch (e) {

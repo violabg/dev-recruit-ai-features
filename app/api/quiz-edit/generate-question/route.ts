@@ -11,18 +11,17 @@ export async function POST(req: Request) {
       skills,
       type,
       previousQuestions,
-      currentIndex,
+      // currentIndex, // No longer used by generateNewQuestionAction
     } = body;
     // Optionally use previousQuestions/currentIndex to instruct the AI to avoid duplicates
-    const aiQuestion = await generateNewQuestionAction(
+    const aiQuestion = await generateNewQuestionAction({
       quizTitle,
       positionTitle,
       experienceLevel,
       skills,
       type,
       previousQuestions,
-      currentIndex
-    );
+    });
     // Optionally, you can add logic to ensure the new question is different from previousQuestions
     return NextResponse.json(aiQuestion);
   } catch (e) {

@@ -5,7 +5,7 @@ export const questionSchema = z.object({
   type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
   question: z.string(),
   options: z.array(z.string()).optional(),
-  correctAnswer: z.string().optional(),
+  correctAnswer: z.number().optional(),
   explanation: z.string().optional(),
   sampleAnswer: z.string().optional(),
   keywords: z.array(z.string()).optional(),

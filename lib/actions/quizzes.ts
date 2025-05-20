@@ -8,6 +8,19 @@ import { createClient } from "../supabase/server";
 import { questionSchema, quizDataSchema } from "./quiz-schemas";
 
 // Quiz actions
+
+type GenerateNewQuizActionParams = {
+  positionId: string;
+  quizTitle: string;
+  questionCount: number;
+  difficulty: number;
+  includeMultipleChoice: boolean;
+  includeOpenQuestions: boolean;
+  includeCodeSnippets: boolean;
+  instructions?: string;
+  previousQuestions?: { question: string }[];
+};
+
 export async function generateAndSaveQuiz(formData: FormData) {
   const supabase = await createClient();
 
@@ -36,58 +49,16 @@ export async function generateAndSaveQuiz(formData: FormData) {
     ? Number.parseInt(formData.get("time_limit") as string)
     : null;
 
-  // Get position details
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("id", positionId)
-    .single();
-
-  if (positionError || !position) {
-    throw new Error("Position not found");
-  }
-
-  // Prepare the prompt for the AI
-  const prompt = `
-                  Genera un quiz tecnico per una posizione di "${
-                    position.title
-                  }" con livello "${position.experience_level}".
-
-                  Competenze richieste: ${position.skills.join(", ")}
-                  ${
-                    position.description
-                      ? `Descrizione della posizione: ${position.description}`
-                      : ""
-                  }
-
-                  Parametri del quiz:
-                  - Numero di domande: ${questionCount}
-                  - Difficoltà (1-5): ${difficulty}
-                  - Tipi di domande da includere:
-                    ${
-                      includeMultipleChoice
-                        ? "- Domande a risposta multipla"
-                        : ""
-                    }
-                    ${includeOpenQuestions ? "- Domande aperte" : ""}
-                    ${
-                      includeCodeSnippets
-                        ? "- Snippet di codice e sfide di programmazione"
-                        : ""
-                    }
-
-                  Istruzioni aggiuntive: ${instructions || "Nessuna"}
-
-                  Genera un quiz con domande pertinenti alle competenze richieste e al livello di esperienza.
-                  `;
-
-  // Generate quiz using AI with generateObject
-  const { object: quizData } = await generateObject({
-    model: groq("llama3-70b-8192"),
-    prompt,
-    system:
-      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera quiz pertinenti, sfidanti ma equi, con domande chiare e risposte corrette.",
-    schema: quizDataSchema,
+  // Generate quiz using the refactored action
+  const quizData = await generateNewQuizAction({
+    positionId,
+    quizTitle: title,
+    questionCount,
+    difficulty,
+    includeMultipleChoice,
+    includeOpenQuestions,
+    includeCodeSnippets,
+    instructions,
   });
 
   // Save the quiz to the database
@@ -115,47 +86,110 @@ export async function generateAndSaveQuiz(formData: FormData) {
   }
 }
 
-export async function generateNewQuizAction(
-  positionId: string,
-  quizTitle: string,
-  experienceLevel: string,
-  skills: string[],
-  questionCount: number,
-  difficulty: number,
-  previousQuestions?: { question: string }[]
-) {
+export async function generateNewQuizAction({
+  positionId,
+  quizTitle,
+  questionCount,
+  difficulty,
+  includeMultipleChoice,
+  includeOpenQuestions,
+  includeCodeSnippets,
+  instructions,
+  previousQuestions,
+}: GenerateNewQuizActionParams) {
+  const supabase = await createClient();
+  // Get position details
+  const { data: position, error: positionError } = await supabase
+    .from("positions")
+    .select("*")
+    .eq("id", positionId)
+    .single();
+
+  if (positionError || !position) {
+    throw new Error("Position not found");
+  }
+
   let previousContext = "";
   if (previousQuestions && previousQuestions.length > 0) {
-    previousContext = `\nDomande già presenti nel quiz precedente (da evitare):\n${previousQuestions
+    previousContext = `\n\nDomande già presenti nel quiz precedente (da evitare o riformulare significativamente):\n${previousQuestions
       .map((q, i) => `#${i + 1}: ${q.question}`)
       .join("\n")}`;
   }
-  const prompt = `Genera un quiz tecnico diverso dal precedente per la posizione "${quizTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
-    ", "
-  )}. Numero di domande: ${questionCount}. Difficoltà: ${difficulty}.${previousContext}\nLe nuove domande devono essere diverse da quelle già presenti.`;
+
+  // Prepare the prompt for the AI
+  const prompt = `
+                  Genera un quiz tecnico per una posizione di "${
+                    position.title
+                  }" con livello "${position.experience_level}".
+
+                  Competenze richieste: ${position.skills.join(", ")}
+                  ${
+                    position.description
+                      ? `Descrizione della posizione: ${position.description}`
+                      : ""
+                  }
+
+                  Parametri del quiz:
+                  - Titolo del Quiz: ${quizTitle}
+                  - Numero di domande: ${questionCount}
+                  - Difficoltà (1-5): ${difficulty}
+                  - Tipi di domande da includere:
+                    ${
+                      includeMultipleChoice
+                        ? "- Domande a risposta multipla"
+                        : ""
+                    }
+                    ${includeOpenQuestions ? "- Domande aperte" : ""}
+                    ${
+                      includeCodeSnippets
+                        ? "- Snippet di codice e sfide di programmazione"
+                        : ""
+                    }
+
+                  ${
+                    instructions
+                      ? `Istruzioni aggiuntive: ${instructions}`
+                      : "Istruzioni aggiuntive: Nessuna"
+                  }
+                  ${previousContext}
+
+                  Genera un quiz con domande pertinenti alle competenze richieste e al livello di esperienza.
+                  Se previousQuestions è fornito, assicurati che le nuove domande siano significativamente diverse.
+                  IMPORTANTE: Per le domande di tipo 'multiple_choice', il campo 'correctAnswer' DEVE essere l'indice numerico (basato su zero) della risposta corretta nell'array 'options'.
+                  `;
+
   const { object: quizData } = await generateObject({
     model: groq("llama3-70b-8192"),
     prompt,
     system:
-      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera quiz pertinenti, sfidanti ma equi, con domande chiare e risposte corrette.",
+      "You are a technical recruitment expert creating quizzes. The output MUST be a perfectly valid JSON object that STRICTLY ADHERES to the provided Zod schema. All JSON syntax (curly braces, square brackets, commas, double quotes for keys and string values) must be correct. \n\nKey Schema Rules:\n1. CRITICAL: Each question object in the 'questions' array MUST include the field name 'type' followed by its value. For example: `\"type\": \"multiple_choice\"`. Valid string values for 'type' are: 'multiple_choice', 'open_question', 'code_snippet'.\n2. For 'multiple_choice' questions, the 'correctAnswer' field MUST be a number (zero-based index of the correct option in the 'options' array). E.g., `\"correctAnswer\": 0`. The 'options' array must be present and contain strings.\n3. For 'open_question' and 'code_snippet' questions, OMIT the 'correctAnswer' field if a numeric answer is not applicable. OMIT the 'options' field if it is not applicable.\n4. ALL JSON field names (e.g., 'id', 'type', 'question', 'options', 'correctAnswer', 'codeSnippet') MUST be in English and match the schema case EXACTLY.\n5. Omit optional fields if they have no content, rather than using empty strings or empty arrays, unless the schema specifically requires an empty array.\n\nExample - multiple_choice: `{\"id\": \"q1\", \"type\": \"multiple_choice\", \"question\": \"What is 2+2?\", \"options\": [\"3\", \"4\", \"5\"], \"correctAnswer\": 1}`\nExample - open_question: `{\"id\": \"q2\", \"type\": \"open_question\", \"question\": \"Explain black holes.\"}`\n\nEnsure all textual content (questions, options, explanations, etc.) is in Italian, but all JSON structure, keys, and enum values are in English as per schema.",
     schema: quizDataSchema,
   });
   return quizData;
 }
 
-export async function generateNewQuestionAction(
-  quizTitle: string,
-  positionTitle: string,
-  experienceLevel: string,
-  skills: string[],
-  type: "multiple_choice" | "open_question" | "code_snippet",
-  previousQuestions?: any[],
-  currentIndex?: number
-) {
+type GenerateNewQuestionActionParams = {
+  quizTitle: string;
+  positionTitle: string;
+  experienceLevel: string;
+  skills: string[];
+  type: "multiple_choice" | "open_question" | "code_snippet";
+  previousQuestions?: { question: string; type?: string }[]; // Adjusted to be more specific
+  // currentIndex is removed as it was unused and not relevant to AI generation logic
+};
+
+export async function generateNewQuestionAction({
+  quizTitle,
+  positionTitle,
+  experienceLevel,
+  skills,
+  type,
+  previousQuestions,
+}: GenerateNewQuestionActionParams) {
   let previousContext = "";
   if (previousQuestions && previousQuestions.length > 0) {
     previousContext = `\nDomande già presenti nel quiz (da evitare):\n${previousQuestions
-      .map((q: any, i: number) => `#${i + 1}: ${q.question}`)
+      .map((q, i) => `#${i + 1}: ${q.question}`)
       .join("\n")}`;
   }
   const prompt = `Genera una domanda di tipo ${type} per un quiz intitolato "${quizTitle}" per la posizione "${positionTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
