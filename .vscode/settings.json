@@ -1,1 +1,11 @@
-{}
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    }
+  ],
+  "chat.promptFiles": true
+  // "chat.promptFilesLocations": {
+  //   "default": [".github/prompts"]
+  // }
+}
