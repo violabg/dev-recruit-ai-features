@@ -13,9 +13,10 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMobile } from "@/hooks/use-mobile";
 import { useSupabase } from "@/lib/supabase/supabase-provider";
-import { BrainCircuit, Loader2, LogOut, Menu, User } from "lucide-react";
+import { BrainCircuit, Loader2, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CurrentUserAvatar } from "../auth/current-user-avatar";
 import { DashboardNav } from "./dashboard-nav";
 
 export function DashboardHeader() {
@@ -29,7 +30,7 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <div className="flex items-center gap-2 font-bold text-xl">
         {isMobile && (
           <Sheet>
@@ -59,8 +60,7 @@ export function DashboardHeader() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Profilo utente</span>
+                    <CurrentUserAvatar />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

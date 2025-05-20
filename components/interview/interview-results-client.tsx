@@ -237,9 +237,11 @@ export function InterviewResultsClient({
                       Punti di forza principali:
                     </h4>
                     <ul className="list-disc pl-5 space-y-1">
-                      {overallEvaluation.strengths.map((strength, idx) => (
-                        <li key={idx}>{strength}</li>
-                      ))}
+                      {overallEvaluation.strengths.map(
+                        (strength: any, idx: number) => (
+                          <li key={idx}>{strength}</li>
+                        )
+                      )}
                     </ul>
                   </div>
                 )}
@@ -250,9 +252,11 @@ export function InterviewResultsClient({
                       Aree di miglioramento:
                     </h4>
                     <ul className="list-disc pl-5 space-y-1">
-                      {overallEvaluation.weaknesses.map((weakness, idx) => (
-                        <li key={idx}>{weakness}</li>
-                      ))}
+                      {overallEvaluation.weaknesses.map(
+                        (weakness: any, idx: number) => (
+                          <li key={idx}>{weakness}</li>
+                        )
+                      )}
                     </ul>
                   </div>
                 )}
@@ -461,7 +465,7 @@ export function InterviewResultsClient({
                                       </div>
                                       <ul className="list-disc pl-5 space-y-1 mt-1">
                                         {evaluation.strengths.map(
-                                          (strength, idx) => (
+                                          (strength: any, idx: number) => (
                                             <li key={idx} className="text-sm">
                                               {strength}
                                             </li>
@@ -479,7 +483,7 @@ export function InterviewResultsClient({
                                       </div>
                                       <ul className="list-disc pl-5 space-y-1 mt-1">
                                         {evaluation.weaknesses.map(
-                                          (weakness, idx) => (
+                                          (weakness: any, idx: number) => (
                                             <li key={idx} className="text-sm">
                                               {weakness}
                                             </li>

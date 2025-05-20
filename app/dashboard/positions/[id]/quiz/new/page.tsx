@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { BrainCircuit, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -53,8 +53,9 @@ interface Position {
 export default function GenerateQuizPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const unwrappedParams = use(params);
   const router = useRouter();
   const { supabase, user } = useSupabase();
   const [position, setPosition] = useState<Position | null>(null);
@@ -85,7 +86,7 @@ export default function GenerateQuizPage({
         const { data, error } = await supabase
           .from("positions")
           .select("*")
-          .eq("id", params.id)
+          .eq("id", unwrappedParams.id)
           .single();
 
         if (error) throw error;
@@ -109,7 +110,7 @@ export default function GenerateQuizPage({
     }
 
     fetchPosition();
-  }, [supabase, params.id, router, form]);
+  }, [supabase, unwrappedParams.id, router, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user || !position) {

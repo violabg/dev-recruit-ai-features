@@ -108,7 +108,7 @@ export default async function PositionsPage({
                   </TableCell>
                   <TableCell>{formatDate(position.created_at)}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button variant="default" size="sm" asChild>
                       <Link href={`/dashboard/positions/${position.id}`}>
                         Dettagli
                       </Link>

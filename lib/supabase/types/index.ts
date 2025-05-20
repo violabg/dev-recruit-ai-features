@@ -107,7 +107,7 @@ export type Database = {
       positions: {
         Row: {
           contract_type: string | null;
-          created_at: string | null;
+          created_at: string;
           created_by: string;
           description: string | null;
           experience_level: string;

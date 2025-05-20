@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const getInitials = (name?: string | null) => {
+  return (
+    name
+      ?.split(" ")
+      ?.map((word) => word[0])
+      ?.join("")
+      ?.toUpperCase() || "U"
+  );
+};
+
 export const prismLanguage = (language: string) => {
   switch ((language || "").toLowerCase()) {
     case "javascript":
