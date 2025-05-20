@@ -26,6 +26,8 @@
 - Use Supabase for backend/database interactions.
 - Use arrow functions for methods and new components.
 - Use typs over interfaces.
+- use server components and server actions as much as possible.
+- in server pages always await for params before using them.
 
 ### UI/UX Expectations
 
