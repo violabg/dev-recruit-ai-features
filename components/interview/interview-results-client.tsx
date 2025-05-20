@@ -31,7 +31,6 @@ export function InterviewResultsClient({
   answers,
   candidateName,
 }: InterviewResultsClientProps) {
-  console.log("🚀 ~ quizQuestions:", quizQuestions);
   const [loading, setLoading] = useState(false);
   const [evaluations, setEvaluations] = useState<Record<string, any>>({});
   const [overallEvaluation, setOverallEvaluation] = useState<any | null>(null);
