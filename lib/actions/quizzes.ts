@@ -8,7 +8,7 @@ import { createClient } from "../supabase/server";
 import { questionSchema, quizDataSchema } from "./quiz-schemas";
 
 // Quiz actions
-export async function generateQuiz(formData: FormData) {
+export async function generateAndSaveQuiz(formData: FormData) {
   const supabase = await createClient();
 
   // Get the current user
@@ -115,6 +115,62 @@ export async function generateQuiz(formData: FormData) {
   }
 }
 
+export async function generateNewQuizAction(
+  positionId: string,
+  quizTitle: string,
+  experienceLevel: string,
+  skills: string[],
+  questionCount: number,
+  difficulty: number,
+  previousQuestions?: { question: string }[]
+) {
+  let previousContext = "";
+  if (previousQuestions && previousQuestions.length > 0) {
+    previousContext = `\nDomande già presenti nel quiz precedente (da evitare):\n${previousQuestions
+      .map((q, i) => `#${i + 1}: ${q.question}`)
+      .join("\n")}`;
+  }
+  const prompt = `Genera un quiz tecnico diverso dal precedente per la posizione "${quizTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
+    ", "
+  )}. Numero di domande: ${questionCount}. Difficoltà: ${difficulty}.${previousContext}\nLe nuove domande devono essere diverse da quelle già presenti.`;
+  const { object: quizData } = await generateObject({
+    model: groq("llama3-70b-8192"),
+    prompt,
+    system:
+      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera quiz pertinenti, sfidanti ma equi, con domande chiare e risposte corrette.",
+    schema: quizDataSchema,
+  });
+  return quizData;
+}
+
+export async function generateNewQuestionAction(
+  quizTitle: string,
+  positionTitle: string,
+  experienceLevel: string,
+  skills: string[],
+  type: "multiple_choice" | "open_question" | "code_snippet",
+  previousQuestions?: any[],
+  currentIndex?: number
+) {
+  let previousContext = "";
+  if (previousQuestions && previousQuestions.length > 0) {
+    previousContext = `\nDomande già presenti nel quiz (da evitare):\n${previousQuestions
+      .map((q: any, i: number) => `#${i + 1}: ${q.question}`)
+      .join("\n")}`;
+  }
+  const prompt = `Genera una domanda di tipo ${type} per un quiz intitolato "${quizTitle}" per la posizione "${positionTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
+    ", "
+  )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.`;
+  const { object: question } = await generateObject({
+    model: groq("llama3-70b-8192"),
+    prompt,
+    system:
+      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera una domanda pertinente, sfidante ma equa, con risposta corretta.",
+    schema: questionSchema,
+  });
+  return question;
+}
+
 export async function deleteQuiz(id: string) {
   const supabase = await createClient();
 
@@ -161,60 +217,4 @@ export async function updateQuizAction(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath(`/dashboard/quizzes/${quizId}`);
   redirect(`/dashboard/quizzes/${quizId}`);
-}
-
-export async function generateNewQuestionAction(
-  quizTitle: string,
-  positionTitle: string,
-  experienceLevel: string,
-  skills: string[],
-  type: "multiple_choice" | "open_question" | "code_snippet",
-  previousQuestions?: any[],
-  currentIndex?: number
-) {
-  let previousContext = "";
-  if (previousQuestions && previousQuestions.length > 0) {
-    previousContext = `\nDomande già presenti nel quiz (da evitare):\n${previousQuestions
-      .map((q: any, i: number) => `#${i + 1}: ${q.question}`)
-      .join("\n")}`;
-  }
-  const prompt = `Genera una domanda di tipo ${type} per un quiz intitolato "${quizTitle}" per la posizione "${positionTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
-    ", "
-  )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.`;
-  const { object: question } = await generateObject({
-    model: groq("llama3-70b-8192"),
-    prompt,
-    system:
-      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera una domanda pertinente, sfidante ma equa, con risposta corretta.",
-    schema: questionSchema,
-  });
-  return question;
-}
-
-export async function generateNewQuizAction(
-  positionId: string,
-  quizTitle: string,
-  experienceLevel: string,
-  skills: string[],
-  questionCount: number,
-  difficulty: number,
-  previousQuestions?: { question: string }[]
-) {
-  let previousContext = "";
-  if (previousQuestions && previousQuestions.length > 0) {
-    previousContext = `\nDomande già presenti nel quiz precedente (da evitare):\n${previousQuestions
-      .map((q, i) => `#${i + 1}: ${q.question}`)
-      .join("\n")}`;
-  }
-  const prompt = `Genera un quiz tecnico diverso dal precedente per la posizione "${quizTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
-    ", "
-  )}. Numero di domande: ${questionCount}. Difficoltà: ${difficulty}.${previousContext}\nLe nuove domande devono essere diverse da quelle già presenti.`;
-  const { object: quizData } = await generateObject({
-    model: groq("llama3-70b-8192"),
-    prompt,
-    system:
-      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera quiz pertinenti, sfidanti ma equi, con domande chiare e risposte corrette.",
-    schema: quizDataSchema,
-  });
-  return quizData;
 }

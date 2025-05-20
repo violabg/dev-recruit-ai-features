@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { generateQuiz } from "@/lib/actions/quizzes";
+import { generateAndSaveQuiz } from "@/lib/actions/quizzes";
 import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { toast } from "sonner";
 
@@ -144,7 +144,7 @@ export default function GenerateQuizPage({
       formData.append("enable_time_limit", values.enableTimeLimit.toString());
       formData.append("time_limit", values.timeLimit.toString());
 
-      await generateQuiz(formData);
+      await generateAndSaveQuiz(formData);
     } catch (error: any) {
       console.error("Error generating quiz:", error);
       toast.error("Errore", {
