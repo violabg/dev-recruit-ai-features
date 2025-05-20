@@ -1,9 +1,6 @@
-"use client";
-
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 
 import { InvitesList } from "@/components/interview/invites-list";
 import { SendInviteForm } from "@/components/interview/send-invite-form";
@@ -16,8 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSupabase } from "@/lib/supabase/supabase-provider";
-import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/server";
 
 interface Quiz {
   id: string;
@@ -31,66 +27,56 @@ interface Position {
   title: string;
 }
 
-export default function InviteCandidatesPage({
+export default async function InviteCandidatesPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const router = useRouter();
-  const { supabase, user } = useSupabase();
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [position, setPosition] = useState<Position | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { id } = await params; // Destructure id from params
+  const supabase = await createClient(); // Assuming createClient is synchronous
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!supabase || !user) return;
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-      try {
-        setLoading(true);
+  if (userError || !user) {
+    return redirect("/login");
+  }
 
-        // Fetch quiz details
-        const { data: quizData, error: quizError } = await supabase
-          .from("quizzes")
-          .select("id, title, position_id, time_limit")
-          .eq("id", params.id)
-          .single();
+  let quiz: Quiz | null = null;
+  let position: Position | null = null;
 
-        if (quizError) throw quizError;
-        setQuiz(quizData);
+  try {
+    // Fetch quiz details
+    const { data: quizData, error: quizError } = await supabase
+      .from("quizzes")
+      .select("id, title, position_id, time_limit")
+      .eq("id", id) // Use destructured id
+      .single();
 
-        // Fetch position details
-        const { data: positionData, error: positionError } = await supabase
-          .from("positions")
-          .select("id, title")
-          .eq("id", quizData.position_id)
-          .single();
+    if (quizError) throw quizError;
+    quiz = quizData;
 
-        if (positionError) throw positionError;
-        setPosition(positionData);
-      } catch (error: any) {
-        toast.error("Error", {
-          description: error.message || "Failed to load data",
-        });
-        router.push(`/dashboard/quizzes/${params.id}`);
-      } finally {
-        setLoading(false);
-      }
+    // Fetch position details
+    const { data: positionData, error: positionError } = await supabase
+      .from("positions")
+      .select("id, title")
+      .eq("id", quizData.position_id) // Use quizData directly as it's guaranteed to be non-null if no error
+      .single();
+
+    if (positionError) throw positionError;
+    position = positionData;
+  } catch (error: unknown) {
+    let errorMessage = "Failed to load data";
+    if (error instanceof Error) {
+      errorMessage = error.message;
     }
-
-    fetchData();
-  }, [supabase, user, params.id, router]);
-
-  const handleSuccess = () => {
-    setRefreshTrigger((prev) => prev + 1);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
+    console.error("Error fetching data:", errorMessage);
+    // It's generally better to redirect to a dedicated error page or show a generic error message
+    // For now, redirecting with a query param as per previous logic
+    return redirect(
+      `/dashboard/quizzes/${id}?error=${encodeURIComponent(errorMessage)}` // Use destructured id
     );
   }
 
@@ -109,7 +95,9 @@ export default function InviteCandidatesPage({
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/dashboard/quizzes/${params.id}`}>
+          <Link href={`/dashboard/quizzes/${id}`}>
+            {" "}
+            {/* Use destructured id */}
             <ArrowLeft className="mr-1 h-4 w-4" />
             Back to quiz
           </Link>
@@ -139,7 +127,7 @@ export default function InviteCandidatesPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SendInviteForm quizId={quiz.id} onSuccess={handleSuccess} />
+              <SendInviteForm quizId={quiz.id} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -153,7 +141,7 @@ export default function InviteCandidatesPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InvitesList quizId={quiz.id} refreshTrigger={refreshTrigger} />
+              <InvitesList quizId={quiz.id} />
             </CardContent>
           </Card>
         </TabsContent>
