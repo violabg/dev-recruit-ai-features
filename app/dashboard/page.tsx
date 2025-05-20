@@ -6,26 +6,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Database } from "@/lib/supabase/types/database.types";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { BarChart3, Briefcase, Plus, Users } from "lucide-react";
-import { cookies } from "next/headers";
 import Link from "next/link";
 
 // Server component for dashboard stats
 async function DashboardStats() {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -101,18 +88,7 @@ async function DashboardStats() {
 
 // Server component for recent positions
 async function RecentPositions() {
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -180,23 +156,15 @@ async function RecentPositions() {
 
 // Main dashboard page (server component)
 export default async function DashboardPage() {
-  // Get the current user from server-side
-  const cookieStore = cookies();
-  const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
