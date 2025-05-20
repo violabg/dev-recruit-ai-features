@@ -129,14 +129,10 @@ export function InterviewResultsClient({
     for (const question of quizQuestions) {
       if (
         question.type === "multiple_choice" &&
-        answers[question.id] !== undefined
+        answers[question.id] !== undefined &&
+        parseInt(answers[question.id]) === question.correctAnswer
       ) {
-        const givenAnswerOptionIndex = Number.parseInt(answers[question.id]);
-        const isCorrect =
-          question.correctAnswer === question.options[givenAnswerOptionIndex];
-        if (isCorrect) {
-          count++;
-        }
+        count++;
       }
     }
     return count;
@@ -438,7 +434,7 @@ export function InterviewResultsClient({
                                   Risposta corretta:
                                 </div>
                                 <div className="rounded-md border border-green-500 bg-green-50 p-3 dark:bg-green-950/20">
-                                  {question.correctAnswer}
+                                  {question.options[question.correctAnswer]}
                                 </div>
                                 {question.explanation && (
                                   <div className="text-sm text-muted-foreground">

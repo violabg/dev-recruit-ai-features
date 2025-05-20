@@ -261,11 +261,27 @@ export async function sendBulkInvites(formData: FormData) {
   const supabase = await createClient();
 
   try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
     const quizId = formData.get("quiz_id") as string;
-    const emails = ((formData.get("emails") as string) || "")
+    const emailsRaw = (formData.get("emails") as string) || "";
+    const emails = emailsRaw
       .split(/[,;\n]/)
       .map((email) => email.trim())
       .filter(Boolean);
+
+    // Validate emails
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const email of emails) {
+      if (!emailRegex.test(email)) {
+        throw new Error(`Invalid email format: ${email}`);
+      }
+    }
     const message = (formData.get("message") as string) || "";
     const sendEmailNotification = formData.get("send_email") === "on";
 
@@ -298,6 +314,12 @@ export async function sendBulkInvites(formData: FormData) {
             .eq("position_id", quiz.position_id)
             .maybeSingle();
 
+        if (candidateError) {
+          throw new Error(
+            `Error fetching candidate for ${email}: ${candidateError.message}`
+          );
+        }
+
         let candidateId: string;
         let candidateName: string;
 
@@ -309,18 +331,28 @@ export async function sendBulkInvites(formData: FormData) {
           // Create new candidate
           const name = email.split("@")[0]; // Use part before @ as name
 
-          const { data: newCandidate, error: createError } = await supabase
-            .from("candidates")
-            .insert({
-              name: name,
-              email: email,
-              position_id: quiz.position_id,
-              status: "invited",
-            })
-            .select();
+          const { data: newCandidate, error: createCandidateError } =
+            await supabase
+              .from("candidates")
+              .insert({
+                name: name,
+                email: email,
+                position_id: quiz.position_id,
+                status: "invited",
+                created_by: user.id,
+              })
+              .select("id");
 
-          if (createError || !newCandidate || newCandidate.length === 0) {
-            throw new Error(`Failed to create candidate for ${email}`);
+          if (
+            createCandidateError ||
+            !newCandidate ||
+            newCandidate.length === 0
+          ) {
+            throw new Error(
+              `Failed to create candidate for ${email}${
+                createCandidateError ? `: ${createCandidateError.message}` : ""
+              }`
+            );
           }
 
           candidateId = newCandidate[0].id;
@@ -328,12 +360,19 @@ export async function sendBulkInvites(formData: FormData) {
         }
 
         // Check if interview already exists
-        const { data: existingInterview, error: existingError } = await supabase
-          .from("interviews")
-          .select("id, token")
-          .eq("candidate_id", candidateId)
-          .eq("quiz_id", quizId)
-          .maybeSingle();
+        const { data: existingInterview, error: existingInterviewError } =
+          await supabase
+            .from("interviews")
+            .select("id, token")
+            .eq("candidate_id", candidateId)
+            .eq("quiz_id", quizId)
+            .maybeSingle();
+
+        if (existingInterviewError) {
+          throw new Error(
+            `Error fetching interview for ${email}: ${existingInterviewError.message}`
+          );
+        }
 
         let interviewToken: string;
 
@@ -342,21 +381,36 @@ export async function sendBulkInvites(formData: FormData) {
           interviewToken = existingInterview.token;
         } else {
           // Create new interview
-          const { data: newInterview, error: createError } = await supabase
-            .from("interviews")
-            .insert({
-              candidate_id: candidateId,
-              quiz_id: quizId,
-              status: "pending",
-            })
-            .select();
+          const token =
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15);
 
-          if (createError || !newInterview || newInterview.length === 0) {
-            throw new Error(`Failed to create interview for ${email}`);
+          const { data: newInterview, error: createInterviewError } =
+            await supabase
+              .from("interviews")
+              .insert({
+                candidate_id: candidateId,
+                quiz_id: quizId,
+                status: "pending",
+                token: token,
+              })
+              .select("token");
+
+          if (
+            createInterviewError ||
+            !newInterview ||
+            newInterview.length === 0
+          ) {
+            throw new Error(
+              `Failed to create interview for ${email}${
+                createInterviewError ? `: ${createInterviewError.message}` : ""
+              }`
+            );
           }
 
           interviewToken = newInterview[0].token;
         }
+        // console.log("🚀 ~ sendBulkInvites ~ interviewToken:", interviewToken);
 
         // Send email if requested
         if (sendEmailNotification) {
@@ -412,11 +466,14 @@ export async function sendBulkInvites(formData: FormData) {
           success: true,
           token: interviewToken,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           email,
           success: false,
-          error: error.message,
+          error:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
         });
       }
     }
@@ -427,11 +484,12 @@ export async function sendBulkInvites(formData: FormData) {
       success: true,
       results,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error sending bulk invites:", error);
     return {
       success: false,
-      error: error.message,
+      error:
+        error instanceof Error ? error.message : "An unknown error occurred",
     };
   }
 }

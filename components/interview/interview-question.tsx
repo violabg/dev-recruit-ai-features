@@ -1,51 +1,85 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
 
 interface QuestionProps {
-  question: any
-  questionNumber: number
-  onAnswer: (answer: any) => void
-  currentAnswer: any
+  question: any;
+  questionNumber: number;
+  onAnswer: (answer: any) => void;
+  currentAnswer: any;
 }
 
-export function InterviewQuestion({ question, questionNumber, onAnswer, currentAnswer }: QuestionProps) {
-  const [answer, setAnswer] = useState<any>(currentAnswer || null)
+export function InterviewQuestion({
+  question,
+  questionNumber,
+  onAnswer,
+  currentAnswer,
+}: QuestionProps) {
+  // Reset answer and code when question changes
+  const [answer, setAnswer] = useState<any>(currentAnswer || null);
   const [code, setCode] = useState<string>(
-    currentAnswer?.code || question.type === "code_snippet" ? question.codeSnippet || "" : "",
-  )
+    currentAnswer?.code ??
+      (question.type === "code_snippet" ? question.codeSnippet || "" : "")
+  );
+
+  // Reset state when question changes
+  useEffect(() => {
+    setAnswer(currentAnswer || null);
+    setCode(
+      currentAnswer?.code ??
+        (question.type === "code_snippet" ? question.codeSnippet || "" : "")
+    );
+  }, [question, currentAnswer]);
 
   const handleSubmitAnswer = () => {
     if (question.type === "multiple_choice") {
-      onAnswer(answer)
+      onAnswer(answer);
     } else if (question.type === "open_question") {
-      onAnswer(answer)
+      onAnswer(answer);
     } else if (question.type === "code_snippet") {
-      onAnswer({ code })
+      onAnswer({ code });
     }
-  }
+  };
 
   return (
-    <Card>
+    <Card key={questionNumber}>
       <CardHeader>
         <CardTitle className="text-xl">
           {questionNumber}. {question.question}
         </CardTitle>
         {question.type === "code_snippet" && (
-          <CardDescription>{question.language && <span>Linguaggio: {question.language}</span>}</CardDescription>
+          <CardDescription>
+            {question.language && <span>Linguaggio: {question.language}</span>}
+          </CardDescription>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
         {question.type === "multiple_choice" && (
-          <RadioGroup value={answer?.toString()} onValueChange={(value) => setAnswer(value)} className="space-y-3">
+          <RadioGroup
+            value={answer?.toString()}
+            onValueChange={(value) => setAnswer(value)}
+            className="space-y-3"
+          >
             {question.options.map((option: string, index: number) => (
-              <div key={index} className="flex items-center space-x-2 rounded-md border p-3">
-                <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+              <div
+                key={index}
+                className="flex items-center space-x-2 rounded-md border p-3"
+              >
+                <RadioGroupItem
+                  value={index.toString()}
+                  id={`option-${index}`}
+                />
                 <Label htmlFor={`option-${index}`} className="flex-1">
                   {option}
                 </Label>
@@ -86,11 +120,14 @@ export function InterviewQuestion({ question, questionNumber, onAnswer, currentA
         )}
 
         <div className="flex justify-end">
-          <Button onClick={handleSubmitAnswer} disabled={answer === null && code === ""}>
+          <Button
+            onClick={handleSubmitAnswer}
+            disabled={answer === null && code === ""}
+          >
             Salva risposta
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
