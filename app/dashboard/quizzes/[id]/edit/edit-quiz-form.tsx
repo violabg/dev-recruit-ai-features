@@ -257,7 +257,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
+                <div className="flex flex-col gap-2">
                   <label className="font-medium">Domanda</label>
                   <Textarea
                     {...form.register(`questions.${index}.question`)}
@@ -265,11 +265,14 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                   />
                 </div>
                 {field.type === "multiple_choice" && (
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <label className="font-medium">Opzioni</label>
-                    <div className="space-y-2 mt-1">
+                    <div className="flex flex-col gap-4 items-start">
                       {field.options?.map((opt, optIdx) => (
-                        <div key={optIdx} className="flex items-center gap-2">
+                        <div
+                          key={optIdx}
+                          className="flex items-center gap-2 w-full"
+                        >
                           <Input
                             {...form.register(
                               `questions.${index}.options.${optIdx}`
@@ -308,7 +311,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                         + Aggiungi opzione
                       </Button>
                     </div>
-                    <div className="mt-2">
+                    <div className="flex flex-col gap-2 mt-2">
                       <label className="font-medium">
                         Risposta corretta (indice)
                       </label>
@@ -318,7 +321,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                         className="w-24"
                       />
                     </div>
-                    <div className="mt-2">
+                    <div className="flex flex-col gap-2 mt-2">
                       <label className="font-medium">Spiegazione</label>
                       <Textarea
                         {...form.register(`questions.${index}.explanation`)}
@@ -328,13 +331,13 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                   </div>
                 )}
                 {field.type === "open_question" && (
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <label className="font-medium">Risposta di esempio</label>
                     <Textarea
                       {...form.register(`questions.${index}.sampleAnswer`)}
                       className="mt-1"
                     />
-                    <div className="mt-2">
+                    <div className="flex flex-col gap-2 mt-2">
                       <label className="font-medium">
                         Parole chiave (separate da virgola)
                       </label>
@@ -353,14 +356,14 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                 )}
                 {field.type === "code_snippet" && (
                   <div className="space-y-2">
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <label className="font-medium">Snippet di codice</label>
                       <Textarea
                         {...form.register(`questions.${index}.codeSnippet`)}
                         className="mt-1"
                       />
                     </div>
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <label className="font-medium">
                         Soluzione di esempio
                       </label>
@@ -369,7 +372,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                         className="mt-1"
                       />
                     </div>
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <label className="font-medium">
                         Test case (JSON array)
                       </label>
