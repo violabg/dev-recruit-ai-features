@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { prismLanguage } from "@/lib/utils";
+import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -194,9 +196,54 @@ export function InterviewMonitor({
                     )}
 
                     {question.type === "code_snippet" && (
-                      <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
-                        <code>{answers[question.id].code}</code>
-                      </pre>
+                      <Highlight
+                        theme={themes.vsDark}
+                        code={answers[question.id].code}
+                        language={prismLanguage(question.language)}
+                      >
+                        {({
+                          className,
+                          style,
+                          tokens,
+                          getLineProps,
+                          getTokenProps,
+                        }) => (
+                          <pre
+                            className={
+                              "p-4 rounded-lg font-mono text-sm bg-[oklch(0.18_0.02_260)] text-[oklch(0.95_0_0)] border border-[oklch(0.3_0.02_260)] " +
+                              className
+                            }
+                            style={style}
+                          >
+                            <code>
+                              {tokens.map((line, i) => {
+                                const { key: lineKey, ...lineProps } =
+                                  getLineProps({
+                                    line,
+                                    key: i,
+                                  });
+                                return (
+                                  <div key={String(lineKey)} {...lineProps}>
+                                    {line.map((token, key) => {
+                                      const { key: tokenKey, ...rest } =
+                                        getTokenProps({
+                                          token,
+                                          key,
+                                        });
+                                      return (
+                                        <span
+                                          key={String(tokenKey)}
+                                          {...rest}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })}
+                            </code>
+                          </pre>
+                        )}
+                      </Highlight>
                     )}
                   </div>
                 ) : (
