@@ -74,7 +74,7 @@ export default async function InterviewDetailPage({
       questions,
       time_limit,
       position:positions(title)
-    `
+      `
     )
     .eq("id", interview.quiz_id)
     .single();

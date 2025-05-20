@@ -364,3 +364,13 @@ export type Candidate = Tables<"candidates">;
 export type Position = Tables<"positions">;
 export type Quiz = Tables<"quizzes">;
 export type Profile = Tables<"profiles">;
+export type Question = {
+  id: string;
+  type: "code_snippet" | "multiple_choice" | "open_question";
+  keywords: string[];
+  options?: string[];
+  language: string;
+  question: string;
+  explanation: string;
+  correctAnswer: string;
+};
