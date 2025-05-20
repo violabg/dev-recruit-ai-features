@@ -1,5 +1,4 @@
-import type { Database } from "@/lib/supabase/types";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -22,7 +21,7 @@ export async function GET(
       );
     }
 
-    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+    const supabase = await createClient();
 
     // Fetch interview details
     const { data: interview, error: interviewError } = await supabase
@@ -107,7 +106,7 @@ export async function POST(
       );
     }
 
-    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+    const supabase = await createClient();
 
     // Fetch interview details
     const { data: interview, error: interviewError } = await supabase
