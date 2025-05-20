@@ -14,8 +14,46 @@ import {
   evaluateAnswer,
   generateOverallEvaluation,
 } from "@/lib/actions/evaluations";
+import { Highlight, themes } from "prism-react-renderer";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const prismLanguage = (language: string) => {
+  switch ((language || "").toLowerCase()) {
+    case "javascript":
+    case "js":
+      return "javascript";
+    case "typescript":
+    case "ts":
+      return "typescript";
+    case "python":
+    case "py":
+      return "python";
+    case "java":
+      return "java";
+    case "c#":
+    case "csharp":
+      return "csharp";
+    case "cpp":
+    case "c++":
+      return "cpp";
+    case "go":
+      return "go";
+    case "ruby":
+      return "ruby";
+    case "php":
+      return "php";
+    case "swift":
+      return "swift";
+    case "kotlin":
+      return "kotlin";
+    case "html":
+    case "css":
+      return "markup";
+    default:
+      return "javascript";
+  }
+};
 
 interface InterviewResultsClientProps {
   interviewId: string;
@@ -29,6 +67,7 @@ export function InterviewResultsClient({
   answers,
   candidateName,
 }: InterviewResultsClientProps) {
+  console.log("🚀 ~ quizQuestions:", quizQuestions);
   const [loading, setLoading] = useState(false);
   const [evaluations, setEvaluations] = useState<Record<string, any>>({});
   const [overallEvaluation, setOverallEvaluation] = useState<any | null>(null);
@@ -370,9 +409,59 @@ export function InterviewResultsClient({
                               )}
 
                               {question.type === "code_snippet" && (
-                                <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
-                                  <code>{answers[question.id].code}</code>
-                                </pre>
+                                <Highlight
+                                  theme={themes.vsDark}
+                                  code={answers[question.id].code}
+                                  language={prismLanguage(question.language)}
+                                >
+                                  {({
+                                    className,
+                                    style,
+                                    tokens,
+                                    getLineProps,
+                                    getTokenProps,
+                                  }) => (
+                                    <pre
+                                      className={
+                                        "p-4 rounded-lg font-mono text-sm bg-[oklch(0.18_0.02_260)] text-[oklch(0.95_0_0)] border border-[oklch(0.3_0.02_260)] " +
+                                        className
+                                      }
+                                      style={style}
+                                    >
+                                      <code>
+                                        {tokens.map((line, i) => {
+                                          const { key: lineKey, ...lineProps } =
+                                            getLineProps({
+                                              line,
+                                              key: i,
+                                            });
+                                          return (
+                                            <div
+                                              key={String(lineKey)}
+                                              {...lineProps}
+                                            >
+                                              {line.map((token, key) => {
+                                                const {
+                                                  key: tokenKey,
+                                                  ...rest
+                                                } = getTokenProps({
+                                                  token,
+                                                  key,
+                                                });
+                                                return (
+                                                  <span
+                                                    key={String(tokenKey)}
+                                                    {...rest}
+                                                  />
+                                                );
+                                              })}
+                                            </div>
+                                          );
+                                        })}
+                                      </code>
+                                    </pre>
+                                  )}
+                                </Highlight>
                               )}
                             </div>
 
