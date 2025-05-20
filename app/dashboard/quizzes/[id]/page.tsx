@@ -19,7 +19,7 @@ import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { ArrowLeft, Clock, Edit, Loader2, Send, Trash } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface Quiz {
@@ -38,8 +38,6 @@ interface Position {
   experience_level: string;
 }
 
-import React from "react";
-
 export default function QuizDetailPage({
   params,
 }: {
@@ -51,7 +49,7 @@ export default function QuizDetailPage({
   const [position, setPosition] = useState<Position | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const unwrappedParams = React.use(params);
+  const unwrappedParams = use(params);
 
   useEffect(() => {
     async function fetchQuizData() {
@@ -257,15 +255,15 @@ export default function QuizDetailPage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <h3 className="font-medium">Domanda:</h3>
                     <p className="mt-1">{question.question}</p>
                   </div>
 
                   {question.type === "multiple_choice" && (
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <h3 className="font-medium">Opzioni:</h3>
-                      <div className="mt-2 space-y-2">
+                      <div className="flex flex-col gap-4 mt-2">
                         {question.options.map(
                           (option: string, optIndex: number) => (
                             <div
@@ -307,7 +305,7 @@ export default function QuizDetailPage({
                         )}
                       </div>
                       {question.explanation && (
-                        <div className="mt-2">
+                        <div className="flex flex-col gap-2 mt-2">
                           <h3 className="font-medium">Spiegazione:</h3>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {question.explanation}
@@ -318,11 +316,13 @@ export default function QuizDetailPage({
                   )}
 
                   {question.type === "open_question" && (
-                    <div>
+                    <div className="flex flex-col gap-2">
                       <h3 className="font-medium">Risposta di esempio:</h3>
-                      <p className="mt-1 text-sm">{question.sampleAnswer}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {question.explanation}
+                      </p>
                       {question.keywords && question.keywords.length > 0 && (
-                        <div className="mt-2">
+                        <div className="flex flex-col gap-2 mt-2">
                           <h3 className="font-medium">Parole chiave:</h3>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {question.keywords.map(
@@ -341,7 +341,7 @@ export default function QuizDetailPage({
                   {question.type === "code_snippet" && (
                     <div className="space-y-3">
                       {question.codeSnippet && (
-                        <div>
+                        <div className="flex flex-col gap-2">
                           <h3 className="font-medium">Snippet di codice:</h3>
                           <pre className="mt-1 overflow-x-auto rounded-md bg-muted p-2 text-sm">
                             <code>{question.codeSnippet}</code>
@@ -349,7 +349,7 @@ export default function QuizDetailPage({
                         </div>
                       )}
                       {question.sampleSolution && (
-                        <div>
+                        <div className="flex flex-col gap-2">
                           <h3 className="font-medium">Soluzione di esempio:</h3>
                           <pre className="mt-1 overflow-x-auto rounded-md bg-muted p-2 text-sm">
                             <code>{question.sampleSolution}</code>
@@ -357,9 +357,9 @@ export default function QuizDetailPage({
                         </div>
                       )}
                       {question.testCases && question.testCases.length > 0 && (
-                        <div>
+                        <div className="flex flex-col gap-2">
                           <h3 className="font-medium">Test case:</h3>
-                          <div className="mt-1 space-y-2">
+                          <div className="flex flex-col gap-4 mt-1">
                             {question.testCases.map(
                               (testCase: any, tcIndex: number) => (
                                 <div

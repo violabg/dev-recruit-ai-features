@@ -6,35 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { questionSchema } from "@/lib/actions/quiz-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-// import { useRouter } from "next/navigation";
-
-const questionSchema = z.object({
-  id: z.string(),
-  type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
-  question: z.string(),
-  options: z.array(z.string()).optional(),
-  correctAnswer: z.string().optional(),
-  explanation: z.string().optional(),
-  sampleAnswer: z.string().optional(),
-  keywords: z.array(z.string()).optional(),
-  language: z.string().optional(),
-  codeSnippet: z.string().optional(),
-  sampleSolution: z.string().optional(),
-  testCases: z
-    .array(
-      z.object({
-        input: z.string(),
-        expectedOutput: z.string(),
-      })
-    )
-    .optional(),
-});
 
 const quizSchema = z.object({
   id: z.string(),

@@ -1,4 +1,4 @@
-import { updateQuizAction } from "@/lib/actions/quiz-edit";
+import { updateQuizAction } from "@/lib/actions/quizzes";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
