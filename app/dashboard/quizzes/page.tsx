@@ -26,11 +26,14 @@ export default async function QuizzesPage({
 
   const { quizzes, fetchError, uniqueLevels, positionCounts } =
     await fetchQuizzesData({ search, sort, filter });
+  console.log("🚀 ~ uniqueLevels:", uniqueLevels);
+  console.log("🚀 ~ quizzes:", quizzes);
+  console.log("🚀 ~ positionCounts:", positionCounts);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold">Quiz</h1>
+      <div className="flex sm:flex-row flex-col sm:justify-between sm:items-center gap-2">
+        <h1 className="font-bold text-3xl">Quiz</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href="/dashboard/positions">Posizioni</Link>
@@ -41,11 +44,11 @@ export default async function QuizzesPage({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[1fr_250px]">
+      <div className="gap-4 grid md:grid-cols-[1fr_250px]">
         <div className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex sm:flex-row flex-col gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="top-2.5 left-2.5 absolute w-4 h-4 text-muted-foreground" />
               <form>
                 <Input
                   type="search"
@@ -62,7 +65,7 @@ export default async function QuizzesPage({
                   <Select name="sort" defaultValue={sort}>
                     <SelectTrigger>
                       <div className="flex items-center gap-2">
-                        <ArrowUpDown className="h-4 w-4" />
+                        <ArrowUpDown className="w-4 h-4" />
                         <SelectValue placeholder="Ordina" />
                       </div>
                     </SelectTrigger>
@@ -80,7 +83,7 @@ export default async function QuizzesPage({
                   <Select name="filter" defaultValue={filter}>
                     <SelectTrigger>
                       <div className="flex items-center gap-2">
-                        <Filter className="h-4 w-4" />
+                        <Filter className="w-4 h-4" />
                         <SelectValue placeholder="Filtra" />
                       </div>
                     </SelectTrigger>
@@ -95,25 +98,30 @@ export default async function QuizzesPage({
                   </Select>
                 </form>
               </div>
+              {(search || filter !== "all") && (
+                <Button variant="outlineDestructive" asChild>
+                  <Link href="/dashboard/quizzes">Resetta</Link>
+                </Button>
+              )}
             </div>
           </div>
 
           {fetchError ? (
-            <div className="rounded-md bg-destructive/15 p-4 text-destructive">
+            <div className="bg-destructive/15 p-4 rounded-md text-destructive">
               <p>
                 Si è verificato un errore nel caricamento dei quiz: {fetchError}
               </p>
             </div>
           ) : quizzes && quizzes.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
+            <div className="gap-4 grid md:grid-cols-1 2xl:grid-cols-3 xl:grid-cols-2">
               {quizzes.map((quiz) => (
                 <QuizCard key={quiz.id} quiz={quiz} />
               ))}
             </div>
           ) : (
-            <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed">
+            <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[300px]">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {search || filter !== "all"
                     ? "Nessun quiz trovato con i criteri di ricerca specificati."
                     : "Nessun quiz creato. Crea un quiz per una posizione."}
@@ -167,7 +175,7 @@ export default async function QuizzesPage({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Nessun dato disponibile
                 </p>
               )}
@@ -181,14 +189,14 @@ export default async function QuizzesPage({
             <CardContent>
               <div className="space-y-2">
                 <Button
-                  className="w-full justify-start"
+                  className="justify-start w-full"
                   variant="outline"
                   asChild
                 >
                   <Link href="/dashboard/positions">Crea nuovo quiz</Link>
                 </Button>
                 <Button
-                  className="w-full justify-start"
+                  className="justify-start w-full"
                   variant="outline"
                   asChild
                 >
