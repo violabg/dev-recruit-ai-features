@@ -15,9 +15,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteQuiz } from "@/lib/actions/quizzes";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/utils";
+import { formatDate, prismLanguage } from "@/lib/utils";
 import { ArrowLeft, Clock, Edit, Send, Trash } from "lucide-react";
 import Link from "next/link";
+import { Highlight, themes } from "prism-react-renderer";
 
 type Quiz = {
   id: string;
@@ -269,17 +270,107 @@ export default async function QuizDetailPage({
                       {question.codeSnippet && (
                         <div className="flex flex-col gap-2">
                           <h3 className="font-medium">Snippet di codice:</h3>
-                          <pre className="mt-1 overflow-x-auto rounded-md bg-muted p-2 text-sm">
-                            <code>{question.codeSnippet}</code>
-                          </pre>
+                          <Highlight
+                            theme={themes.vsDark}
+                            code={question.codeSnippet}
+                            language={prismLanguage(question.language)}
+                          >
+                            {({
+                              className,
+                              style,
+                              tokens,
+                              getLineProps,
+                              getTokenProps,
+                            }) => (
+                              <pre
+                                className={
+                                  "mt-1 overflow-x-auto rounded-md bg-muted p-4 text-sm" +
+                                  className
+                                }
+                                style={style}
+                              >
+                                <code>
+                                  {tokens.map((line, i) => {
+                                    const { key: lineKey, ...lineProps } =
+                                      getLineProps({
+                                        line,
+                                        key: i,
+                                      });
+                                    return (
+                                      <div key={String(lineKey)} {...lineProps}>
+                                        {line.map((token, key) => {
+                                          const { key: tokenKey, ...rest } =
+                                            getTokenProps({
+                                              token,
+                                              key,
+                                            });
+                                          return (
+                                            <span
+                                              key={String(tokenKey)}
+                                              {...rest}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  })}
+                                </code>
+                              </pre>
+                            )}
+                          </Highlight>
                         </div>
                       )}
                       {question.sampleSolution && (
                         <div className="flex flex-col gap-2">
                           <h3 className="font-medium">Soluzione di esempio:</h3>
-                          <pre className="mt-1 overflow-x-auto rounded-md bg-muted p-2 text-sm">
-                            <code>{question.sampleSolution}</code>
-                          </pre>
+                          <Highlight
+                            theme={themes.vsDark}
+                            code={question.sampleSolution}
+                            language={prismLanguage(question.language)}
+                          >
+                            {({
+                              className,
+                              style,
+                              tokens,
+                              getLineProps,
+                              getTokenProps,
+                            }) => (
+                              <pre
+                                className={
+                                  "mt-1 overflow-x-auto rounded-md bg-muted p-4 text-sm" +
+                                  className
+                                }
+                                style={style}
+                              >
+                                <code>
+                                  {tokens.map((line, i) => {
+                                    const { key: lineKey, ...lineProps } =
+                                      getLineProps({
+                                        line,
+                                        key: i,
+                                      });
+                                    return (
+                                      <div key={String(lineKey)} {...lineProps}>
+                                        {line.map((token, key) => {
+                                          const { key: tokenKey, ...rest } =
+                                            getTokenProps({
+                                              token,
+                                              key,
+                                            });
+                                          return (
+                                            <span
+                                              key={String(tokenKey)}
+                                              {...rest}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  })}
+                                </code>
+                              </pre>
+                            )}
+                          </Highlight>
                         </div>
                       )}
                       {question.testCases && question.testCases.length > 0 && (
