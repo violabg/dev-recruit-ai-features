@@ -158,7 +158,6 @@ export async function generateNewQuizAction({
                   Se previousQuestions è fornito, assicurati che le nuove domande siano significativamente diverse.
                   IMPORTANTE: Per le domande di tipo 'multiple_choice', il campo 'correctAnswer' DEVE essere l'indice numerico (basato su zero) della risposta corretta nell'array 'options'.
                   `;
-  console.log("🚀 ~ prompt:", prompt);
 
   const { object: quizData } = await generateObject({
     model: groq("llama3-70b-8192"),
