@@ -1,5 +1,3 @@
-"use client";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,15 +13,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSupabase } from "@/lib/supabase/supabase-provider";
+import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, Clock, Edit, Loader2, Send, Trash } from "lucide-react";
+import { ArrowLeft, Clock, Edit, Send, Trash } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { use, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { redirect } from "next/navigation";
 
-interface Quiz {
+// --- Server action for deleting quiz ---
+const deleteQuiz = async (formData: FormData) => {
+  "use server";
+  const id = formData.get("quiz_id");
+  if (!id || typeof id !== "string") return;
+  const supabase = await createClient();
+  await supabase.from("quizzes").delete().eq("id", id);
+  redirect("/dashboard/quizzes");
+};
+
+type Quiz = {
   id: string;
   title: string;
   position_id: string;
@@ -31,109 +37,51 @@ interface Quiz {
   time_limit: number | null;
   created_at: string;
   created_by: string;
-}
+};
 
-interface Position {
+type Position = {
   id: string;
   title: string;
   experience_level: string;
-}
+};
 
-export default function QuizDetailPage({
+export default async function QuizDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const router = useRouter();
-  const { supabase, user } = useSupabase();
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [position, setPosition] = useState<Position | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
-  const unwrappedParams = use(params);
+  const { id } = await Promise.resolve(params);
+  const supabase = await createClient();
 
-  useEffect(() => {
-    async function fetchQuizData() {
-      if (!supabase || !user) return;
+  // Fetch quiz details
+  const { data: quiz, error: quizError } = await supabase
+    .from("quizzes")
+    .select("*")
+    .eq("id", id)
+    .single<Quiz>();
 
-      try {
-        setLoading(true);
-
-        // Fetch quiz details
-        const { data: quizData, error: quizError } = await supabase
-          .from("quizzes")
-          .select("*")
-          .eq("id", unwrappedParams.id)
-          .single();
-
-        if (quizError) throw quizError;
-        if (!quizData) throw new Error("Quiz non trovato");
-
-        setQuiz(quizData);
-
-        // Fetch position details
-        const { data: positionData, error: positionError } = await supabase
-          .from("positions")
-          .select("id, title, experience_level")
-          .eq("id", quizData.position_id)
-          .single();
-
-        if (positionError) throw positionError;
-        setPosition(positionData);
-      } catch (error: any) {
-        toast.error("Errore", {
-          description: error.message || "Impossibile caricare i dati del quiz",
-        });
-        router.push("/dashboard/quizzes");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchQuizData();
-  }, [supabase, user, unwrappedParams.id, router]);
-
-  const handleDelete = async () => {
-    if (!supabase || !quiz) return;
-
-    try {
-      setDeleting(true);
-
-      // Delete the quiz
-      const { error } = await supabase
-        .from("quizzes")
-        .delete()
-        .eq("id", quiz.id);
-
-      if (error) throw error;
-
-      toast.success("Quiz eliminato", {
-        description: "Il quiz è stato eliminato con successo",
-      });
-
-      router.push("/dashboard/quizzes");
-    } catch (error: any) {
-      toast.error("Errore", {
-        description:
-          error.message || "Si è verificato un errore durante l'eliminazione",
-      });
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  if (loading) {
+  if (quizError || !quiz) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex h-[400px] flex-col items-center justify-center">
+        <p className="text-lg font-medium">Quiz non trovato</p>
+        <Button className="mt-4" asChild>
+          <Link href="/dashboard/quizzes">Torna ai quiz</Link>
+        </Button>
       </div>
     );
   }
 
-  if (!quiz || !position) {
+  // Fetch position details
+  const { data: position, error: positionError } = await supabase
+    .from("positions")
+    .select("id, title, experience_level")
+    .eq("id", quiz.position_id)
+    .single<Position>();
+
+  if (positionError || !position) {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Quiz non trovato</p>
+        <p className="text-lg font-medium">Posizione non trovata</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
@@ -182,6 +130,7 @@ export default function QuizDetailPage({
               Invia a candidati
             </Link>
           </Button>
+          {/* Delete button uses server action */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
@@ -199,20 +148,15 @@ export default function QuizDetailPage({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Annulla</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Eliminazione...
-                    </>
-                  ) : (
-                    "Elimina"
-                  )}
-                </AlertDialogAction>
+                <form action={deleteQuiz}>
+                  <input type="hidden" name="quiz_id" value={quiz.id} />
+                  <AlertDialogAction
+                    type="submit"
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Elimina
+                  </AlertDialogAction>
+                </form>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
