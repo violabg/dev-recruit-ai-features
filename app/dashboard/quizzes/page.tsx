@@ -1,15 +1,7 @@
 import { QuizCard } from "@/components/quiz/quiz-card";
+import { SearchAndFilterQuizzes } from "@/components/quiz/search-and-filter-quizzes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowUpDown, Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { fetchQuizzesData } from "./quizzes-actions";
 
@@ -26,9 +18,6 @@ export default async function QuizzesPage({
 
   const { quizzes, fetchError, uniqueLevels, positionCounts } =
     await fetchQuizzesData({ search, sort, filter });
-  console.log("🚀 ~ uniqueLevels:", uniqueLevels);
-  console.log("🚀 ~ quizzes:", quizzes);
-  console.log("🚀 ~ positionCounts:", positionCounts);
 
   return (
     <div className="space-y-6">
@@ -46,65 +35,7 @@ export default async function QuizzesPage({
 
       <div className="gap-4 grid md:grid-cols-[1fr_250px]">
         <div className="space-y-4">
-          <div className="flex sm:flex-row flex-col gap-4">
-            <div className="relative flex-1">
-              <Search className="top-2.5 left-2.5 absolute w-4 h-4 text-muted-foreground" />
-              <form>
-                <Input
-                  type="search"
-                  name="search"
-                  placeholder="Cerca quiz..."
-                  className="pl-8"
-                  defaultValue={search}
-                />
-              </form>
-            </div>
-            <div className="flex gap-2">
-              <div className="w-[150px]">
-                <form>
-                  <Select name="sort" defaultValue={sort}>
-                    <SelectTrigger>
-                      <div className="flex items-center gap-2">
-                        <ArrowUpDown className="w-4 h-4" />
-                        <SelectValue placeholder="Ordina" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Più recenti</SelectItem>
-                      <SelectItem value="oldest">Meno recenti</SelectItem>
-                      <SelectItem value="a-z">A-Z</SelectItem>
-                      <SelectItem value="z-a">Z-A</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </form>
-              </div>
-              <div className="w-[180px]">
-                <form>
-                  <Select name="filter" defaultValue={filter}>
-                    <SelectTrigger>
-                      <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4" />
-                        <SelectValue placeholder="Filtra" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutti i livelli</SelectItem>
-                      {uniqueLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {level}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </form>
-              </div>
-              {(search || filter !== "all") && (
-                <Button variant="outlineDestructive" asChild>
-                  <Link href="/dashboard/quizzes">Resetta</Link>
-                </Button>
-              )}
-            </div>
-          </div>
+          <SearchAndFilterQuizzes uniqueLevels={uniqueLevels} />
 
           {fetchError ? (
             <div className="bg-destructive/15 p-4 rounded-md text-destructive">
