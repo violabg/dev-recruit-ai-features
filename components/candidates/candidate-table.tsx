@@ -32,24 +32,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { CandidateStatusBadge } from "./candidate-status-badge";
 
-// Helper function to get status color
-function getStatusColor(status: string) {
-  switch (status) {
-    case "pending":
-      return "bg-yellow-500";
-    case "contacted":
-      return "bg-blue-500";
-    case "interviewing":
-      return "bg-purple-500";
-    case "hired":
-      return "bg-green-500";
-    case "rejected":
-      return "bg-red-500";
-    default:
-      return "bg-gray-500";
-  }
-}
-
 // Define the candidate type
 type Candidate = {
   id: string;
@@ -99,14 +81,14 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[250px]">
               <div className="flex items-center">
                 Nome
-                <ArrowUpDown className="ml-2 h-4 w-4" />
+                <ArrowUpDown className="ml-2 w-4 h-4" />
               </div>
             </TableHead>
             <TableHead>Email</TableHead>
@@ -125,7 +107,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 {candidate.positions ? (
                   <div className="flex flex-col">
                     <span>{candidate.positions.title}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {candidate.positions.experience_level}
                     </span>
                   </div>
@@ -146,16 +128,16 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="p-0 w-8 h-8">
                       <span className="sr-only">Apri menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Azioni</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/candidates/${candidate.id}`}>
-                        <User className="mr-2 h-4 w-4" />
+                        <User className="mr-2 w-4 h-4" />
                         Visualizza profilo
                       </Link>
                     </DropdownMenuItem>
@@ -163,7 +145,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                       <Link
                         href={`/dashboard/candidates/${candidate.id}/send-quiz`}
                       >
-                        <Send className="mr-2 h-4 w-4" />
+                        <Send className="mr-2 w-4 h-4" />
                         Invia quiz
                       </Link>
                     </DropdownMenuItem>
@@ -173,7 +155,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                           <Link
                             href={`/dashboard/interviews/${candidate.interviews[0].id}`}
                           >
-                            <FileText className="mr-2 h-4 w-4" />
+                            <FileText className="mr-2 w-4 h-4" />
                             Visualizza risultati
                           </Link>
                         </DropdownMenuItem>
@@ -184,7 +166,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                       disabled={isDeleting === candidate.id}
                       className="text-red-600"
                     >
-                      <Trash className="mr-2 h-4 w-4" />
+                      <Trash className="mr-2 w-4 h-4" />
                       {isDeleting === candidate.id
                         ? "Eliminazione..."
                         : "Elimina candidato"}

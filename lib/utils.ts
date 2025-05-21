@@ -63,3 +63,20 @@ export function formatDate(dateString: string | null, showTime?: boolean) {
   };
   return new Intl.DateTimeFormat("it-IT", formatOptions).format(date);
 }
+
+export function getStatusColor(status: string) {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-500 text-black";
+    case "contacted":
+      return "bg-blue-600";
+    case "interviewing":
+      return "bg-purple-500";
+    case "hired":
+      return "bg-green-500 text-black";
+    case "rejected":
+      return "bg-red-500";
+    default:
+      return "bg-gray-500";
+  }
+}

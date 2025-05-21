@@ -1,3 +1,4 @@
+import { CandidateStatusBadge } from "@/components/candidates/candidate-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ export default async function CandidateDetailPage({
 }: {
   params: { id: string };
 }) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,7 +35,7 @@ export default async function CandidateDetailPage({
         positions (id, title, experience_level),
         interviews (id, status, score, created_at)`
     )
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("created_by", user.id)
     .single();
 
@@ -83,7 +85,7 @@ export default async function CandidateDetailPage({
             </div>
             <div>
               <div className="font-semibold">Stato</div>
-              <div>{candidate.status}</div>
+              <CandidateStatusBadge status={candidate.status} />
             </div>
             <div>
               <div className="font-semibold">Posizione</div>
