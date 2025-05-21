@@ -1,7 +1,7 @@
 "use server";
 
 import { groq } from "@ai-sdk/groq";
-import { generateObject } from "ai";
+import { generateObject, NoObjectGeneratedError } from "ai";
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server";
 import { questionSchema, quizDataSchema } from "./quiz-schemas";
@@ -153,43 +153,67 @@ export async function generateNewQuizAction({
                       : "Istruzioni aggiuntive: Nessuna"
                   }
                   ${previousContext}
-
+                  
                   Genera un quiz con domande pertinenti alle competenze richieste e al livello di esperienza.
                   Se previousQuestions è fornito, assicurati che le nuove domande siano significativamente diverse.
                   IMPORTANTE: Per le domande di tipo 'multiple_choice', il campo 'correctAnswer' DEVE essere l'indice numerico (basato su zero) della risposta corretta nell'array 'options'.
                   `;
 
-  const { object: quizData } = await generateObject({
-    model: groq("llama3-70b-8192"),
-    prompt,
-    system: `
+  let quizData;
+  try {
+    const result = await generateObject({
+      model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
+      prompt,
+      system: `
       You are a technical recruitment expert creating quizzes.
       The output MUST be a perfectly valid JSON object that STRICTLY ADHERES to the provided Zod schema.
-      ABSOLUTELY NO extraneous characters. For example, after "options", it MUST be "options": [ not "options>": [ or "options\\u003e": [.
-      Ensure all JSON syntax (curly braces, square brackets, commas, double quotes for keys and string values) is correct.
+      Crucially, each individual question within the 'questions' array must be a self-contained JSON object, enclosed in curly braces \`{}\`. For example, \`\\"questions\\": [ { /* question 1 data */ }, { /* question 2 data */ } ]\`. Do NOT output question properties directly into the array without enclosing them in an object.
+      Every object in the 'questions' array MUST have all property names (e.g., "id", "type", "question", etc.) explicitly written, never as positional values.
+      There MUST NOT be any trailing commas in arrays or objects.
+      ABSOLUTELY NO extraneous characters. For example, after "options", it MUST be "options": [ not "options>": [ or "options\\u003e": [.\n      Ensure all JSON syntax (curly braces, square brackets, commas, double quotes for keys and string values) is correct.
       String values within the JSON, including questions, options, and code snippets, MUST NOT contain unescaped newline characters (e.g., \\n). If a newline is intended in a string, it MUST be properly escaped as \\\\n.
+
+      ***CRITICAL WARNING:*** The key "options" MUST NEVER be written as "options>", "options\\u003e", "options >", or any variant. It MUST be exactly "options": [ (with a colon and no extra characters). If you output "options>" or "options\\u003e", the output is INVALID and must be regenerated.
 
       Key Schema Rules:
       1. CRITICAL: Each question object in the 'questions' array MUST ALWAYS include the field "type". The value of "type" MUST be one of ONLY these allowed strings: "multiple_choice", "open_question", or "code_snippet". Example: "type": "multiple_choice".
       2. For 'multiple_choice' questions:
          - The 'correctAnswer' field MUST be a number (zero-based index of the correct option). Example: "correctAnswer": 0.
-         - The 'options' field MUST be an array of strings. Example: "options": ["Option 1", "Option 2\\\\nwith newline", "Option 3"]. The key MUST be exactly "options", followed by a colon, then the array.
-      3. For 'open_question' and 'code_snippet' questions:
-         - OMIT the 'correctAnswer' field if a numeric answer is not applicable.
-         - OMIT the 'options' field.
-      4. ALL JSON field names (e.g., 'id', 'type', 'question', 'options', 'correctAnswer', 'codeSnippet', 'sampleSolution', 'testCases') MUST be in English and match the schema case EXACTLY.
-      5. OMIT optional fields (like 'codeSnippet', 'sampleSolution', 'testCases' for non-code questions, or 'explanation') if they have no content or are not applicable to the question type. Do not use empty strings or empty arrays for optional fields unless the schema specifically requires an empty array.
+         - The 'options' field MUST be an array of exactly 4 strings, each starting with "A)", "B)", "C)", or "D)" (in order). Example: "options": ["A) Opzione uno", "B) Opzione due", "C) Opzione tre", "D) Opzione quattro"]. The key MUST be exactly "options", followed by a colon, then the array, and always have a length of 4. ***NEVER write 'options>' or 'options\\u003e' or any variant.***
+         - The 'id' field for each question MUST be in the format "q1", "q2", ..., "q10" (not Roman numerals or other formats).
+         - All questions, options, and sample answers MUST be in Italian.
+      3. For 'open_question' questions:
+         - The 'sampleAnswer' field MUST be present and contain a plausible, concise answer in Italian. Example: "sampleAnswer": "Una risposta esemplificativa in italiano."
+         - OMIT the 'correctAnswer' and 'options' fields.
+      4. For 'code_snippet' questions:
+         - OMIT the 'correctAnswer' and 'options' fields.
+      5. ALL JSON field names (e.g., 'id', 'type', 'question', 'options', 'correctAnswer', 'codeSnippet', 'sampleSolution', 'testCases', 'sampleAnswer') MUST be in English and match the schema case EXACTLY.
+      6. OMIT optional fields (like 'codeSnippet', 'sampleSolution', 'testCases' for non-code questions, or 'explanation') if they have no content or are not applicable to the question type. Do not use empty strings or empty arrays for optional fields unless the schema specifically requires an empty array.
 
       Simplified Examples:
-      - Multiple Choice: {"id": "q1", "type": "multiple_choice", "question": "What is 2+2?", "options": ["3", "4", "5"], "correctAnswer": 1}
-      - Open Question: {"id": "q2", "type": "open_question", "question": "Explain black holes."}
-      - Code Snippet: {"id": "q3", "type": "code_snippet", "question": "What does this code do?", "codeSnippet": "console.log('hello');"}
+      - Multiple Choice: {"id": "q1", "type": "multiple_choice", "question": "What is 2+2?", "options": ["2", "3", "4", "5"], "correctAnswer": 1}
+      - Open Question: {"id": "q2", "type": "open_question", "question": "Spiega i buchi neri.", "sampleAnswer": "Un buco nero è un oggetto astronomico con un campo gravitazionale così forte che nulla può sfuggirgli."}
+      - Code Snippet: {"id": "q3", "type": "code_snippet", "question": "Cosa fa questo codice?", "codeSnippet": "console.log('hello');"}
 
+      DOUBLE-CHECK: Every property in an object must be separated by a comma, especially after arrays like "options". There must ALWAYS be a comma after the closing bracket of "options" before the next property (e.g., before "correctAnswer").
       Ensure all textual content (questions, options, etc.) is in Italian, but all JSON structure, keys, and enum values for 'type' are in English as per schema.
       Focus on generating clean, valid JSON. Double-check for unescaped newlines and ANY extraneous characters (like '>') before outputting. The JSON must be parsable.
+      IF YOU ARE UNSURE, OUTPUT NOTHING RATHER THAN INVALID JSON.
     `,
-    schema: quizDataSchema,
-  });
+      schema: quizDataSchema,
+    });
+    quizData = result.object;
+  } catch (error: unknown) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.log("NoObjectGeneratedError");
+      console.log("Cause:", error.cause);
+      console.log("Text:", error.text);
+      console.log("Response:", error.response);
+      console.log("Usage:", error.usage);
+      console.log("Finish Reason:", error.finishReason);
+    }
+    throw error;
+  }
   return quizData;
 }
 
@@ -221,7 +245,7 @@ export async function generateNewQuestionAction({
     ", "
   )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.`;
   const { object: question } = await generateObject({
-    model: groq("llama3-70b-8192"),
+    model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
     prompt,
     system:
       "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera una domanda pertinente, sfidante ma equa, con risposta corretta.",

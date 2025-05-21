@@ -50,6 +50,7 @@ export default async function QuizDetailPage({
     .select("*")
     .eq("id", id)
     .single<Quiz>();
+  console.log("🚀 ~ quiz:", quiz);
 
   if (quizError || !quiz) {
     return (
@@ -246,7 +247,7 @@ export default async function QuizDetailPage({
                     <div className="flex flex-col gap-2">
                       <h3 className="font-medium">Risposta di esempio:</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {question.explanation}
+                        {question.sampleAnswer}
                       </p>
                       {question.keywords && question.keywords.length > 0 && (
                         <div className="flex flex-col gap-2 mt-2">
@@ -289,7 +290,7 @@ export default async function QuizDetailPage({
                                 }
                                 style={style}
                               >
-                                <code>
+                                <code className="whitespace-pre-wrap break-words">
                                   {tokens.map((line, i) => {
                                     const { key: lineKey, ...lineProps } =
                                       getLineProps({
@@ -342,7 +343,7 @@ export default async function QuizDetailPage({
                                 }
                                 style={style}
                               >
-                                <code>
+                                <code className="whitespace-pre-wrap break-words">
                                   {tokens.map((line, i) => {
                                     const { key: lineKey, ...lineProps } =
                                       getLineProps({

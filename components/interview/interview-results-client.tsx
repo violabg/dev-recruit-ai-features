@@ -391,7 +391,7 @@ export function InterviewResultsClient({
                                       }
                                       style={style}
                                     >
-                                      <code>
+                                      <code className="whitespace-pre-wrap break-words">
                                         {tokens.map((line, i) => {
                                           const { key: lineKey, ...lineProps } =
                                             getLineProps({

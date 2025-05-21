@@ -103,7 +103,9 @@ export function InterviewQuestion({
               <div>
                 <h3 className="mb-2 font-medium">Codice:</h3>
                 <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm">
-                  <code>{question.codeSnippet}</code>
+                  <code className="whitespace-pre-wrap break-words">
+                    {question.codeSnippet}
+                  </code>
                 </pre>
               </div>
             )}
