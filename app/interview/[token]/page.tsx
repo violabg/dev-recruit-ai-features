@@ -6,15 +6,16 @@ import { createClient } from "@/lib/supabase/server";
 export default async function InterviewPage({
   params,
 }: {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }) {
+  const interviewParams = await params;
   const supabase = await createClient();
 
   // Fetch interview details
   const { data: interview, error: interviewError } = await supabase
     .from("interviews")
     .select("*")
-    .eq("token", params.token)
+    .eq("token", interviewParams.token)
     .single();
 
   if (interviewError || !interview) {

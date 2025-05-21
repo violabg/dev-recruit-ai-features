@@ -15,16 +15,14 @@ export default function CandidatesLoading() {
 
       {/* Stats Cards Skeleton */}
       <div className="grid gap-4 md:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <Skeleton className="h-4 w-24" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-12" />
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Skeleton className="h-4 w-24" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-8 w-12" />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters Section Skeleton */}
