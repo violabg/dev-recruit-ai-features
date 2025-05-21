@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { questionSchema } from "@/lib/actions/quiz-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ type EditQuizFormProps = {
 };
 
 const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
-  // const router = useRouter();
+  const router = useRouter();
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [aiQuizLoading, setAiQuizLoading] = useState(false);
 
@@ -71,9 +72,10 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
       });
       if (!res.ok) throw new Error(await res.text());
       toast.success("Quiz aggiornato");
-      // Optionally reload or redirect
+      router.push(`/dashboard/quizzes/${quiz.id}`);
     } catch (e) {
       const error = e as Error;
+      console.log("🚀 ~ onSubmit ~ error:", error);
       toast.error("Errore salvataggio", { description: error.message });
     }
   };
@@ -141,6 +143,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
       const aiQuiz = (await res.json()) as GenerateQuizResponse;
       form.setValue("questions", aiQuiz.questions);
       toast.success("Quiz rigenerato dall'AI");
+      router.push(`/dashboard/quizzes/${quiz.id}`);
     } catch (e) {
       const error = e as Error;
       toast.error("Errore AI", { description: error.message });

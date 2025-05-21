@@ -2,7 +2,6 @@
 
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server";
 import { questionSchema, quizDataSchema } from "./quiz-schemas";
@@ -77,13 +76,15 @@ export async function generateAndSaveQuiz(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePath(`/dashboard/positions/${positionId}`);
+  return quiz[0].id;
 
-  if (quiz && quiz[0]) {
-    redirect(`/dashboard/quizzes/${quiz[0].id}`);
-  } else {
-    redirect(`/dashboard/positions/${positionId}`);
-  }
+  // revalidatePath(`/dashboard/positions/${positionId}`);
+
+  // if (quiz && quiz[0]) {
+  //   redirect(`/dashboard/quizzes/${quiz[0].id}`);
+  // } else {
+  //   redirect(`/dashboard/positions/${positionId}`);
+  // }
 }
 
 export async function generateNewQuizAction({
@@ -205,29 +206,21 @@ export async function generateNewQuestionAction({
   return question;
 }
 
-export async function deleteQuiz(id: string) {
+export async function deleteQuiz(formData: FormData) {
+  const id = formData.get("quiz_id");
+  if (!id || typeof id !== "string") return;
   const supabase = await createClient();
 
-  const { data: quiz, error: fetchError } = await supabase
+  const { error: fetchError } = await supabase
     .from("quizzes")
-    .select("position_id")
-    .eq("id", id)
-    .single();
+    .delete()
+    .eq("id", id);
 
   if (fetchError) {
     throw new Error(fetchError.message);
   }
 
-  const positionId = quiz?.position_id;
-
-  const { error } = await supabase.from("quizzes").delete().eq("id", id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidatePath(`/dashboard/positions/${positionId}`);
-  redirect(`/dashboard/positions/${positionId}`);
+  redirect("/dashboard/quizzes");
 }
 
 export async function updateQuizAction(formData: FormData) {
@@ -249,6 +242,6 @@ export async function updateQuizAction(formData: FormData) {
     .eq("id", quizId);
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/dashboard/quizzes/${quizId}`);
-  redirect(`/dashboard/quizzes/${quizId}`);
+  // revalidatePath(`/dashboard/quizzes/${quizId}`);
+  // redirect(`/dashboard/quizzes/${quizId}`);
 }

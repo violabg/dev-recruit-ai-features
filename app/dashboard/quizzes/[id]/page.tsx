@@ -13,21 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { deleteQuiz } from "@/lib/actions/quizzes";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft, Clock, Edit, Send, Trash } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-
-// --- Server action for deleting quiz ---
-const deleteQuiz = async (formData: FormData) => {
-  "use server";
-  const id = formData.get("quiz_id");
-  if (!id || typeof id !== "string") return;
-  const supabase = await createClient();
-  await supabase.from("quizzes").delete().eq("id", id);
-  redirect("/dashboard/quizzes");
-};
 
 type Quiz = {
   id: string;
