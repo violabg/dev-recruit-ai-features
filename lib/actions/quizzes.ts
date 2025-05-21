@@ -158,12 +158,37 @@ export async function generateNewQuizAction({
                   Se previousQuestions è fornito, assicurati che le nuove domande siano significativamente diverse.
                   IMPORTANTE: Per le domande di tipo 'multiple_choice', il campo 'correctAnswer' DEVE essere l'indice numerico (basato su zero) della risposta corretta nell'array 'options'.
                   `;
+  console.log("🚀 ~ prompt:", prompt);
 
   const { object: quizData } = await generateObject({
     model: groq("llama3-70b-8192"),
     prompt,
-    system:
-      "You are a technical recruitment expert creating quizzes. The output MUST be a perfectly valid JSON object that STRICTLY ADHERES to the provided Zod schema. All JSON syntax (curly braces, square brackets, commas, double quotes for keys and string values) must be correct. \n\nKey Schema Rules:\n1. CRITICAL: Each question object in the 'questions' array MUST include the field name 'type' followed by its value. For example: `\"type\": \"multiple_choice\"`. Valid string values for 'type' are: 'multiple_choice', 'open_question', 'code_snippet'.\n2. For 'multiple_choice' questions, the 'correctAnswer' field MUST be a number (zero-based index of the correct option in the 'options' array). E.g., `\"correctAnswer\": 0`. The 'options' array must be present and contain strings.\n3. For 'open_question' and 'code_snippet' questions, OMIT the 'correctAnswer' field if a numeric answer is not applicable. OMIT the 'options' field if it is not applicable.\n4. ALL JSON field names (e.g., 'id', 'type', 'question', 'options', 'correctAnswer', 'codeSnippet') MUST be in English and match the schema case EXACTLY.\n5. Omit optional fields if they have no content, rather than using empty strings or empty arrays, unless the schema specifically requires an empty array.\n\nExample - multiple_choice: `{\"id\": \"q1\", \"type\": \"multiple_choice\", \"question\": \"What is 2+2?\", \"options\": [\"3\", \"4\", \"5\"], \"correctAnswer\": 1}`\nExample - open_question: `{\"id\": \"q2\", \"type\": \"open_question\", \"question\": \"Explain black holes.\"}`\n\nEnsure all textual content (questions, options, explanations, etc.) is in Italian, but all JSON structure, keys, and enum values are in English as per schema.",
+    system: `
+      You are a technical recruitment expert creating quizzes.
+      The output MUST be a perfectly valid JSON object that STRICTLY ADHERES to the provided Zod schema.
+      ABSOLUTELY NO extraneous characters. For example, after "options", it MUST be "options": [ not "options>": [ or "options\\u003e": [.
+      Ensure all JSON syntax (curly braces, square brackets, commas, double quotes for keys and string values) is correct.
+      String values within the JSON, including questions, options, and code snippets, MUST NOT contain unescaped newline characters (e.g., \\n). If a newline is intended in a string, it MUST be properly escaped as \\\\n.
+
+      Key Schema Rules:
+      1. CRITICAL: Each question object in the 'questions' array MUST ALWAYS include the field "type". The value of "type" MUST be one of ONLY these allowed strings: "multiple_choice", "open_question", or "code_snippet". Example: "type": "multiple_choice".
+      2. For 'multiple_choice' questions:
+         - The 'correctAnswer' field MUST be a number (zero-based index of the correct option). Example: "correctAnswer": 0.
+         - The 'options' field MUST be an array of strings. Example: "options": ["Option 1", "Option 2\\\\nwith newline", "Option 3"]. The key MUST be exactly "options", followed by a colon, then the array.
+      3. For 'open_question' and 'code_snippet' questions:
+         - OMIT the 'correctAnswer' field if a numeric answer is not applicable.
+         - OMIT the 'options' field.
+      4. ALL JSON field names (e.g., 'id', 'type', 'question', 'options', 'correctAnswer', 'codeSnippet', 'sampleSolution', 'testCases') MUST be in English and match the schema case EXACTLY.
+      5. OMIT optional fields (like 'codeSnippet', 'sampleSolution', 'testCases' for non-code questions, or 'explanation') if they have no content or are not applicable to the question type. Do not use empty strings or empty arrays for optional fields unless the schema specifically requires an empty array.
+
+      Simplified Examples:
+      - Multiple Choice: {"id": "q1", "type": "multiple_choice", "question": "What is 2+2?", "options": ["3", "4", "5"], "correctAnswer": 1}
+      - Open Question: {"id": "q2", "type": "open_question", "question": "Explain black holes."}
+      - Code Snippet: {"id": "q3", "type": "code_snippet", "question": "What does this code do?", "codeSnippet": "console.log('hello');"}
+
+      Ensure all textual content (questions, options, etc.) is in Italian, but all JSON structure, keys, and enum values for 'type' are in English as per schema.
+      Focus on generating clean, valid JSON. Double-check for unescaped newlines and ANY extraneous characters (like '>') before outputting. The JSON must be parsable.
+    `,
     schema: quizDataSchema,
   });
   return quizData;

@@ -75,7 +75,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
       router.push(`/dashboard/quizzes/${quiz.id}`);
     } catch (e) {
       const error = e as Error;
-      console.log("🚀 ~ onSubmit ~ error:", error);
       toast.error("Errore salvataggio", { description: error.message });
     }
   };
@@ -143,7 +142,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
       const aiQuiz = (await res.json()) as GenerateQuizResponse;
       form.setValue("questions", aiQuiz.questions);
       toast.success("Quiz rigenerato dall'AI");
-      router.push(`/dashboard/quizzes/${quiz.id}`);
     } catch (e) {
       const error = e as Error;
       toast.error("Errore AI", { description: error.message });
@@ -191,8 +189,12 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           onClick={handleRegenerateQuiz}
           disabled={aiQuizLoading}
         >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {aiQuizLoading ? "Generazione..." : "Genera nuovo quiz con AI"}
+          {aiQuizLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="mr-2 h-4 w-4" />
+          )}
+          Genera nuovo quiz con AI
         </Button>
         <Button
           type="submit"
