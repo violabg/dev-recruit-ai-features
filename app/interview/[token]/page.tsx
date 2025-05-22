@@ -17,15 +17,17 @@ export default async function InterviewPage({
     .select("*")
     .eq("token", interviewParams.token)
     .single();
+  console.log("🚀 ~ interview:", interview);
+  console.log("🚀 ~ interviewError:", interviewError);
 
   if (interviewError || !interview) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-          <h1 className="text-center text-2xl font-bold">
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <div className="bg-card shadow-lg p-6 border rounded-lg w-full max-w-md">
+          <h1 className="font-bold text-2xl text-center">
             Intervista non trovata
           </h1>
-          <p className="mt-2 text-center text-muted-foreground">
+          <p className="mt-2 text-muted-foreground text-center">
             Il link che hai seguito non è valido o l&apos;intervista è stata
             cancellata.
           </p>
@@ -44,17 +46,18 @@ export default async function InterviewPage({
       questions,
       time_limit,
       position:positions(title)
-    `
+      `
     )
     .eq("id", interview.quiz_id)
     .single<Quiz>();
+  console.log("🚀 ~ quiz:", quiz);
 
   if (quizError || !quiz) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-          <h1 className="text-center text-2xl font-bold">Quiz non trovato</h1>
-          <p className="mt-2 text-center text-muted-foreground">
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <div className="bg-card shadow-lg p-6 border rounded-lg w-full max-w-md">
+          <h1 className="font-bold text-2xl text-center">Quiz non trovato</h1>
+          <p className="mt-2 text-muted-foreground text-center">
             Il quiz associato a questa intervista non è stato trovato.
           </p>
         </div>
@@ -71,12 +74,12 @@ export default async function InterviewPage({
 
   if (candidateError || !candidate) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-          <h1 className="text-center text-2xl font-bold">
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <div className="bg-card shadow-lg p-6 border rounded-lg w-full max-w-md">
+          <h1 className="font-bold text-2xl text-center">
             Candidato non trovato
           </h1>
-          <p className="mt-2 text-center text-muted-foreground">
+          <p className="mt-2 text-muted-foreground text-center">
             Il candidato associato a questa intervista non è stato trovato.
           </p>
         </div>

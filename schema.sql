@@ -82,9 +82,9 @@ CREATE POLICY "Users can update their own profile"
   USING (auth.uid() = user_id);
 
 -- Create policies for positions
-CREATE POLICY "Users can view their own positions"
+CREATE POLICY "Anyone can view position title by quiz token"
   ON positions FOR SELECT
-  USING (auth.uid() = created_by);
+  USING (true);
 
 CREATE POLICY "Users can insert their own positions"
   ON positions FOR INSERT
@@ -103,6 +103,16 @@ CREATE POLICY "Users can view their own candidates"
   ON candidates FOR SELECT
   USING (auth.uid() = created_by);
 
+CREATE POLICY "Anyone can view candidate by interview token"
+  ON candidates FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM interviews
+      WHERE interviews.candidate_id = candidates.id
+      AND interviews.token IS NOT NULL
+    )
+  );
+
 CREATE POLICY "Users can insert their own candidates"
   ON candidates FOR INSERT
   WITH CHECK (auth.uid() = created_by);
@@ -120,6 +130,16 @@ CREATE POLICY "Users can view their own quizzes"
   ON quizzes FOR SELECT
   USING (auth.uid() = created_by);
 
+CREATE POLICY "Anyone can view quiz by interview token"
+  ON quizzes FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM interviews
+      WHERE interviews.quiz_id = quizzes.id
+      AND interviews.token IS NOT NULL
+    )
+  );
+
 CREATE POLICY "Users can insert their own quizzes"
   ON quizzes FOR INSERT
   WITH CHECK (auth.uid() = created_by);
@@ -133,13 +153,9 @@ CREATE POLICY "Users can delete their own quizzes"
   USING (auth.uid() = created_by);
 
 -- Create policies for interviews
-CREATE POLICY "Users can view interviews for their candidates"
+CREATE POLICY "Anyone can access interviews by token"
   ON interviews FOR SELECT
-  USING (EXISTS (
-    SELECT 1 FROM candidates
-    WHERE candidates.id = interviews.candidate_id
-    AND candidates.created_by = auth.uid()
-  ));
+  USING (token IS NOT NULL);
 
 CREATE POLICY "Users can insert interviews for their candidates"
   ON interviews FOR INSERT
