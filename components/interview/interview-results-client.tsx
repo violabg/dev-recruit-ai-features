@@ -47,15 +47,27 @@ export function InterviewResultsClient({
       for (const question of quizQuestions) {
         if (!answers[question.id]) continue;
 
-        const answer = answers[question.id];
+        let answer = "";
+        switch (question.type) {
+          case "multiple_choice":
+            const answerIndex = parseInt(answers[question.id]);
+            answer = question.options[answerIndex];
+            break;
+          case "code_snippet":
+            answer = answers[question.id].code;
+            break;
+          case "open_question":
+            answer = answers[question.id];
+            break;
+          default:
+            console.error("Unknown question type:", question.type);
+            continue;
+        }
         const maxScore = 10; // Max score per question
 
         try {
           // Call the server action to evaluate the answer
-          const result = await evaluateAnswer(
-            question,
-            question.type === "code_snippet" ? answer.code : answer
-          );
+          const result = await evaluateAnswer(question, answer);
 
           evaluatedQuestions[question.id] = {
             evaluation: result.evaluation,
@@ -149,22 +161,22 @@ export function InterviewResultsClient({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="gap-4 grid md:grid-cols-3">
             <div className="space-y-2">
-              <div className="text-sm font-medium">Completamento</div>
+              <div className="font-medium text-sm">Completamento</div>
               <Progress
                 value={
                   (getAnsweredQuestionsCount() / quizQuestions.length) * 100
                 }
                 className="h-2"
               />
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {getAnsweredQuestionsCount()} di {quizQuestions.length} domande
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="text-sm font-medium">
+              <div className="font-medium text-sm">
                 Risposte corrette (scelta multipla)
               </div>
               <Progress
@@ -176,7 +188,7 @@ export function InterviewResultsClient({
                 }
                 className="h-2"
               />
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {getCorrectAnswersCount()} di{" "}
                 {
                   quizQuestions.filter((q) => q.type === "multiple_choice")
@@ -187,7 +199,7 @@ export function InterviewResultsClient({
             </div>
 
             <div className="space-y-2">
-              <div className="text-sm font-medium">Punteggio complessivo</div>
+              <div className="font-medium text-sm">Punteggio complessivo</div>
               <Progress
                 value={overallScore || 0}
                 className={`h-2 ${
@@ -200,7 +212,7 @@ export function InterviewResultsClient({
                     : ""
                 }`}
               />
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {overallScore !== null ? `${overallScore}%` : "N/A"}
               </div>
             </div>
@@ -216,7 +228,7 @@ export function InterviewResultsClient({
           )}
 
           {overallEvaluation && (
-            <Card className="border-primary/20 bg-primary/5">
+            <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <CardTitle className="text-lg">
                   Valutazione complessiva AI
@@ -229,10 +241,10 @@ export function InterviewResultsClient({
 
                 {overallEvaluation.strengths && (
                   <div>
-                    <h4 className="font-medium text-green-600 dark:text-green-400 mb-2">
+                    <h4 className="mb-2 font-medium text-green-600 dark:text-green-400">
                       Punti di forza principali:
                     </h4>
-                    <ul className="list-disc pl-5 space-y-1">
+                    <ul className="space-y-1 pl-5 list-disc">
                       {overallEvaluation.strengths.map(
                         (strength: any, idx: number) => (
                           <li key={idx}>{strength}</li>
@@ -244,10 +256,10 @@ export function InterviewResultsClient({
 
                 {overallEvaluation.weaknesses && (
                   <div>
-                    <h4 className="font-medium text-amber-600 dark:text-amber-400 mb-2">
+                    <h4 className="mb-2 font-medium text-amber-600 dark:text-amber-400">
                       Aree di miglioramento:
                     </h4>
-                    <ul className="list-disc pl-5 space-y-1">
+                    <ul className="space-y-1 pl-5 list-disc">
                       {overallEvaluation.weaknesses.map(
                         (weakness: any, idx: number) => (
                           <li key={idx}>{weakness}</li>
@@ -258,12 +270,12 @@ export function InterviewResultsClient({
                 )}
 
                 {overallEvaluation.recommendation && (
-                  <div className="mt-4 p-3 border rounded-md bg-background">
-                    <h4 className="font-medium mb-1">Raccomandazione:</h4>
+                  <div className="bg-background mt-4 p-3 border rounded-md">
+                    <h4 className="mb-1 font-medium">Raccomandazione:</h4>
                     <p>{overallEvaluation.recommendation}</p>
                     {overallEvaluation.fitScore && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-muted-foreground text-sm">
                           Punteggio di idoneità:
                         </span>
                         <div className="flex items-center">
@@ -315,7 +327,7 @@ export function InterviewResultsClient({
                   return (
                     <Card key={question.id}>
                       <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">
                             {index + 1}. {question.question}
                           </CardTitle>
@@ -366,7 +378,7 @@ export function InterviewResultsClient({
                               )}
 
                               {question.type === "open_question" && (
-                                <div className="rounded-md border p-3 whitespace-pre-wrap">
+                                <div className="p-3 border rounded-md whitespace-pre-wrap">
                                   {answers[question.id]}
                                 </div>
                               )}
@@ -391,7 +403,7 @@ export function InterviewResultsClient({
                                       }
                                       style={style}
                                     >
-                                      <code className="whitespace-pre-wrap break-words">
+                                      <code className="break-words whitespace-pre-wrap">
                                         {tokens.map((line, i) => {
                                           const { key: lineKey, ...lineProps } =
                                             getLineProps({
@@ -433,11 +445,11 @@ export function InterviewResultsClient({
                                 <div className="font-medium">
                                   Risposta corretta:
                                 </div>
-                                <div className="rounded-md border border-green-500 bg-green-50 p-3 dark:bg-green-950/20">
+                                <div className="bg-green-50 dark:bg-green-950/20 p-3 border border-green-500 rounded-md">
                                   {question.options[question.correctAnswer]}
                                 </div>
                                 {question.explanation && (
-                                  <div className="text-sm text-muted-foreground">
+                                  <div className="text-muted-foreground text-sm">
                                     {question.explanation}
                                   </div>
                                 )}
@@ -449,7 +461,7 @@ export function InterviewResultsClient({
                                 <div className="font-medium">
                                   Valutazione AI:
                                 </div>
-                                <div className="rounded-md border p-3 whitespace-pre-wrap">
+                                <div className="p-3 border rounded-md whitespace-pre-wrap">
                                   {evaluation.evaluation}
                                 </div>
 
@@ -459,7 +471,7 @@ export function InterviewResultsClient({
                                       <div className="font-medium text-green-600 dark:text-green-400">
                                         Punti di forza:
                                       </div>
-                                      <ul className="list-disc pl-5 space-y-1 mt-1">
+                                      <ul className="space-y-1 mt-1 pl-5 list-disc">
                                         {evaluation.strengths.map(
                                           (strength: any, idx: number) => (
                                             <li key={idx} className="text-sm">
@@ -477,7 +489,7 @@ export function InterviewResultsClient({
                                       <div className="font-medium text-amber-600 dark:text-amber-400">
                                         Aree di miglioramento:
                                       </div>
-                                      <ul className="list-disc pl-5 space-y-1 mt-1">
+                                      <ul className="space-y-1 mt-1 pl-5 list-disc">
                                         {evaluation.weaknesses.map(
                                           (weakness: any, idx: number) => (
                                             <li key={idx} className="text-sm">
