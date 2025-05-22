@@ -111,25 +111,13 @@ export async function evaluateAnswer(question: any, answer: any) {
               Domanda: ${question.question}
               Codice del candidato:
               \`\`\`
-              ${answer.code}
+              ${answer}
               \`\`\`
 
               Soluzione di esempio:
               \`\`\`
               ${question.sampleSolution}
               \`\`\`
-
-              ${
-                question.testCases
-                  ? `Test cases:
-              ${question.testCases
-                .map(
-                  (tc: any) =>
-                    `Input: ${tc.input}, Output atteso: ${tc.expectedOutput}`
-                )
-                .join("\n")}`
-                  : ""
-              }
 
               Fornisci una valutazione dettagliata del codice, considerando:
               1. Correttezza funzionale

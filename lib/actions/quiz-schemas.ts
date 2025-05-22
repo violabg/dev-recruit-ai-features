@@ -12,14 +12,6 @@ export const questionSchema = z.object({
   language: z.string().optional(),
   codeSnippet: z.string().optional(),
   sampleSolution: z.string().optional(),
-  testCases: z
-    .array(
-      z.object({
-        input: z.string(),
-        expectedOutput: z.string(),
-      })
-    )
-    .optional(),
 });
 
 export const quizDataSchema = z.object({

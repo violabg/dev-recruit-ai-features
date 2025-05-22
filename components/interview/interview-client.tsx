@@ -185,10 +185,10 @@ export function InterviewClient({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
+      <div className="flex flex-col justify-center items-center min-h-screen">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-lg font-medium">Caricamento intervista...</p>
+          <div className="border-4 border-primary border-t-transparent rounded-full w-8 h-8 animate-spin" />
+          <p className="font-medium text-lg">Caricamento intervista...</p>
         </div>
       </div>
     );
@@ -200,14 +200,14 @@ export function InterviewClient({
 
   if (!isStarted) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="flex flex-col justify-center items-center p-4 min-h-screen">
         <Card className="w-full max-w-2xl">
           <CardHeader>
-            <div className="flex items-center justify-center gap-2 text-primary">
-              <BrainCircuit className="h-6 w-6" />
-              <h2 className="text-xl font-bold">DevRecruit AI</h2>
+            <div className="flex justify-center items-center gap-2 text-primary">
+              <BrainCircuit className="w-6 h-6" />
+              <h2 className="font-bold text-xl">DevRecruit AI</h2>
             </div>
-            <CardTitle className="text-center text-2xl">
+            <CardTitle className="text-2xl text-center">
               Benvenuto al colloquio tecnico
             </CardTitle>
             <CardDescription className="text-center">
@@ -216,9 +216,9 @@ export function InterviewClient({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border p-4">
+            <div className="p-4 border rounded-lg">
               <h3 className="font-medium">Dettagli del quiz</h3>
-              <div className="mt-2 space-y-2 text-sm">
+              <div className="space-y-2 mt-2 text-sm">
                 <div className="flex justify-between">
                   <span>Titolo:</span>
                   <span className="font-medium">{quiz.title}</span>
@@ -238,9 +238,9 @@ export function InterviewClient({
               </div>
             </div>
 
-            <div className="rounded-lg border p-4">
+            <div className="p-4 border rounded-lg">
               <h3 className="font-medium">Istruzioni</h3>
-              <ul className="mt-2 space-y-2 text-sm">
+              <ul className="space-y-2 mt-2 text-sm">
                 <li>• Leggi attentamente ogni domanda prima di rispondere</li>
                 <li>
                   • Puoi navigare tra le domande utilizzando i pulsanti
@@ -260,11 +260,11 @@ export function InterviewClient({
               </ul>
             </div>
 
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-900 dark:bg-yellow-950">
+            <div className="bg-yellow-50 dark:bg-yellow-950 p-4 border border-yellow-200 dark:border-yellow-900 rounded-lg">
               <h3 className="font-medium text-yellow-800 dark:text-yellow-300">
                 Importante
               </h3>
-              <p className="mt-1 text-sm text-yellow-800 dark:text-yellow-300">
+              <p className="mt-1 text-yellow-800 dark:text-yellow-300 text-sm">
                 Non chiudere o aggiornare questa pagina durante il quiz. Farlo
                 potrebbe causare la perdita delle tue risposte.
               </p>
@@ -281,17 +281,17 @@ export function InterviewClient({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-background">
-        <div className="container flex h-16 items-center justify-between">
+    <div className="flex flex-col min-h-screen">
+      <header className="top-0 z-10 sticky bg-background border-b">
+        <div className="flex justify-between items-center h-16 container">
           <div className="flex items-center gap-2">
-            <BrainCircuit className="h-5 w-5 text-primary" />
+            <BrainCircuit className="w-5 h-5 text-primary" />
             <span className="font-bold">DevRecruit AI</span>
           </div>
           <div className="flex items-center gap-4">
             {timeRemaining !== null && (
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="w-4 h-4 text-muted-foreground" />
                 <span className="font-mono">
                   {formatTimeRemaining(timeRemaining)}
                 </span>
@@ -310,13 +310,13 @@ export function InterviewClient({
 
       <main className="flex-1 p-4 md:p-6">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-6 space-y-2">
-            <h1 className="text-2xl font-bold">{quiz.title}</h1>
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+          <div className="space-y-2 mb-6">
+            <h1 className="font-bold text-2xl">{quiz.title}</h1>
+            <div className="flex justify-between items-center">
+              <div className="text-muted-foreground text-sm">
                 Domanda {currentQuestionIndex + 1} di {quiz.questions.length}
               </div>
-              <div className="text-sm font-medium">{candidate.name}</div>
+              <div className="font-medium text-sm">{candidate.name}</div>
             </div>
             <Progress
               value={((currentQuestionIndex + 1) / quiz.questions.length) * 100}
@@ -328,6 +328,7 @@ export function InterviewClient({
             <InterviewQuestion
               question={quiz.questions[currentQuestionIndex]}
               questionNumber={currentQuestionIndex + 1}
+              totalQuestions={quiz.questions.length}
               onAnswer={(answer) =>
                 handleAnswer(quiz.questions[currentQuestionIndex].id, answer)
               }
@@ -335,7 +336,7 @@ export function InterviewClient({
             />
           )}
 
-          <div className="mt-6 flex justify-between">
+          <div className="flex justify-between mt-6">
             <Button
               variant="outline"
               onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}

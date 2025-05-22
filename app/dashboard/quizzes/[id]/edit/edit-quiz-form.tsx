@@ -157,7 +157,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           <CardTitle>Modifica quiz: {quiz.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="gap-4 grid md:grid-cols-2">
             <div>
               <label className="font-medium">Titolo</label>
               <Input {...form.register("title")} className="mt-1" />
@@ -190,9 +190,9 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           disabled={aiQuizLoading}
         >
           {aiQuizLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
           ) : (
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="mr-2 w-4 h-4" />
           )}
           Genera nuovo quiz con AI
         </Button>
@@ -202,7 +202,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
           ) : null}
           Salva modifiche
         </Button>
@@ -214,11 +214,11 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
         <TabsContent value="questions" className="space-y-4 pt-4">
           {fields.map((field, index) => (
             <Card key={field.id} className="relative">
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row justify-between items-center">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Badge
                     variant="outline"
-                    className="h-6 w-6 rounded-full p-0 flex items-center justify-center"
+                    className="flex justify-center items-center p-0 rounded-full w-6 h-6"
                   >
                     {index + 1}
                   </Badge>
@@ -238,9 +238,9 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                     disabled={aiLoading === `q${index}` || aiQuizLoading}
                   >
                     {aiLoading === `q${index}` ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4" />
+                      <RefreshCw className="w-4 h-4" />
                     )}
                     Rigenera con AI
                   </Button>
@@ -265,7 +265,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                 {field.type === "multiple_choice" && (
                   <div className="flex flex-col gap-2">
                     <label className="font-medium">Opzioni</label>
-                    <div className="flex flex-col gap-4 items-start">
+                    <div className="flex flex-col items-start gap-4">
                       {field.options?.map((opt, optIdx) => (
                         <div
                           key={optIdx}
@@ -370,28 +370,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                         className="mt-1"
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="font-medium">
-                        Test case (JSON array)
-                      </label>
-                      <Textarea
-                        defaultValue={JSON.stringify(
-                          field.testCases || [],
-                          null,
-                          2
-                        )}
-                        onBlur={(e) => {
-                          try {
-                            const val = JSON.parse(e.target.value);
-                            form.setValue(`questions.${index}.testCases`, val);
-                          } catch {
-                            toast.error(
-                              "Test case non valido (deve essere un array JSON)"
-                            );
-                          }
-                        }}
-                      />
-                    </div>
                   </div>
                 )}
               </CardContent>
@@ -405,7 +383,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
         disabled={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
         ) : null}
         Salva modifiche
       </Button>

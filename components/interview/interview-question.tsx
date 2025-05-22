@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 interface QuestionProps {
   question: any;
   questionNumber: number;
+  totalQuestions: number;
   onAnswer: (answer: any) => void;
   currentAnswer: any;
 }
@@ -25,6 +26,7 @@ export function InterviewQuestion({
   questionNumber,
   onAnswer,
   currentAnswer,
+  totalQuestions,
 }: QuestionProps) {
   // Reset answer and code when question changes
   const [answer, setAnswer] = useState<any>(currentAnswer || null);
@@ -74,7 +76,7 @@ export function InterviewQuestion({
             {question.options.map((option: string, index: number) => (
               <div
                 key={index}
-                className="flex items-center space-x-2 rounded-md border p-3"
+                className="flex items-center space-x-2 p-3 border rounded-md"
               >
                 <RadioGroupItem
                   value={index.toString()}
@@ -102,8 +104,8 @@ export function InterviewQuestion({
             {question.codeSnippet && (
               <div>
                 <h3 className="mb-2 font-medium">Codice:</h3>
-                <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm">
-                  <code className="whitespace-pre-wrap break-words">
+                <pre className="bg-muted p-4 rounded-md overflow-x-auto text-sm">
+                  <code className="break-words whitespace-pre-wrap">
                     {question.codeSnippet}
                   </code>
                 </pre>
@@ -124,7 +126,10 @@ export function InterviewQuestion({
         <div className="flex justify-end">
           <Button
             onClick={handleSubmitAnswer}
-            disabled={answer === null && code === ""}
+            disabled={
+              (answer === null && code === "") ||
+              questionNumber === totalQuestions
+            }
           >
             Salva risposta
           </Button>

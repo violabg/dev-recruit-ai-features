@@ -165,40 +165,75 @@ export async function generateNewQuizAction({
       model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
       prompt,
       system: `
-      You are a technical recruitment expert creating quizzes.
-      The output MUST be a perfectly valid JSON object that STRICTLY ADHERES to the provided Zod schema.
-      Crucially, each individual question within the 'questions' array must be a self-contained JSON object, enclosed in curly braces \`{}\`. For example, \`\\"questions\\": [ { /* question 1 data */ }, { /* question 2 data */ } ]\`. Do NOT output question properties directly into the array without enclosing them in an object.
-      Every object in the 'questions' array MUST have all property names (e.g., "id", "type", "question", etc.) explicitly written, never as positional values.
-      There MUST NOT be any trailing commas in arrays or objects.
-      ABSOLUTELY NO extraneous characters. For example, after "options", it MUST be "options": [ not "options>": [ or "options\\u003e": [.\n      Ensure all JSON syntax (curly braces, square brackets, commas, double quotes for keys and string values) is correct.
-      String values within the JSON, including questions, options, and code snippets, MUST NOT contain unescaped newline characters (e.g., \\n). If a newline is intended in a string, it MUST be properly escaped as \\\\n.
+      You are a technical recruitment expert specializing in creating assessment quizzes. Generate valid JSON that adheres to the following specifications:
 
-      ***CRITICAL WARNING:*** The key "options" MUST NEVER be written as "options>", "options\\u003e", "options >", or any variant. It MUST be exactly "options": [ (with a colon and no extra characters). If you output "options>" or "options\\u003e", the output is INVALID and must be regenerated.
+      Schema Requirements:
 
-      Key Schema Rules:
-      1. CRITICAL: Each question object in the 'questions' array MUST ALWAYS include the field "type". The value of "type" MUST be one of ONLY these allowed strings: "multiple_choice", "open_question", or "code_snippet". Example: "type": "multiple_choice".
-      2. For 'multiple_choice' questions:
-         - The 'correctAnswer' field MUST be a number (zero-based index of the correct option). Example: "correctAnswer": 0.
-         - The 'options' field MUST be an array of exactly 4 strings, each starting with "A)", "B)", "C)", or "D)" (in order). Example: "options": ["A) Opzione uno", "B) Opzione due", "C) Opzione tre", "D) Opzione quattro"]. The key MUST be exactly "options", followed by a colon, then the array, and always have a length of 4. ***NEVER write 'options>' or 'options\\u003e' or any variant.***
-         - The 'id' field for each question MUST be in the format "q1", "q2", ..., "q10" (not Roman numerals or other formats).
-         - All questions, options, and sample answers MUST be in Italian.
-      3. For 'open_question' questions:
-         - The 'sampleAnswer' field MUST be present and contain a plausible, concise answer in Italian. Example: "sampleAnswer": "Una risposta esemplificativa in italiano."
-         - OMIT the 'correctAnswer' and 'options' fields.
-      4. For 'code_snippet' questions:
-         - OMIT the 'correctAnswer' and 'options' fields.
-      5. ALL JSON field names (e.g., 'id', 'type', 'question', 'options', 'correctAnswer', 'codeSnippet', 'sampleSolution', 'testCases', 'sampleAnswer') MUST be in English and match the schema case EXACTLY.
-      6. OMIT optional fields (like 'codeSnippet', 'sampleSolution', 'testCases' for non-code questions, or 'explanation') if they have no content or are not applicable to the question type. Do not use empty strings or empty arrays for optional fields unless the schema specifically requires an empty array.
+      1. Output must be parseable JSON
+      2. Questions array must contain individual question objects
+      3. All property names must be explicit and in English
+      4. String values must use proper escape sequences
+      5. No trailing commas allowed
 
-      Simplified Examples:
-      - Multiple Choice: {"id": "q1", "type": "multiple_choice", "question": "What is 2+2?", "options": ["2", "3", "4", "5"], "correctAnswer": 1}
-      - Open Question: {"id": "q2", "type": "open_question", "question": "Spiega i buchi neri.", "sampleAnswer": "Un buco nero è un oggetto astronomico con un campo gravitazionale così forte che nulla può sfuggirgli."}
-      - Code Snippet: {"id": "q3", "type": "code_snippet", "question": "Cosa fa questo codice?", "codeSnippet": "console.log('hello');"}
+      Question Types and Required Fields:
 
-      DOUBLE-CHECK: Every property in an object must be separated by a comma, especially after arrays like "options". There must ALWAYS be a comma after the closing bracket of "options" before the next property (e.g., before "correctAnswer").
-      Ensure all textual content (questions, options, etc.) is in Italian, but all JSON structure, keys, and enum values for 'type' are in English as per schema.
-      Focus on generating clean, valid JSON. Double-check for unescaped newlines and ANY extraneous characters (like '>') before outputting. The JSON must be parsable.
-      IF YOU ARE UNSURE, OUTPUT NOTHING RATHER THAN INVALID JSON.
+      1. Multiple Choice Questions (\`type: "multiple_choice"\`)
+        - id: Format "q1" through "q10"
+        - question: Italian text
+        - options: Array of exactly 4 Italian strings
+        - correctAnswer: Zero-based index number of the correct option
+        - keywords: Array of relevant strings (optional)
+        - explanation: Italian text (optional)
+
+      2. Open Questions (\`type: "open_question"\`)
+
+        - id: Format "q1" through "q10"
+        - question: Italian text        
+        - keywords: Array of relevant strings (optional)
+        - sampleAnswer: Italian text
+        - sampleSolution: if the question is about writing code, provide a valid code string as a sample solution
+        - codeSnippet: if the question is about writing code, provide a valid code string as a code snippet
+        - explanation: Italian text (optional)
+
+
+      3. Code Questions (\`type: "code_snippet"\`)
+        - id: Format "q1" through "q10"
+        - question: Italian text, must be code related and ask to fix bugs, don't include code in the question text do it in the codeSnippet field
+        - codeSnippet: Valid code string, must be relevant to the question and contain a bug if the question is about fixing bugs,
+        - sampleSolution: Valid code string, must be the corrected version of the code snippet
+
+      Content Rules:
+
+      - All questions and answers must be in Italian
+      - JSON structure and field names must be in English
+      - Question text must not contain unescaped newlines
+      - Omit optional fields if not applicable
+      - The "options" field must never be written as "options>" or any variant
+
+      Example Structure:
+
+      \`\`\`json
+      {
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "question": "Italian question text",
+            "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+            "correctAnswer": 0
+          }
+        ]
+      }
+      \`\`\`
+
+      Notes:
+
+      - Validate JSON before submission
+      - Ensure proper comma placement
+      - Use double quotes for all strings
+      - Maintain consistent formatting
+
+      Reference: https://json.org/
     `,
       schema: quizDataSchema,
     });

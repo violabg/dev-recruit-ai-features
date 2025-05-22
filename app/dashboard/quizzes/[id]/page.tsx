@@ -54,8 +54,8 @@ export default async function QuizDetailPage({
 
   if (quizError || !quiz) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Quiz non trovato</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Quiz non trovato</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
@@ -72,8 +72,8 @@ export default async function QuizDetailPage({
 
   if (positionError || !position) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Posizione non trovata</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Posizione non trovata</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
@@ -86,25 +86,25 @@ export default async function QuizDetailPage({
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/dashboard/positions/${position.id}`}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+            <ArrowLeft className="mr-1 w-4 h-4" />
             Torna alla posizione
           </Link>
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{quiz.title}</h1>
-          <div className="mt-1 flex items-center gap-2">
+          <h1 className="font-bold text-3xl">{quiz.title}</h1>
+          <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline">{position.title}</Badge>
             <Badge variant="outline">{position.experience_level}</Badge>
             {quiz.time_limit && (
               <Badge variant="secondary">
-                <Clock className="mr-1 h-3 w-3" />
+                <Clock className="mr-1 w-3 h-3" />
                 {quiz.time_limit} minuti
               </Badge>
             )}
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Creato il {formatDate(quiz.created_at)}
             </span>
           </div>
@@ -112,13 +112,13 @@ export default async function QuizDetailPage({
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href={`/dashboard/quizzes/${quiz.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
+              <Edit className="mr-2 w-4 h-4" />
               Modifica
             </Link>
           </Button>
           <Button variant="default" asChild>
             <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
-              <Send className="mr-2 h-4 w-4" />
+              <Send className="mr-2 w-4 h-4" />
               Invia a candidati
             </Link>
           </Button>
@@ -126,7 +126,7 @@ export default async function QuizDetailPage({
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
-                <Trash className="mr-2 h-4 w-4" />
+                <Trash className="mr-2 w-4 h-4" />
                 Elimina
               </Button>
             </AlertDialogTrigger>
@@ -144,7 +144,7 @@ export default async function QuizDetailPage({
                   <input type="hidden" name="quiz_id" value={quiz.id} />
                   <AlertDialogAction
                     type="submit"
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   >
                     Elimina
                   </AlertDialogAction>
@@ -169,7 +169,7 @@ export default async function QuizDetailPage({
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Badge
                       variant="outline"
-                      className="h-6 w-6 rounded-full p-0 flex items-center justify-center"
+                      className="flex justify-center items-center p-0 rounded-full w-6 h-6"
                     >
                       {index + 1}
                     </Badge>
@@ -221,7 +221,7 @@ export default async function QuizDetailPage({
                                     strokeWidth="2"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    className="h-3 w-3"
+                                    className="w-3 h-3"
                                   >
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                   </svg>
@@ -235,7 +235,7 @@ export default async function QuizDetailPage({
                       {question.explanation && (
                         <div className="flex flex-col gap-2 mt-2">
                           <h3 className="font-medium">Spiegazione:</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">
+                          <p className="mt-1 text-muted-foreground text-sm">
                             {question.explanation}
                           </p>
                         </div>
@@ -246,13 +246,13 @@ export default async function QuizDetailPage({
                   {question.type === "open_question" && (
                     <div className="flex flex-col gap-2">
                       <h3 className="font-medium">Risposta di esempio:</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="mt-1 text-muted-foreground text-sm">
                         {question.sampleAnswer}
                       </p>
                       {question.keywords && question.keywords.length > 0 && (
                         <div className="flex flex-col gap-2 mt-2">
                           <h3 className="font-medium">Parole chiave:</h3>
-                          <div className="mt-1 flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {question.keywords.map(
                               (keyword: string, kwIndex: number) => (
                                 <Badge key={kwIndex} variant="secondary">
@@ -290,7 +290,7 @@ export default async function QuizDetailPage({
                                 }
                                 style={style}
                               >
-                                <code className="whitespace-pre-wrap break-words">
+                                <code className="break-words whitespace-pre-wrap">
                                   {tokens.map((line, i) => {
                                     const { key: lineKey, ...lineProps } =
                                       getLineProps({
@@ -343,7 +343,7 @@ export default async function QuizDetailPage({
                                 }
                                 style={style}
                               >
-                                <code className="whitespace-pre-wrap break-words">
+                                <code className="break-words whitespace-pre-wrap">
                                   {tokens.map((line, i) => {
                                     const { key: lineKey, ...lineProps } =
                                       getLineProps({
@@ -374,32 +374,6 @@ export default async function QuizDetailPage({
                           </Highlight>
                         </div>
                       )}
-                      {question.testCases && question.testCases.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                          <h3 className="font-medium">Test case:</h3>
-                          <div className="flex flex-col gap-4 mt-1">
-                            {question.testCases.map(
-                              (testCase: any, tcIndex: number) => (
-                                <div
-                                  key={tcIndex}
-                                  className="rounded-md border p-2 text-sm"
-                                >
-                                  <div>
-                                    <span className="font-medium">Input:</span>{" "}
-                                    {testCase.input}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">
-                                      Output atteso:
-                                    </span>{" "}
-                                    {testCase.expectedOutput}
-                                  </div>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
                 </CardContent>
@@ -413,14 +387,14 @@ export default async function QuizDetailPage({
               <CardTitle>Impostazioni del quiz</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="gap-4 grid md:grid-cols-2">
                 <div>
                   <h3 className="font-medium">Titolo</h3>
-                  <p className="text-sm text-muted-foreground">{quiz.title}</p>
+                  <p className="text-muted-foreground text-sm">{quiz.title}</p>
                 </div>
                 <div>
                   <h3 className="font-medium">Limite di tempo</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {quiz.time_limit
                       ? `${quiz.time_limit} minuti`
                       : "Nessun limite"}
@@ -428,13 +402,13 @@ export default async function QuizDetailPage({
                 </div>
                 <div>
                   <h3 className="font-medium">Numero di domande</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {quiz.questions.length}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-medium">Posizione</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {position.title} ({position.experience_level})
                   </p>
                 </div>
@@ -448,14 +422,14 @@ export default async function QuizDetailPage({
               <CardTitle>Risultati</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed">
+              <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[200px]">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Nessun candidato ha ancora completato questo quiz
                   </p>
                   <Button className="mt-2" size="sm" asChild>
                     <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
-                      <Send className="mr-2 h-4 w-4" />
+                      <Send className="mr-2 w-4 h-4" />
                       Invia a candidati
                     </Link>
                   </Button>
