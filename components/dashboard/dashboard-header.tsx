@@ -17,6 +17,7 @@ import { BrainCircuit, Loader2, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
+import Breadcrumbs from "./Breadcumbs";
 import { DashboardNav } from "./dashboard-nav";
 
 export function DashboardHeader() {
@@ -30,27 +31,28 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
+    <header className="top-0 z-30 sticky flex items-center gap-4 bg-background supports-[backdrop-filter]:bg-background/80 backdrop-blur-md px-6 border-b h-16">
       <div className="flex items-center gap-2 font-bold text-xl">
         {isMobile && (
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2">
-                <Menu className="h-5 w-5" />
+                <Menu className="w-5 h-5" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
+            <SheetContent side="left" className="p-0 w-64">
               <DashboardNav />
             </SheetContent>
           </Sheet>
         )}
         <Link href="/" className="flex items-center gap-2">
-          <BrainCircuit className="h-6 w-6" />
+          <BrainCircuit className="w-6 h-6" />
           <span>DevRecruit AI</span>
         </Link>
+        <Breadcrumbs />
       </div>
-      <div className="ml-auto flex items-center gap-4">
+      <div className="flex items-center gap-4 ml-auto">
         <ThemeToggle />
         {loading ? (
           <Loader2 className="mr-2 w-4 h-4 animate-spin" />
@@ -66,15 +68,15 @@ export function DashboardHeader() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                  {/* <DropdownMenuItem asChild>
                     <Link href="/dashboard/profile">Profilo</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/settings">Impostazioni</Link>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="mr-2 w-4 h-4" />
                     <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
