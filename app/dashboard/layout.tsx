@@ -31,7 +31,7 @@ export default async function DashboardLayout({
             </div>
           </div>
         </header>
-        <div className="px-4">{children}</div>
+        <div className="p-4">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
