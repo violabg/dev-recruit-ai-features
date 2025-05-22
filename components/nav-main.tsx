@@ -31,7 +31,7 @@ export function NavMain({
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((route) => {
-            const isActive = pathname === route.href;
+            const isActive = pathname.includes(route.href);
             const isLoading = isPending && clickedHref === route.href;
             return (
               <SidebarMenuItem key={route.label}>

@@ -4,7 +4,6 @@ import {
   BrainCircuit,
   Briefcase,
   FileQuestion,
-  LayoutDashboard,
   Settings,
   Users,
 } from "lucide-react";
@@ -25,11 +24,11 @@ import Link from "next/link";
 
 const data = {
   navSecondary: [
-    {
-      href: "/dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-    },
+    // {
+    //   href: "/dashboard",
+    //   label: "Dashboard",
+    //   icon: LayoutDashboard,
+    // },
     {
       href: "/dashboard/positions",
       label: "Posizioni",
@@ -60,7 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="font-bold text-xl">
-              <Link href="/" className="flex items-center gap-2">
+              <Link href="/dashboard" className="flex items-center gap-2">
                 <div>
                   <BrainCircuit className="size-6" />
                 </div>
