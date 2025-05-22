@@ -1,29 +1,19 @@
-"use client"
+import * as React from "react"
 
-import { useState, useEffect } from "react"
+const MOBILE_BREAKPOINT = 768
 
-/**
- * Hook to detect if the current device is a mobile device
- * @returns boolean indicating if the current device is mobile
- */
-export function useMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(false)
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
 
-  useEffect(() => {
-    // Function to check if the device is mobile based on screen width
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
-
-    // Initial check
-    checkMobile()
-
-    // Add event listener for window resize
-    window.addEventListener("resize", checkMobile)
-
-    // Clean up event listener
-    return () => window.removeEventListener("resize", checkMobile)
+    mql.addEventListener("change", onChange)
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return isMobile
+  return !!isMobile
 }

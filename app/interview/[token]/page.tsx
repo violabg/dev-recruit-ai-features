@@ -17,8 +17,6 @@ export default async function InterviewPage({
     .select("*")
     .eq("token", interviewParams.token)
     .single();
-  console.log("🚀 ~ interview:", interview);
-  console.log("🚀 ~ interviewError:", interviewError);
 
   if (interviewError || !interview) {
     return (

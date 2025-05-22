@@ -154,15 +154,6 @@ export function LoginForm({
               >
                 {isLoading ? "Accesso in corso..." : "Accedi"}
               </Button>
-              <div className="mt-4 text-sm text-center">
-                Non hai un account?{" "}
-                <Link
-                  href="/auth/sign-up"
-                  className="underline underline-offset-4"
-                >
-                  Registrati
-                </Link>
-              </div>
             </form>
           </Form>
           <Separator className="my-4" />
@@ -182,14 +173,12 @@ export function LoginForm({
             </div>
           </form>
           <Separator className="my-4" />
-          <p className="px-8 text-center text-sm text-muted-foreground">
-            <Link
-              href="/register"
-              className="hover:text-brand underline underline-offset-4"
-            >
-              Non hai un account? Registrati
+          <div className="mt-4 text-sm text-center">
+            Non hai un account?{" "}
+            <Link href="/auth/sign-up" className="underline underline-offset-4">
+              Registrati
             </Link>
-          </p>
+          </div>
         </CardContent>
       </Card>
     </div>

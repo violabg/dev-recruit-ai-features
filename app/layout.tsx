@@ -1,4 +1,3 @@
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SupabaseProvider } from "@/lib/supabase/supabase-provider";
 import type { Metadata } from "next";
@@ -31,7 +30,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SupabaseProvider>
-            <DashboardHeader />
             {children}
             <Toaster richColors />
           </SupabaseProvider>

@@ -41,43 +41,43 @@ async function DashboardStats() {
     .eq("status", "completed");
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="gap-4 grid md:grid-cols-3">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <CardTitle className="font-medium text-sm">
             Posizioni Aperte
           </CardTitle>
-          <Briefcase className="h-4 w-4 text-muted-foreground" />
+          <Briefcase className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{positionsCount || 0}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="font-bold text-2xl">{positionsCount || 0}</div>
+          <p className="text-muted-foreground text-xs">
             Posizioni attualmente aperte
           </p>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Candidati</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <CardTitle className="font-medium text-sm">Candidati</CardTitle>
+          <Users className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{candidatesCount || 0}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="font-bold text-2xl">{candidatesCount || 0}</div>
+          <p className="text-muted-foreground text-xs">
             Candidati totali nel sistema
           </p>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <CardTitle className="font-medium text-sm">
             Colloqui Completati
           </CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <BarChart3 className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{interviewsCount || 0}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="font-bold text-2xl">{interviewsCount || 0}</div>
+          <p className="text-muted-foreground text-xs">
             Colloqui completati con successo
           </p>
         </CardContent>
@@ -118,11 +118,11 @@ async function RecentPositions() {
             {positions.map((position) => (
               <div
                 key={position.id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="flex justify-between items-center p-3 border rounded-lg"
               >
                 <div>
                   <div className="font-medium">{position.title}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {position.experience_level}
                   </div>
                 </div>
@@ -135,14 +135,14 @@ async function RecentPositions() {
             ))}
           </div>
         ) : (
-          <div className="flex h-[140px] flex-col items-center justify-center rounded-lg border border-dashed">
+          <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[140px]">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Nessuna posizione creata
               </p>
               <Button className="mt-2" size="sm" asChild>
                 <Link href="/dashboard/positions/new">
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="mr-2 w-4 h-4" />
                   Crea posizione
                 </Link>
               </Button>
@@ -168,11 +168,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="font-bold text-3xl">Dashboard</h1>
         <Button asChild>
           <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 w-4 h-4" />
             Nuova Posizione
           </Link>
         </Button>
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
       {/* Stats cards */}
       <DashboardStats />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="gap-4 grid md:grid-cols-2">
         {/* Recent positions */}
         <RecentPositions />
 
@@ -193,9 +193,9 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[140px] flex-col items-center justify-center rounded-lg border border-dashed">
+            <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[140px]">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Nessuna attività recente
                 </p>
               </div>
