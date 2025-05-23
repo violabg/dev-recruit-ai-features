@@ -1,8 +1,8 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Copy, Loader2, Mail, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Copy, Loader2, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react"; // Keep useEffect for potential refreshTrigger if needed
 
 import {
   AlertDialog,
@@ -24,57 +24,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { deleteInterview, getInterviewsByQuiz } from "@/lib/actions/interviews";
+import { deleteInterview } from "@/lib/actions/interviews"; // InterviewsByQuiz might need adjustment based on the new function's return type
+import { AssignedInterview } from "@/lib/supabase/types";
 import { toast } from "sonner";
 
-interface Interview {
-  id: string;
-  token: string;
-  status: string;
-  created_at: string;
-  started_at: string | null;
-  completed_at: string | null;
-  candidate: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
-
 interface InvitesListProps {
-  quizId: string;
-  refreshTrigger?: number;
+  // quizId: string; // No longer needed if interviews are passed directly
+  assignedInterviews: AssignedInterview[];
+  refreshTrigger?: number; // Kept for now, might be removed if revalidation is sufficient
 }
 
-export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [loading, setLoading] = useState(true);
+export function InvitesList({
+  assignedInterviews,
+  refreshTrigger = 0,
+}: InvitesListProps) {
+  const [interviews, setInterviews] =
+    useState<AssignedInterview[]>(assignedInterviews);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Update interviews if the prop changes (e.g., after revalidation)
   useEffect(() => {
-    async function fetchInterviews() {
-      try {
-        setLoading(true);
-        const data = await getInterviewsByQuiz(quizId);
-        setInterviews(data);
-      } catch (error: any) {
-        toast.error("Error", {
-          description: error.message || "Failed to load invites",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
+    setInterviews(
+      assignedInterviews.filter((interview) => interview.created_at !== null)
+    );
+  }, [assignedInterviews, refreshTrigger]);
 
-    fetchInterviews();
-  }, [quizId, refreshTrigger]);
-
-  const copyInviteLink = (token: string) => {
+  const copyInterviewLink = (token: string) => {
     const link = `${window.location.origin}/interview/${token}`;
     navigator.clipboard.writeText(link);
     toast.success("Link copied", {
-      description: "The invite link has been copied to your clipboard",
+      description: "The interview link has been copied to your clipboard",
     });
   };
 
@@ -83,18 +63,20 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
 
     try {
       setDeleting(true);
-      await deleteInterview(deleteId);
+      await deleteInterview(deleteId); // This server action should revalidate the path
 
+      // Optimistically update UI or rely on revalidation from parent
       setInterviews(
         interviews.filter((interview) => interview.id !== deleteId)
       );
 
-      toast.success("Invite deleted", {
-        description: "The invite has been deleted successfully",
+      toast.success("Interview deleted", {
+        description: "The interview has been deleted successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Error", {
-        description: error.message || "Failed to delete invite",
+        description:
+          error instanceof Error ? error.message : "Failed to delete interview",
       });
     } finally {
       setDeleting(false);
@@ -117,27 +99,20 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   if (interviews.length === 0) {
     return (
-      <div className="flex h-40 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          No invites have been sent for this quiz yet
+      <div className="flex flex-col justify-center items-center p-8 border border-dashed rounded-lg h-40 text-center">
+        <p className="text-muted-foreground text-sm">
+          No interviews have been created for this quiz yet.
         </p>
       </div>
     );
@@ -145,14 +120,14 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="border rounded-md">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Candidate</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead>Quiz</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Sent</TableHead>
+              <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -160,9 +135,11 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
             {interviews.map((interview) => (
               <TableRow key={interview.id}>
                 <TableCell className="font-medium">
-                  {interview.candidate.name}
+                  {interview.candidate_name}
+                  {/* Use candidate_name from new type */}
                 </TableCell>
-                <TableCell>{interview.candidate.email}</TableCell>
+                <TableCell>{interview.quiz_title}</TableCell>
+                {/* Use quiz_title from new type */}
                 <TableCell>{getStatusBadge(interview.status)}</TableCell>
                 <TableCell>{formatDate(interview.created_at)}</TableCell>
                 <TableCell className="text-right">
@@ -170,29 +147,19 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyInviteLink(interview.token)}
-                      title="Copy link"
+                      onClick={() => copyInterviewLink(interview.token)}
+                      title="Copy interview link"
                     >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      title="Send email"
-                    >
-                      <a href={`mailto:${interview.candidate.email}`}>
-                        <Mail className="h-4 w-4" />
-                      </a>
+                      <Copy className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setDeleteId(interview.id)}
-                      title="Delete invite"
+                      title="Delete interview"
                       disabled={interview.status === "completed"}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
                 </TableCell>
@@ -210,7 +177,7 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the invite. This action cannot be
+              This will permanently delete the interview. This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -218,7 +185,7 @@ export function InvitesList({ quizId, refreshTrigger = 0 }: InvitesListProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={deleting}>
               {deleting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
               ) : null}
               Delete
             </AlertDialogAction>

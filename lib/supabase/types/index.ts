@@ -227,6 +227,16 @@ export type Database = {
           count: number;
         }[];
       };
+      get_candidates_for_quiz_assignment: {
+        Args: { quiz_id_param: string; p_user_id: string };
+        Returns: {
+          assigned_interviews: AssignedInterview[];
+          unassigned_candidates: Candidate[];
+          quiz: Quiz | null;
+          position: Position | null;
+          error?: string;
+        };
+      };
       generate_unique_token: {
         Args: Record<PropertyKey, never>;
         Returns: string;
@@ -373,3 +383,17 @@ export type Position = Tables<"positions">;
 export type Interview = Tables<"interviews">;
 export type Quiz = Tables<"quizzes">;
 export type Profile = Tables<"profiles">;
+
+export type AssignedInterview = {
+  id: string; // interview id
+  token: string;
+  status: string;
+  created_at: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  candidate_id: string;
+  candidate_name: string;
+  candidate_email: string;
+  quiz_id: string;
+  quiz_title: string;
+};

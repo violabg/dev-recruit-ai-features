@@ -2,8 +2,8 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { InvitesList } from "@/components/interview/invites-list";
-import { SendInviteForm } from "@/components/interview/send-invite-form";
+import { CandidateSelectionForm } from "@/components/interview/candidate-selection-form";
+import { InvitesList } from "@/components/interview/invites-list"; // Import AssignedInterview type
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,26 +14,60 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
+import { SupabaseClient } from "@supabase/supabase-js";
 
-interface Quiz {
-  id: string;
-  title: string;
-  position_id: string;
-  time_limit: number | null;
-}
+const getData = async (
+  quizId: string,
+  userId: string,
+  supabase: SupabaseClient
+) => {
+  try {
+    // Call the Supabase function to get assigned and unassigned candidates
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "get_candidates_for_quiz_assignment",
+      { quiz_id_param: quizId, p_user_id: userId }
+    );
 
-interface Position {
-  id: string;
-  title: string;
-}
+    if (rpcError) {
+      console.error("RPC Error:", rpcError);
+      throw new Error(
+        rpcError.message || "Failed to load candidate assignment data"
+      );
+    }
+
+    if (rpcData && rpcData.error) {
+      console.error("RPC Function Error:", rpcData.error);
+      // Potentially redirect or show a specific error message based on rpcData.error
+      return redirect(
+        `/dashboard/quizzes/${quizId}?error=${encodeURIComponent(
+          rpcData.error
+        )}`
+      );
+    }
+
+    return rpcData;
+  } catch (error: unknown) {
+    let errorMessage = "Failed to load data";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.error(
+      "Error fetching data for InviteCandidatesPage:",
+      errorMessage
+    );
+    return redirect(
+      `/dashboard/quizzes/${quizId}?error=${encodeURIComponent(errorMessage)}`
+    );
+  }
+};
 
 export default async function InviteCandidatesPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const { id } = await params; // Destructure id from params
-  const supabase = await createClient(); // Assuming createClient is synchronous
+  const { id: quizId } = await params; // Destructure and rename id to quizId for clarity
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -44,46 +78,14 @@ export default async function InviteCandidatesPage({
     return redirect("/login");
   }
 
-  let quiz: Quiz | null = null;
-  let position: Position | null = null;
+  const { quiz, position, assigned_interviews, unassigned_candidates } =
+    await getData(quizId, user.id, supabase);
 
-  try {
-    // Fetch quiz details
-    const { data: quizData, error: quizError } = await supabase
-      .from("quizzes")
-      .select("id, title, position_id, time_limit")
-      .eq("id", id) // Use destructured id
-      .single();
-
-    if (quizError) throw quizError;
-    quiz = quizData;
-
-    // Fetch position details
-    const { data: positionData, error: positionError } = await supabase
-      .from("positions")
-      .select("id, title")
-      .eq("id", quizData.position_id) // Use quizData directly as it's guaranteed to be non-null if no error
-      .single();
-
-    if (positionError) throw positionError;
-    position = positionData;
-  } catch (error: unknown) {
-    let errorMessage = "Failed to load data";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    console.error("Error fetching data:", errorMessage);
-    // It's generally better to redirect to a dedicated error page or show a generic error message
-    // For now, redirecting with a query param as per previous logic
-    return redirect(
-      `/dashboard/quizzes/${id}?error=${encodeURIComponent(errorMessage)}` // Use destructured id
-    );
-  }
-
+  // This check is redundant due to earlier checks but kept for safety
   if (!quiz || !position) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Quiz not found</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Quiz or Position not found</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Return to quizzes</Link>
         </Button>
@@ -95,53 +97,54 @@ export default async function InviteCandidatesPage({
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/dashboard/quizzes/${id}`}>
-            {" "}
-            {/* Use destructured id */}
-            <ArrowLeft className="mr-1 h-4 w-4" />
+          <Link href={`/dashboard/quizzes/${quizId}`}>
+            <ArrowLeft className="mr-1 w-4 h-4" />
             Back to quiz
           </Link>
         </Button>
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold">Invite candidates</h1>
+        <h1 className="font-bold text-3xl">Assign quiz to candidates</h1>
         <p className="text-muted-foreground">
-          Send the quiz &quot;{quiz.title}&quot; for the position &quot;
-          {position.title}&quot;
+          Assign the quiz &quot;{quiz.title}&quot; for the position &quot;
+          {position.title}&quot; to candidates
         </p>
       </div>
 
-      <Tabs defaultValue="email">
+      <Tabs defaultValue="candidates">
         <TabsList>
-          <TabsTrigger value="email">Invite via email</TabsTrigger>
-          <TabsTrigger value="invites">Sent invites</TabsTrigger>
+          <TabsTrigger value="candidates">Assign to candidates</TabsTrigger>
+          <TabsTrigger value="interviews">Created interviews</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="email" className="space-y-4 pt-4">
+        <TabsContent value="candidates" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Invite candidates via email</CardTitle>
+              <CardTitle>Assign quiz to candidates</CardTitle>
               <CardDescription>
-                Send invites to multiple candidates at once
+                Select candidates and create interview links for this quiz
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SendInviteForm quizId={quiz.id} />
+              <CandidateSelectionForm
+                quizId={quiz.id}
+                unassignedCandidates={unassigned_candidates}
+              />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="invites" className="space-y-4 pt-4">
+        <TabsContent value="interviews" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Sent invites</CardTitle>
+              <CardTitle>Created interviews</CardTitle>
               <CardDescription>
-                Manage invites sent for this quiz
+                Manage interviews created for this quiz
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InvitesList quizId={quiz.id} />
+              <InvitesList assignedInterviews={assigned_interviews} />
             </CardContent>
           </Card>
         </TabsContent>
