@@ -1,6 +1,5 @@
 "use client";
 
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +14,7 @@ import { BrainCircuit, Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
+import { ThemeToggle } from "../theme-toggle";
 import Breadcrumbs from "./Breadcumbs";
 
 export function DashboardHeader() {

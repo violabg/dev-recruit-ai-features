@@ -1,19 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Loader2 } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MultiSelect } from "@/components/shared/multi-select"
-import { createPosition } from "@/lib/actions/positions"
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { createPosition } from "@/lib/actions/positions";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -28,7 +42,7 @@ const formSchema = z.object({
   }),
   soft_skills: z.array(z.string()).optional(),
   contract_type: z.string().optional(),
-})
+});
 
 const programmingLanguages = [
   "JavaScript",
@@ -41,7 +55,7 @@ const programmingLanguages = [
   "Go",
   "Swift",
   "Kotlin",
-]
+];
 
 const frameworks = [
   "React",
@@ -55,7 +69,7 @@ const frameworks = [
   "Laravel",
   "ASP.NET",
   "Ruby on Rails",
-]
+];
 
 const databases = [
   "MySQL",
@@ -68,9 +82,20 @@ const databases = [
   "Cassandra",
   "Firebase",
   "Supabase",
-]
+];
 
-const tools = ["Git", "Docker", "Kubernetes", "AWS", "Azure", "Google Cloud", "CI/CD", "Jira", "Figma", "Webpack"]
+const tools = [
+  "Git",
+  "Docker",
+  "Kubernetes",
+  "AWS",
+  "Azure",
+  "Google Cloud",
+  "CI/CD",
+  "Jira",
+  "Figma",
+  "Webpack",
+];
 
 const softSkills = [
   "Comunicazione",
@@ -83,15 +108,21 @@ const softSkills = [
   "Creatività",
   "Empatia",
   "Negoziazione",
-]
+];
 
-const contractTypes = ["Tempo indeterminato", "Tempo determinato", "Partita IVA", "Stage", "Apprendistato"]
+const contractTypes = [
+  "Tempo indeterminato",
+  "Tempo determinato",
+  "Partita IVA",
+  "Stage",
+  "Apprendistato",
+];
 
-const experienceLevels = ["Junior", "Mid-Level", "Senior", "Lead", "Architect"]
+const experienceLevels = ["Junior", "Mid-Level", "Senior", "Lead", "Architect"];
 
 export function NewPositionForm() {
-  const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,36 +134,51 @@ export function NewPositionForm() {
       soft_skills: [],
       contract_type: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      const formData = new FormData()
-      formData.append("title", values.title)
-      formData.append("description", values.description || "")
-      formData.append("experience_level", values.experience_level)
-      formData.append("skills", JSON.stringify(values.skills))
-      formData.append("soft_skills", JSON.stringify(values.soft_skills || []))
-      formData.append("contract_type", values.contract_type || "")
+      const formData = new FormData();
+      formData.append("title", values.title);
+      formData.append("description", values.description || "");
+      formData.append("experience_level", values.experience_level);
+      formData.append("skills", JSON.stringify(values.skills));
+      formData.append("soft_skills", JSON.stringify(values.soft_skills || []));
+      formData.append("contract_type", values.contract_type || "");
 
-      await createPosition(formData)
+      await createPosition(formData);
     } catch (error) {
-      console.error("Error creating position:", error)
-      setIsSubmitting(false)
+      console.error("Error creating position:", error);
+      setIsSubmitting(false);
     }
   }
 
   // Combine all skills for the MultiSelect component
   const allSkills = [
-    ...programmingLanguages.map((skill) => ({ label: skill, value: skill, category: "Linguaggi" })),
-    ...frameworks.map((skill) => ({ label: skill, value: skill, category: "Framework" })),
-    ...databases.map((skill) => ({ label: skill, value: skill, category: "Database" })),
+    ...programmingLanguages.map((skill) => ({
+      label: skill,
+      value: skill,
+      category: "Linguaggi",
+    })),
+    ...frameworks.map((skill) => ({
+      label: skill,
+      value: skill,
+      category: "Framework",
+    })),
+    ...databases.map((skill) => ({
+      label: skill,
+      value: skill,
+      category: "Database",
+    })),
     ...tools.map((skill) => ({ label: skill, value: skill, category: "Tool" })),
-  ]
+  ];
 
-  const allSoftSkills = softSkills.map((skill) => ({ label: skill, value: skill }))
+  const allSoftSkills = softSkills.map((skill) => ({
+    label: skill,
+    value: skill,
+  }));
 
   return (
     <Form {...form}>
@@ -144,9 +190,14 @@ export function NewPositionForm() {
             <FormItem>
               <FormLabel>Titolo della posizione</FormLabel>
               <FormControl>
-                <Input placeholder="es. Sviluppatore Frontend React" {...field} />
+                <Input
+                  placeholder="es. Sviluppatore Frontend React"
+                  {...field}
+                />
               </FormControl>
-              <FormDescription>Inserisci un titolo chiaro e descrittivo</FormDescription>
+              <FormDescription>
+                Inserisci un titolo chiaro e descrittivo
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -165,7 +216,9 @@ export function NewPositionForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription>Fornisci dettagli sulla posizione e sulle responsabilità</FormDescription>
+              <FormDescription>
+                Fornisci dettagli sulla posizione e sulle responsabilità
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -191,7 +244,9 @@ export function NewPositionForm() {
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>Indica il livello di esperienza richiesto</FormDescription>
+              <FormDescription>
+                Indica il livello di esperienza richiesto
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -212,7 +267,9 @@ export function NewPositionForm() {
                   grouped
                 />
               </FormControl>
-              <FormDescription>Seleziona le competenze tecniche richieste per questa posizione</FormDescription>
+              <FormDescription>
+                Seleziona le competenze tecniche richieste per questa posizione
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -232,7 +289,9 @@ export function NewPositionForm() {
                   placeholder="Seleziona soft skills..."
                 />
               </FormControl>
-              <FormDescription>Seleziona le soft skills importanti per questa posizione</FormDescription>
+              <FormDescription>
+                Seleziona le soft skills importanti per questa posizione
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -258,7 +317,9 @@ export function NewPositionForm() {
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>Indica il tipo di contratto offerto</FormDescription>
+              <FormDescription>
+                Indica il tipo di contratto offerto
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -271,7 +332,7 @@ export function NewPositionForm() {
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                 Creazione in corso...
               </>
             ) : (
@@ -281,5 +342,5 @@ export function NewPositionForm() {
         </div>
       </form>
     </Form>
-  )
+  );
 }

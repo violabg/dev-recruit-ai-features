@@ -20,7 +20,7 @@ import {
 import { useSupabase } from "@/lib/supabase/supabase-provider";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CurrentUserAvatar } from "./auth/current-user-avatar";
+import { CurrentUserAvatar } from "../auth/current-user-avatar";
 
 export function NavUser() {
   const { supabase, user } = useSupabase();
