@@ -305,3 +305,17 @@ CREATE OR REPLACE TRIGGER set_interview_token_trigger
 BEFORE INSERT ON public.interviews
 FOR EACH ROW
 EXECUTE FUNCTION set_interview_token();
+
+-- Create the count_candidates_by_status function in Supabase
+CREATE OR REPLACE FUNCTION count_candidates_by_status(user_id UUID)
+RETURNS TABLE(status TEXT, count BIGINT)
+LANGUAGE SQL
+AS $$
+  SELECT 
+    candidates.status,
+    COUNT(*) as count
+  FROM candidates
+  WHERE candidates.created_by = user_id
+  GROUP BY candidates.status
+  ORDER BY candidates.status;
+$$;
