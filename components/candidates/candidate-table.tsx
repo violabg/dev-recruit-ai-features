@@ -1,5 +1,5 @@
 "use client";
-
+import { CandidateWithRelations } from "@/app/dashboard/candidates/candidates-actions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,31 +32,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { CandidateStatusBadge } from "./candidate-status-badge";
 
-// Define the candidate type
-type Candidate = {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  created_at: string;
-  positions: {
-    id: string;
-    title: string;
-    experience_level: string;
-  } | null;
-  interviews:
-    | {
-        id: string;
-        status: string;
-        score: number | null;
-        created_at: string;
-      }[]
-    | null;
-};
-
 // Props for the candidate table
 interface CandidateTableProps {
-  candidates: Candidate[];
+  candidates: CandidateWithRelations[];
 }
 
 // Candidate table component
@@ -121,9 +99,10 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 <CandidateStatusBadge status={candidate.status} />
               </TableCell>
               <TableCell>
-                {format(new Date(candidate.created_at), "dd MMM yyyy", {
-                  locale: it,
-                })}
+                {candidate.created_at &&
+                  format(new Date(candidate.created_at), "dd MMM yyyy", {
+                    locale: it,
+                  })}
               </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>

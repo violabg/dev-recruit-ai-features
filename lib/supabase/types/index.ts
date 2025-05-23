@@ -367,3 +367,9 @@ export const Constants = {
     Enums: {},
   },
 } as const;
+
+export type Candidate = Tables<"candidates">;
+export type Position = Tables<"positions">;
+export type Interview = Tables<"interviews">;
+export type Quiz = Tables<"quizzes">;
+export type Profile = Tables<"profiles">;

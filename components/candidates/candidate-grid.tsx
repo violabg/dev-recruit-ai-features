@@ -1,5 +1,6 @@
 "use client";
 
+import { CandidateWithRelations } from "@/app/dashboard/candidates/candidates-actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,31 +34,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { CandidateStatusBadge } from "./candidate-status-badge";
 
-// Define the candidate type
-type Candidate = {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  created_at: string;
-  positions: {
-    id: string;
-    title: string;
-    experience_level: string;
-  } | null;
-  interviews:
-    | {
-        id: string;
-        status: string;
-        score: number | null;
-        created_at: string;
-      }[]
-    | null;
-};
-
-// Props for the candidate grid
 interface CandidateGridProps {
-  candidates: Candidate[];
+  candidates: CandidateWithRelations[];
 }
 
 // Get initials from name
@@ -92,35 +70,35 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="gap-4 grid sm:grid-cols-2 lg:grid-cols-3">
       {candidates.map((candidate) => (
         <Card key={candidate.id} className="overflow-hidden">
           <CardHeader className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex justify-between items-start">
               <div className="flex items-center space-x-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="w-10 h-10">
                   <AvatarFallback>{getInitials(candidate.name)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold">{candidate.name}</h3>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Mail className="mr-1 h-3 w-3" />
+                  <div className="flex items-center text-muted-foreground text-sm">
+                    <Mail className="mr-1 w-3 h-3" />
                     {candidate.email}
                   </div>
                 </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
+                  <Button variant="ghost" className="p-0 w-8 h-8">
                     <span className="sr-only">Apri menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Azioni</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
                     <Link href={`/dashboard/candidates/${candidate.id}`}>
-                      <User className="mr-2 h-4 w-4" />
+                      <User className="mr-2 w-4 h-4" />
                       Visualizza profilo
                     </Link>
                   </DropdownMenuItem>
@@ -128,7 +106,7 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
                     <Link
                       href={`/dashboard/candidates/${candidate.id}/send-quiz`}
                     >
-                      <Send className="mr-2 h-4 w-4" />
+                      <Send className="mr-2 w-4 h-4" />
                       Invia quiz
                     </Link>
                   </DropdownMenuItem>
@@ -137,7 +115,7 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
                       <Link
                         href={`/dashboard/interviews/${candidate.interviews[0].id}`}
                       >
-                        <FileText className="mr-2 h-4 w-4" />
+                        <FileText className="mr-2 w-4 h-4" />
                         Visualizza risultati
                       </Link>
                     </DropdownMenuItem>
@@ -148,7 +126,7 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
                     disabled={isDeleting === candidate.id}
                     className="text-red-600"
                   >
-                    <Trash className="mr-2 h-4 w-4" />
+                    <Trash className="mr-2 w-4 h-4" />
                     {isDeleting === candidate.id
                       ? "Eliminazione..."
                       : "Elimina candidato"}
@@ -160,11 +138,11 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
           <CardContent className="p-4 pt-0">
             <div className="space-y-2">
               <div className="flex items-center text-sm">
-                <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Briefcase className="mr-2 w-4 h-4 text-muted-foreground" />
                 {candidate.positions ? (
                   <div>
                     <span>{candidate.positions.title}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {" "}
                       • {candidate.positions.experience_level}
                     </span>
@@ -176,17 +154,19 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
                 )}
               </div>
               <div className="flex items-center text-sm">
-                <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>
-                  Aggiunto il{" "}
-                  {format(new Date(candidate.created_at), "dd MMMM yyyy", {
-                    locale: it,
-                  })}
-                </span>
+                <Calendar className="mr-2 w-4 h-4 text-muted-foreground" />
+                {candidate.created_at && (
+                  <span>
+                    Aggiunto il{" "}
+                    {format(new Date(candidate.created_at), "dd MMMM yyyy", {
+                      locale: it,
+                    })}
+                  </span>
+                )}
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex items-center justify-between border-t p-4">
+          <CardFooter className="flex justify-between items-center p-4 border-t">
             <CandidateStatusBadge status={candidate.status} />
             <Button asChild variant="outline" size="sm">
               <Link href={`/dashboard/candidates/${candidate.id}`}>

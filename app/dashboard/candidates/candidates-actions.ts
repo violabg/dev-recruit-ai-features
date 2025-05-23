@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { Candidate, Interview, Position } from "@/lib/supabase/types";
+
+export type CandidateWithRelations = Candidate & {
+  positions: Position | null;
+  interviews: Interview[] | null;
+};
 
 type FetchCandidatesParams = {
   search: string;
@@ -102,7 +108,7 @@ export async function fetchCandidatesData({
 
   return {
     user,
-    candidates,
+    candidates: (candidates || []) as CandidateWithRelations[],
     positions,
     statusCounts,
     totalCandidates,
