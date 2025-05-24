@@ -23,8 +23,8 @@ import { it } from "date-fns/locale";
 import {
   ArrowUpDown,
   FileText,
+  Link2,
   MoreHorizontal,
-  Send,
   Trash,
   User,
 } from "lucide-react";
@@ -121,11 +121,9 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link
-                        href={`/dashboard/candidates/${candidate.id}/send-quiz`}
-                      >
-                        <Send className="mr-2 w-4 h-4" />
-                        Invia quiz
+                      <Link href={`/dashboard/candidates/${candidate.id}/quiz`}>
+                        <Link2 className="mr-2 w-4 h-4" />
+                        Associa quiz
                       </Link>
                     </DropdownMenuItem>
                     {candidate.interviews &&

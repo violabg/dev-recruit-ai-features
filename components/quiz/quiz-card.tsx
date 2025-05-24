@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
-import { Clock, Eye, Send } from "lucide-react";
+import { Clock, Eye, Link2 } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -22,7 +22,7 @@ export function QuizCard({
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
-        <CardTitle className="line-clamp-1 text-lg">{title}</CardTitle>
+        <CardTitle className="text-lg line-clamp-1">{title}</CardTitle>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="space-y-2">
@@ -33,7 +33,7 @@ export function QuizCard({
             )}
             {time_limit && (
               <Badge variant="secondary">
-                <Clock className="mr-1 h-3 w-3" />
+                <Clock className="mr-1 w-3 h-3" />
                 {time_limit} minuti
               </Badge>
             )}
@@ -49,17 +49,17 @@ export function QuizCard({
         </div>
       </CardContent>
       <CardFooter className="mt-auto pt-2">
-        <div className="flex w-full justify-between gap-2">
+        <div className="flex justify-between gap-2 w-full">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/quizzes/${id}`}>
-              <Eye className="mr-1 h-4 w-4" />
+              <Eye className="mr-1 w-4 h-4" />
               Visualizza
             </Link>
           </Button>
           <Button variant="secondary" size="sm" asChild>
             <Link href={`/dashboard/quizzes/${id}/invite`}>
-              <Send className="mr-1 h-4 w-4" />
-              Invia
+              <Link2 className="mr-1 w-4 h-4" />
+              Associa candidato
             </Link>
           </Button>
         </div>

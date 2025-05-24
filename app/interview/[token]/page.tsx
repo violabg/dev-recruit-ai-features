@@ -48,7 +48,6 @@ export default async function InterviewPage({
     )
     .eq("id", interview.quiz_id)
     .single<Quiz>();
-  console.log("🚀 ~ quiz:", quiz);
 
   if (quizError || !quiz) {
     return (

@@ -26,21 +26,21 @@ export default async function GenerateQuizPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Genera Quiz AI</h1>
+        <h1 className="font-bold text-3xl">Genera Quiz AI</h1>
         <p className="text-muted-foreground">
           Crea un quiz personalizzato per la posizione {position.title}
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="gap-6 grid md:grid-cols-2">
         <div>
           <QuizForm position={position} />
         </div>
         <Card>
           <CardContent className="p-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <BrainCircuit className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-2 font-semibold text-lg">
+                <BrainCircuit className="w-5 h-5 text-primary" />
                 <span>Informazioni sulla posizione</span>
               </div>
 
@@ -54,11 +54,11 @@ export default async function GenerateQuizPage({
                 </div>
                 <div>
                   <span className="font-medium">Competenze:</span>
-                  <div className="mt-1 flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 mt-1">
                     {position.skills.map((skill: string, index: number) => (
                       <span
                         key={index}
-                        className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                        className="inline-flex items-center px-2.5 py-0.5 border rounded-full font-semibold text-xs"
                       >
                         {skill}
                       </span>
@@ -68,18 +68,18 @@ export default async function GenerateQuizPage({
                 {position.description && (
                   <div>
                     <span className="font-medium">Descrizione:</span>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-muted-foreground text-sm">
                       {position.description}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="rounded-md bg-muted p-4">
+              <div className="bg-muted p-4 rounded-md">
                 <h3 className="font-medium">Come funziona la generazione AI</h3>
-                <ul className="mt-2 space-y-2 text-sm">
+                <ul className="space-y-2 mt-2 text-sm">
                   <li className="flex items-start gap-2">
-                    <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
+                    <span className="flex justify-center items-center bg-primary mt-0.5 rounded-full w-4 h-4 font-bold text-primary-foreground text-xs">
                       1
                     </span>
                     <span>
@@ -88,7 +88,7 @@ export default async function GenerateQuizPage({
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
+                    <span className="flex justify-center items-center bg-primary mt-0.5 rounded-full w-4 h-4 font-bold text-primary-foreground text-xs">
                       2
                     </span>
                     <span>
@@ -96,7 +96,7 @@ export default async function GenerateQuizPage({
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
+                    <span className="flex justify-center items-center bg-primary mt-0.5 rounded-full w-4 h-4 font-bold text-primary-foreground text-xs">
                       3
                     </span>
                     <span>
@@ -105,11 +105,11 @@ export default async function GenerateQuizPage({
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-0.5 h-4 w-4 rounded-full bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center">
+                    <span className="flex justify-center items-center bg-primary mt-0.5 rounded-full w-4 h-4 font-bold text-primary-foreground text-xs">
                       4
                     </span>
                     <span>
-                      Puoi modificare il quiz generato prima di inviarlo ai
+                      Puoi modificare il quiz generato prima di associarlo ai
                       candidati
                     </span>
                   </li>

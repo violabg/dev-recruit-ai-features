@@ -25,8 +25,8 @@ export default async function PositionDetailPage({
 
   if (positionError || !position) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Posizione non trovata</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Posizione non trovata</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/positions">Torna alle posizioni</Link>
         </Button>
@@ -50,15 +50,15 @@ export default async function PositionDetailPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{position.title}</h1>
-          <div className="mt-1 flex items-center gap-2">
+          <h1 className="font-bold text-3xl">{position.title}</h1>
+          <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline">{position.experience_level}</Badge>
             {position.contract_type && (
               <Badge variant="outline">{position.contract_type}</Badge>
             )}
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Creata il {formatDate(position.created_at)}
             </span>
           </div>
@@ -66,7 +66,7 @@ export default async function PositionDetailPage({
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href={`/dashboard/positions/${position.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
+              <Edit className="mr-2 w-4 h-4" />
               Modifica
             </Link>
           </Button>
@@ -81,7 +81,7 @@ export default async function PositionDetailPage({
           <TabsTrigger value="candidates">Candidati</TabsTrigger>
         </TabsList>
         <TabsContent value="details" className="space-y-4 pt-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="gap-4 grid md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Descrizione</CardTitle>
@@ -133,17 +133,17 @@ export default async function PositionDetailPage({
 
         <TabsContent value="quizzes" className="space-y-4 pt-4">
           <div className="flex justify-between">
-            <h2 className="text-xl font-semibold">Quiz</h2>
+            <h2 className="font-semibold text-xl">Quiz</h2>
             <Button asChild>
               <Link href={`/dashboard/positions/${position.id}/quiz/new`}>
-                <BrainCircuit className="mr-2 h-4 w-4" />
+                <BrainCircuit className="mr-2 w-4 h-4" />
                 Genera Quiz AI
               </Link>
             </Button>
           </div>
 
           {quizzes && quizzes.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="gap-4 grid md:grid-cols-2">
               {quizzes.map((quiz) => (
                 <Card key={quiz.id}>
                   <CardHeader className="pb-2">
@@ -169,7 +169,7 @@ export default async function PositionDetailPage({
                         </Button>
                         <Button variant="secondary" size="sm" asChild>
                           <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
-                            Invita candidati
+                            Associa candidati
                           </Link>
                         </Button>
                       </div>
@@ -179,14 +179,14 @@ export default async function PositionDetailPage({
               ))}
             </div>
           ) : (
-            <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed">
+            <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[200px]">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Nessun quiz creato per questa posizione
                 </p>
                 <Button className="mt-2" size="sm" asChild>
                   <Link href={`/dashboard/positions/${position.id}/quiz/new`}>
-                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    <BrainCircuit className="mr-2 w-4 h-4" />
                     Genera Quiz AI
                   </Link>
                 </Button>
@@ -197,17 +197,17 @@ export default async function PositionDetailPage({
 
         <TabsContent value="candidates" className="space-y-4 pt-4">
           <div className="flex justify-between">
-            <h2 className="text-xl font-semibold">Candidati</h2>
+            <h2 className="font-semibold text-xl">Candidati</h2>
             <Button asChild>
               <Link href={`/dashboard/positions/${position.id}/candidates/new`}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 w-4 h-4" />
                 Aggiungi Candidato
               </Link>
             </Button>
           </div>
 
           {candidates && candidates.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="gap-4 grid md:grid-cols-2">
               {candidates.map((candidate) => (
                 <Card key={candidate.id}>
                   <CardHeader className="pb-2">
@@ -245,9 +245,9 @@ export default async function PositionDetailPage({
                         </Button>
                         <Button variant="secondary" size="sm" asChild>
                           <Link
-                            href={`/dashboard/candidates/${candidate.id}/invite`}
+                            href={`/dashboard/candidates/${candidate.id}/quiz`}
                           >
-                            Invia quiz
+                            Associa quiz
                           </Link>
                         </Button>
                       </div>
@@ -257,16 +257,16 @@ export default async function PositionDetailPage({
               ))}
             </div>
           ) : (
-            <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed">
+            <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[200px]">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Nessun candidato aggiunto per questa posizione
                 </p>
                 <Button className="mt-2" size="sm" asChild>
                   <Link
                     href={`/dashboard/positions/${position.id}/candidates/new`}
                   >
-                    <Users className="mr-2 h-4 w-4" />
+                    <Users className="mr-2 w-4 h-4" />
                     Aggiungi candidato
                   </Link>
                 </Button>

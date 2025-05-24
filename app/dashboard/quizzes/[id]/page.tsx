@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteQuiz } from "@/lib/actions/quizzes";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, prismLanguage } from "@/lib/utils";
-import { ArrowLeft, Clock, Edit, Send, Trash } from "lucide-react";
+import { ArrowLeft, Clock, Edit, Link2, Send, Trash } from "lucide-react";
 import Link from "next/link";
 import { Highlight, themes } from "prism-react-renderer";
 
@@ -50,7 +50,6 @@ export default async function QuizDetailPage({
     .select("*")
     .eq("id", id)
     .single<Quiz>();
-  console.log("🚀 ~ quiz:", quiz);
 
   if (quizError || !quiz) {
     return (
@@ -119,7 +118,7 @@ export default async function QuizDetailPage({
           <Button variant="default" asChild>
             <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
               <Send className="mr-2 w-4 h-4" />
-              Invia a candidati
+              Assicia a candidati
             </Link>
           </Button>
           {/* Delete button uses server action */}
@@ -429,8 +428,8 @@ export default async function QuizDetailPage({
                   </p>
                   <Button className="mt-2" size="sm" asChild>
                     <Link href={`/dashboard/quizzes/${quiz.id}/invite`}>
-                      <Send className="mr-2 w-4 h-4" />
-                      Invia a candidati
+                      <Link2 className="mr-2 w-4 h-4" />
+                      Associa a candidati
                     </Link>
                   </Button>
                 </div>
