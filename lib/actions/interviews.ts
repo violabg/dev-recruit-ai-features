@@ -1,9 +1,9 @@
 "use server";
 
-import { Json } from "@/types/supabase"; // Corrected import path for Json type
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "../supabase/server";
+import { Json } from "../supabase/types";
 
 // Interview actions
 export async function startInterview(token: string) {
@@ -148,7 +148,12 @@ export type AssignCandidatesToQuizState = {
     quizId?: string[];
     general?: string[];
   };
-  createdInterviews?: { candidateId: string; token: string }[];
+  createdInterviews?: {
+    candidateId: string;
+    token: string;
+    candidateName: string;
+    candidateEmail: string;
+  }[];
   success?: boolean;
 };
 
@@ -197,10 +202,33 @@ export async function assignCandidatesToQuiz(
     return { message: "You do not have permission to assign this quiz." };
   }
 
-  const createdInterviews: { candidateId: string; token: string }[] = [];
+  // Get candidate information first
+  const { data: candidates, error: candidatesError } = await supabase
+    .from("candidates")
+    .select("id, name, email")
+    .in("id", validatedCandidateIds);
+
+  if (candidatesError) {
+    return { message: "Error fetching candidate information." };
+  }
+
+  const candidateMap = new Map(candidates?.map((c) => [c.id, c]) || []);
+
+  const createdInterviews: {
+    candidateId: string;
+    token: string;
+    candidateName: string;
+    candidateEmail: string;
+  }[] = [];
   const errors: { candidateId: string; message: string }[] = [];
 
   for (const candidateId of validatedCandidateIds) {
+    const candidate = candidateMap.get(candidateId);
+    if (!candidate) {
+      errors.push({ candidateId, message: "Candidate not found" });
+      continue;
+    }
+
     // Generate unique token
     const token =
       Math.random().toString(36).substring(2, 15) +
@@ -219,7 +247,12 @@ export async function assignCandidatesToQuiz(
     if (error) {
       errors.push({ candidateId, message: error.message });
     } else if (data && data[0]) {
-      createdInterviews.push({ candidateId, token: data[0].token });
+      createdInterviews.push({
+        candidateId,
+        token: data[0].token,
+        candidateName: candidate.name,
+        candidateEmail: candidate.email,
+      });
     }
   }
 

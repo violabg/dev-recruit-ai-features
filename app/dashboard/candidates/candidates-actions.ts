@@ -100,7 +100,6 @@ export async function fetchCandidatesData({
       user_id: user.id,
     }
   );
-  console.log("🚀 ~ statusCounts:", statusCounts);
 
   // Calculate total candidates
   const totalCandidates =

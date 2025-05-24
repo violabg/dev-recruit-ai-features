@@ -58,7 +58,12 @@ export function CandidateSelectionForm({
     initialState
   );
   const [createdLinks, setCreatedLinks] = useState<
-    { candidateId: string; token: string; candidateName: string }[]
+    {
+      candidateId: string;
+      token: string;
+      candidateName: string;
+      candidateEmail: string;
+    }[]
   >([]);
 
   const form = useForm<CandidateSelectionValues>({
@@ -76,14 +81,8 @@ export function CandidateSelectionForm({
         } interview links have been created successfully`,
       });
       form.reset();
-      setCreatedLinks(
-        formState.createdInterviews?.map((link) => ({
-          ...link,
-          candidateName:
-            unassignedCandidates.find((c) => c.id === link.candidateId)?.name ||
-            "Unknown",
-        })) || []
-      );
+      // Now we can use the candidate information directly from the server response
+      setCreatedLinks(formState.createdInterviews || []);
       if (onSuccess) {
         onSuccess(); // Consider if this is still needed with server-side revalidation
       }
@@ -99,7 +98,7 @@ export function CandidateSelectionForm({
         description: formState.message,
       });
     }
-  }, [formState, form, unassignedCandidates, onSuccess]);
+  }, [formState, form, onSuccess]);
 
   const copyInterviewLink = (token: string) => {
     const link = `${window.location.origin}/interview/${token}`;
@@ -114,68 +113,66 @@ export function CandidateSelectionForm({
     value: candidate.id,
   }));
 
-  if (unassignedCandidates.length === 0) {
-    return (
-      <div className="flex flex-col justify-center items-center p-8 border border-dashed rounded-lg h-40 text-center">
-        <p className="text-muted-foreground text-sm">
-          No candidates available to assign for this quiz position.
-        </p>
-        <p className="mt-1 text-muted-foreground text-xs">
-          All candidates in this position have already been assigned or there
-          are no candidates in this position.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <Form {...form}>
-        <form action={formAction} className="space-y-6">
-          <input type="hidden" name="quizId" value={quizId} />
-          {form.watch("candidateIds").map((candidateId) => (
-            <input
-              key={candidateId}
-              type="hidden"
+      {unassignedCandidates.length === 0 ? (
+        <div className="flex flex-col justify-center items-center p-8 border border-dashed rounded-lg h-40 text-center">
+          <p className="text-muted-foreground text-sm">
+            No candidates available to assign for this quiz position.
+          </p>
+          <p className="mt-1 text-muted-foreground text-xs">
+            All candidates in this position have already been assigned or there
+            are no candidates in this position.
+          </p>
+        </div>
+      ) : (
+        <Form {...form}>
+          <form action={formAction} className="space-y-6">
+            <input type="hidden" name="quizId" value={quizId} />
+            {form.watch("candidateIds").map((candidateId) => (
+              <input
+                key={candidateId}
+                type="hidden"
+                name="candidateIds"
+                value={candidateId}
+              />
+            ))}
+
+            <FormField
+              control={form.control}
               name="candidateIds"
-              value={candidateId}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select candidates</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={candidateOptions}
+                      onChange={field.onChange}
+                      selected={field.value}
+                      placeholder="Select candidates to assign this quiz"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          ))}
 
-          <FormField
-            control={form.control}
-            name="candidateIds"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Select candidates</FormLabel>
-                <FormControl>
-                  <MultiSelect
-                    options={candidateOptions}
-                    onChange={field.onChange}
-                    selected={field.value}
-                    placeholder="Select candidates to assign this quiz"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                Creating interviews...
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 w-4 h-4" />
-                Create interview links
-              </>
-            )}
-          </Button>
-        </form>
-      </Form>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                  Creating interviews...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 w-4 h-4" />
+                  Create interview links
+                </>
+              )}
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {/* Display created links */}
       {createdLinks.length > 0 && (
@@ -190,7 +187,7 @@ export function CandidateSelectionForm({
                 <div>
                   <div className="font-medium">{link.candidateName}</div>
                   <div className="text-muted-foreground text-sm">
-                    Interview link ready
+                    {link.candidateEmail} • Interview link ready
                   </div>
                 </div>
                 <Button
