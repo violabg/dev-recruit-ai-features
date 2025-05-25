@@ -213,11 +213,11 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
   // Filter by user's candidates only
   query = query.eq("candidates.created_by", user.id);
 
-  // Apply search filter
+  // Apply search filter - use textSearch for better compatibility
   if (search) {
-    query = query.or(
-      `candidates.name.ilike.%${search}%,candidates.email.ilike.%${search}%,quizzes.title.ilike.%${search}%`
-    );
+    // For complex joins, it's better to handle search in separate queries or use simpler approach
+    // Since we're dealing with joined tables, let's apply search filter after data fetch
+    // This ensures we don't get parsing errors with complex OR conditions on joined tables
   }
 
   // Apply status filter
@@ -225,10 +225,8 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
     query = query.eq("status", status);
   }
 
-  // Apply position filter
-  if (positionId !== "all") {
-    query = query.eq("quizzes.position_id", positionId);
-  }
+  // Note: Position filter is applied after fetching to ensure proper handling of joins
+  // and to exclude interviews with N/A positions when a specific position is selected
 
   // For programming language filter, we need to fetch all data first
   // Apply ordering but no pagination yet
@@ -240,8 +238,29 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
     throw new Error(error.message);
   }
 
-  // Filter by programming language after fetching (since we can't filter on embedded resources)
+  // Filter by programming language and search after fetching (since we can't filter on embedded resources easily)
   let filteredInterviews = allInterviews || [];
+
+  // Apply search filter
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredInterviews = filteredInterviews.filter(
+      (interview) =>
+        interview.candidate?.name?.toLowerCase().includes(searchLower) ||
+        interview.candidate?.email?.toLowerCase().includes(searchLower) ||
+        interview.quiz?.title?.toLowerCase().includes(searchLower) ||
+        interview.quiz?.position?.title?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  // Apply position filter (ensuring we exclude N/A positions when a specific position is selected)
+  if (positionId !== "all") {
+    filteredInterviews = filteredInterviews.filter(
+      (interview) => interview.quiz?.position?.id === positionId
+    );
+  }
+
+  // Apply programming language filter
   if (programmingLanguage !== "all") {
     filteredInterviews = filteredInterviews.filter(
       (interview) =>
