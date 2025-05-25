@@ -15,7 +15,7 @@ const DASHBOARD_LABELS: Record<string, string> = {
   positions: "Posizioni",
   quizzes: "Quiz",
   candidates: "Candidati",
-  interviews: "Interviste",
+  interviews: "Colloqui",
   settings: "Impostazioni",
   "sign-up": "Registrazione",
   "sign-up-success": "Registrazione completata",

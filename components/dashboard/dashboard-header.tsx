@@ -10,10 +10,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSupabase } from "@/lib/supabase/supabase-provider";
-import { BrainCircuit, Loader2, LogOut } from "lucide-react";
+import { BrainCircuit, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
+import { LogoutButton } from "../auth/logout-button";
 import { ThemeToggle } from "../theme-toggle";
 import Breadcrumbs from "./Breadcumbs";
 
@@ -58,9 +59,8 @@ export function DashboardHeader() {
                     <Link href="/dashboard/settings">Impostazioni</Link>
                   </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 w-4 h-4" />
-                    <span>Logout</span>
+                  <DropdownMenuItem>
+                    <LogoutButton />
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

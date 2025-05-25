@@ -4,6 +4,7 @@ import {
   BrainCircuit,
   Briefcase,
   FileQuestion,
+  MessageSquareMore,
   Settings,
   Users,
 } from "lucide-react";
@@ -43,6 +44,11 @@ const data = {
       href: "/dashboard/quizzes",
       label: "Quiz",
       icon: FileQuestion,
+    },
+    {
+      href: "/dashboard/interviews",
+      label: "Colloqui",
+      icon: MessageSquareMore,
     },
     {
       href: "/dashboard/settings",

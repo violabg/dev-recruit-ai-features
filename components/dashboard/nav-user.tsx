@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
+import { BadgeCheck, ChevronsUpDown } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -19,18 +19,12 @@ import {
 } from "@/components/ui/sidebar";
 import { useSupabase } from "@/lib/supabase/supabase-provider";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
+import { LogoutButton } from "../auth/logout-button";
 
 export function NavUser() {
-  const { supabase, user } = useSupabase();
-  const router = useRouter();
+  const { user } = useSupabase();
   const { isMobile } = useSidebar();
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-  };
 
   return (
     <SidebarMenu>
@@ -76,10 +70,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut />
-              Log out
-            </DropdownMenuItem>
+            <LogoutButton variant="ghost" />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

@@ -56,7 +56,7 @@ export async function submitAnswer(
   const { error } = await supabase
     .from("interviews")
     .update({
-      answers: updatedAnswers,
+      answers: updatedAnswers as Json,
     })
     .eq("id", interview.id); // Use interview.id here
 
@@ -132,6 +132,171 @@ export async function deleteInterview(id: string) {
   }
 
   return { success: true };
+}
+
+// New types for interviews page
+export type InterviewWithDetails = {
+  id: string;
+  token: string;
+  status: string;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string | null;
+  score: number | null;
+  candidate: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  quiz: {
+    id: string;
+    title: string;
+    position: {
+      id: string;
+      title: string;
+      skills: string[];
+    } | null;
+  } | null;
+};
+
+export type InterviewsFilters = {
+  search?: string;
+  status?: string;
+  positionId?: string;
+  programmingLanguage?: string;
+  page?: number;
+  limit?: number;
+};
+
+// Fetch all interviews with pagination and filters
+export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const {
+    search = "",
+    status = "all",
+    positionId = "all",
+    programmingLanguage = "all",
+    page = 1,
+    limit = 10,
+  } = filters;
+
+  // Base query
+  let query = supabase.from("interviews").select(
+    `
+      id,
+      token,
+      status,
+      started_at,
+      completed_at,
+      created_at,
+      score,
+      candidate:candidates(id, name, email),
+      quiz:quizzes(
+        id,
+        title,
+        position:positions(id, title, skills)
+      )
+    `,
+    { count: "exact" }
+  );
+
+  // Filter by user's candidates only
+  query = query.eq("candidates.created_by", user.id);
+
+  // Apply search filter
+  if (search) {
+    query = query.or(
+      `candidates.name.ilike.%${search}%,candidates.email.ilike.%${search}%,quizzes.title.ilike.%${search}%`
+    );
+  }
+
+  // Apply status filter
+  if (status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  // Apply position filter
+  if (positionId !== "all") {
+    query = query.eq("quizzes.position_id", positionId);
+  }
+
+  // For programming language filter, we need to fetch all data first
+  // Apply ordering but no pagination yet
+  query = query.order("created_at", { ascending: false });
+
+  const { data: allInterviews, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Filter by programming language after fetching (since we can't filter on embedded resources)
+  let filteredInterviews = allInterviews || [];
+  if (programmingLanguage !== "all") {
+    filteredInterviews = filteredInterviews.filter(
+      (interview) =>
+        interview.quiz?.position?.skills?.includes(programmingLanguage) || false
+    );
+  }
+
+  // Apply pagination to filtered results
+  const totalFilteredCount = filteredInterviews.length;
+  const offset = (page - 1) * limit;
+  const paginatedInterviews = filteredInterviews.slice(offset, offset + limit);
+
+  // Get positions for filter dropdown
+  const { data: positions, error: positionsError } = await supabase
+    .from("positions")
+    .select("id, title, skills")
+    .eq("created_by", user.id)
+    .order("title");
+
+  if (positionsError) {
+    throw new Error(positionsError.message);
+  }
+
+  // Get unique programming languages from all positions
+  const allSkills = positions?.flatMap((p) => p.skills || []) || [];
+  const programmingLanguages = [...new Set(allSkills)].sort();
+
+  // Get status counts for filter badges
+  const { data: statusCounts, error: statusError } = await supabase
+    .from("interviews")
+    .select("status, candidates!inner(created_by)", { count: "exact" })
+    .eq("candidates.created_by", user.id);
+
+  if (statusError) {
+    throw new Error(statusError.message);
+  }
+
+  // Count interviews by status
+  const statusCountMap =
+    statusCounts?.reduce((acc, interview) => {
+      acc[interview.status] = (acc[interview.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+  return {
+    interviews: paginatedInterviews,
+    positions: positions || [],
+    programmingLanguages,
+    statusCounts: statusCountMap,
+    totalCount: totalFilteredCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalFilteredCount / limit),
+    hasNextPage: totalFilteredCount > offset + limit,
+    hasPrevPage: page > 1,
+  };
 }
 
 const candidateSelectionSchema = z.object({

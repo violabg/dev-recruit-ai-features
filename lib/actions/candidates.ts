@@ -83,6 +83,7 @@ export async function deleteCandidate(id: string) {
   return { success: true };
 }
 
+// TODO:check if this is needed
 // Update candidate status
 export async function updateCandidateStatus(id: string, status: string) {
   const supabase = await createClient();
