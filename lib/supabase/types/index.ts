@@ -247,6 +247,10 @@ export type Database = {
           count: number;
         }[];
       };
+      get_candidate_quiz_data: {
+        Args: { p_candidate_id: string; p_user_id: string };
+        Returns: CandidateQuizData;
+      };
       get_candidates_for_quiz_assignment: {
         Args: { quiz_id_param: string; p_user_id: string };
         Returns: {
@@ -444,6 +448,30 @@ export type AssignedInterview = {
   candidate_email: string;
   quiz_id: string;
   quiz_title: string;
+};
+
+export type CandidateQuizData = {
+  candidate: {
+    id: string;
+    name: string;
+    email: string;
+    status: string;
+    position_id: string;
+    created_by: string;
+  } | null;
+  position: {
+    id: string;
+    title: string;
+  } | null;
+  available_quizzes: {
+    id: string;
+    title: string;
+    created_at: string;
+    time_limit: number | null;
+    position_id: string;
+  }[];
+  assigned_interviews: AssignedInterview[];
+  error?: string;
 };
 
 export type InterviewWithDetails =

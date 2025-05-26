@@ -488,3 +488,104 @@ BEGIN
   LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get candidate quiz assignment data
+CREATE OR REPLACE FUNCTION get_candidate_quiz_data(p_candidate_id UUID, p_user_id UUID)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_candidate jsonb;
+  v_position jsonb;
+  v_available_quizzes jsonb;
+  v_assigned_interviews jsonb;
+  v_candidate_exists BOOLEAN;
+  v_position_id UUID;
+BEGIN
+  -- Check if candidate exists and belongs to user
+  SELECT EXISTS (
+    SELECT 1
+    FROM candidates
+    WHERE id = p_candidate_id AND created_by = p_user_id
+  ) INTO v_candidate_exists;
+
+  IF NOT v_candidate_exists THEN
+    RETURN jsonb_build_object(
+      'error', 'Candidate not found or user does not have permission.',
+      'candidate', NULL,
+      'position', NULL,
+      'available_quizzes', '[]'::jsonb,
+      'assigned_interviews', '[]'::jsonb
+    );
+  END IF;
+
+  -- Get candidate details with position
+  SELECT jsonb_build_object(
+    'id', c.id,
+    'name', c.name,
+    'email', c.email,
+    'status', c.status,
+    'position_id', c.position_id,
+    'created_by', c.created_by
+  ), c.position_id
+  INTO v_candidate, v_position_id
+  FROM candidates c
+  WHERE c.id = p_candidate_id;
+
+  -- Get position details
+  SELECT jsonb_build_object(
+    'id', p.id,
+    'title', p.title
+  )
+  INTO v_position
+  FROM positions p
+  WHERE p.id = v_position_id;
+
+  -- Get assigned interviews for this candidate
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'id', i.id,
+    'token', i.token,
+    'status', i.status,
+    'created_at', i.created_at,
+    'started_at', i.started_at,
+    'completed_at', i.completed_at,
+    'candidate_id', i.candidate_id,
+    'candidate_name', c.name,
+    'candidate_email', c.email,
+    'quiz_id', i.quiz_id,
+    'quiz_title', q.title
+  )), '[]'::jsonb)
+  INTO v_assigned_interviews
+  FROM interviews i
+  JOIN candidates c ON i.candidate_id = c.id
+  JOIN quizzes q ON i.quiz_id = q.id
+  WHERE i.candidate_id = p_candidate_id;
+
+  -- Get available quizzes (not yet assigned to this candidate)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'id', q.id,
+    'title', q.title,
+    'created_at', COALESCE(q.created_at::text, ''),
+    'time_limit', q.time_limit,
+    'position_id', q.position_id
+  )), '[]'::jsonb)
+  INTO v_available_quizzes
+  FROM quizzes q
+  WHERE q.position_id = v_position_id
+    AND q.created_by = p_user_id
+    AND NOT EXISTS (
+      SELECT 1
+      FROM interviews i_check
+      WHERE i_check.candidate_id = p_candidate_id AND i_check.quiz_id = q.id
+    );
+
+  RETURN jsonb_build_object(
+    'candidate', v_candidate,
+    'position', v_position,
+    'available_quizzes', v_available_quizzes,
+    'assigned_interviews', v_assigned_interviews
+  );
+END;
+$$;

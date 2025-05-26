@@ -14,134 +14,34 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
+import { CandidateQuizData } from "@/lib/supabase/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 const getData = async (
   candidateId: string,
   userId: string,
   supabase: SupabaseClient
-) => {
+): Promise<CandidateQuizData> => {
   try {
-    // Get candidate information
-    const { data: candidate, error: candidateError } = await supabase
-      .from("candidates")
-      .select(
-        `
-        id,
-        name,
-        email,
-        status,
-        position_id,
-        created_by,
-        positions (
-          id,
-          title
-        )
-      `
-      )
-      .eq("id", candidateId)
-      .eq("created_by", userId)
-      .single();
+    // Use the new database function to get all data in one call
+    const { data, error } = await supabase.rpc("get_candidate_quiz_data", {
+      p_candidate_id: candidateId,
+      p_user_id: userId,
+    });
 
-    if (candidateError || !candidate) {
-      console.error("Candidate error:", candidateError);
-      throw new Error(
-        "Candidate not found or you don't have permission to view it"
-      );
+    if (error || !data) {
+      console.error("Database function error:", error);
+      throw new Error("Failed to load candidate and quiz data");
     }
 
-    // Get all quizzes for the candidate's position
-    const { data: allQuizzes, error: quizzesError } = await supabase
-      .from("quizzes")
-      .select(
-        `
-        id,
-        title,
-        created_at,
-        time_limit,
-        position_id
-      `
-      )
-      .eq("position_id", candidate.position_id)
-      .eq("created_by", userId);
+    // Parse the JSON response
+    const result = data as CandidateQuizData;
 
-    if (quizzesError) {
-      console.error("Quizzes error:", quizzesError);
-      throw new Error("Failed to load available quizzes");
+    if (result.error) {
+      throw new Error(result.error);
     }
 
-    // Get existing interviews for this candidate to filter out already assigned quizzes
-    const { data: existingInterviews, error: existingInterviewsError } =
-      await supabase
-        .from("interviews")
-        .select(
-          `
-        id,
-        token,
-        status,
-        created_at,
-        started_at,
-        completed_at,
-        candidate_id,
-        quiz_id,
-        quizzes (
-          title
-        ),
-        candidates (
-          name,
-          email
-        )
-      `
-        )
-        .eq("candidate_id", candidateId);
-
-    if (existingInterviewsError) {
-      throw new Error("Failed to check existing assignments");
-    }
-
-    // Filter out quizzes that are already assigned to this candidate
-    const assignedQuizIds = new Set(
-      existingInterviews?.map((i) => i.quiz_id) || []
-    );
-    const availableQuizzes = (allQuizzes || []).filter(
-      (quiz) => !assignedQuizIds.has(quiz.id)
-    );
-
-    // Transform interviews data to match AssignedInterview interface
-
-    const assignedInterviews = (existingInterviews || []).map(
-      (interview: any) => ({
-        id: interview.id,
-        token: interview.token,
-        status: interview.status,
-        created_at: interview.created_at,
-        started_at: interview.started_at,
-        completed_at: interview.completed_at,
-        candidate_id: interview.candidate_id,
-        candidate_name: Array.isArray(interview.candidates)
-          ? interview.candidates[0]?.name || ""
-          : interview.candidates?.name || "",
-        candidate_email: Array.isArray(interview.candidates)
-          ? interview.candidates[0]?.email || ""
-          : interview.candidates?.email || "",
-        quiz_id: interview.quiz_id,
-        quiz_title: Array.isArray(interview.quizzes)
-          ? interview.quizzes[0]?.title || ""
-          : interview.quizzes?.title || "",
-      })
-    );
-
-    return {
-      candidate,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      position: Array.isArray((candidate as any).positions)
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (candidate as any).positions[0]
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (candidate as any).positions,
-      availableQuizzes: availableQuizzes || [],
-      assignedInterviews,
-    };
+    return result;
   } catch (error: unknown) {
     let errorMessage = "Failed to load data";
     if (error instanceof Error) {
@@ -173,7 +73,7 @@ export default async function CandidateQuizPage({
     return redirect("/login");
   }
 
-  const { candidate, position, availableQuizzes, assignedInterviews } =
+  const { candidate, position, available_quizzes, assigned_interviews } =
     await getData(candidateId, user.id, supabase);
 
   if (!candidate || !position) {
@@ -223,7 +123,7 @@ export default async function CandidateQuizPage({
             <CardContent>
               <QuizSelectionForm
                 candidateId={candidate.id}
-                availableQuizzes={availableQuizzes}
+                availableQuizzes={available_quizzes}
               />
             </CardContent>
           </Card>
@@ -238,7 +138,7 @@ export default async function CandidateQuizPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InvitesList assignedInterviews={assignedInterviews} />
+              <InvitesList assignedInterviews={assigned_interviews} />
             </CardContent>
           </Card>
         </TabsContent>
