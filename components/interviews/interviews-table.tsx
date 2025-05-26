@@ -107,140 +107,145 @@ export function InterviewsTable({
 
   return (
     <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Candidato</TableHead>
-            <TableHead>Quiz</TableHead>
-            <TableHead>Posizione</TableHead>
-            <TableHead>Competenze</TableHead>
-            <TableHead>Stato</TableHead>
-            <TableHead className="text-right">Azioni</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {interviews.length === 0 ? (
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell
-                colSpan={11}
-                className="h-24 text-muted-foreground text-center"
-              >
-                Nessun colloquio trovato
-              </TableCell>
+              <TableHead>Candidato</TableHead>
+              <TableHead>Quiz</TableHead>
+              <TableHead>Posizione</TableHead>
+              <TableHead>Competenze</TableHead>
+              <TableHead>Stato</TableHead>
+              <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
-          ) : (
-            interviews.map((interview) => {
-              const statusInfo =
-                statusConfig[interview.status as keyof typeof statusConfig];
-              const StatusIcon = statusInfo?.icon || Clock;
+          </TableHeader>
+          <TableBody>
+            {interviews.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={11}
+                  className="h-24 text-muted-foreground text-center"
+                >
+                  Nessun colloquio trovato
+                </TableCell>
+              </TableRow>
+            ) : (
+              interviews.map((interview) => {
+                const statusInfo =
+                  statusConfig[interview.status as keyof typeof statusConfig];
+                const StatusIcon = statusInfo?.icon || Clock;
 
-              return (
-                <TableRow key={interview.id}>
-                  <TableCell className="font-medium">
-                    {interview.candidate_name || "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {interview.quiz_title || "N/A"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {interview.position_title || "N/A"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {interview.position_skills?.slice(0, 3).map((skill) => (
-                        <Badge
-                          key={skill}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {skill}
-                        </Badge>
-                      )) || []}
-                      {(interview.position_skills?.length || 0) > 3 && (
+                return (
+                  <TableRow key={interview.id}>
+                    <TableCell className="font-medium">
+                      {interview.candidate_name || "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        {interview.quiz_title || "N/A"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        {interview.position_title || "N/A"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {interview.position_skills?.slice(0, 3).map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {skill}
+                          </Badge>
+                        )) || []}
+                        {(interview.position_skills?.length || 0) > 3 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="outline" className="text-xs">
+                                  +
+                                  {(interview.position_skills?.length || 0) - 3}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  {interview.position_skills
+                                    ?.slice(3)
+                                    .map((skill) => (
+                                      <div key={skill}>{skill}</div>
+                                    )) || []}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={statusInfo?.variant || "secondary"}
+                        className="flex items-center gap-1 w-fit"
+                      >
+                        <StatusIcon className="size-3" />
+                        {statusInfo?.label || interview.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end items-center gap-2">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <Badge variant="outline" className="text-xs">
-                                +{(interview.position_skills?.length || 0) - 3}
-                              </Badge>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  copyInterviewLink(interview.token)
+                                }
+                                className={
+                                  copiedToken === interview.token
+                                    ? "bg-green-50 border-green-200"
+                                    : ""
+                                }
+                              >
+                                <Copy className="size-4" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <div className="space-y-1">
-                                {interview.position_skills
-                                  ?.slice(3)
-                                  .map((skill) => (
-                                    <div key={skill}>{skill}</div>
-                                  )) || []}
-                              </div>
+                              {copiedToken === interview.token
+                                ? "Copiato!"
+                                : "Copia link colloquio"}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={statusInfo?.variant || "secondary"}
-                      className="flex items-center gap-1 w-fit"
-                    >
-                      <StatusIcon className="size-3" />
-                      {statusInfo?.label || interview.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end items-center gap-2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyInterviewLink(interview.token)}
-                              className={
-                                copiedToken === interview.token
-                                  ? "bg-green-50 border-green-200"
-                                  : ""
-                              }
-                            >
-                              <Copy className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {copiedToken === interview.token
-                              ? "Copiato!"
-                              : "Copia link colloquio"}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button size="sm" variant="outline" asChild>
-                              <Link
-                                href={`/dashboard/interviews/${interview.id}`}
-                              >
-                                <ExternalLink className="size-4" />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Apri colloquio in nuova scheda
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button size="sm" variant="outline" asChild>
+                                <Link
+                                  href={`/dashboard/interviews/${interview.id}`}
+                                >
+                                  <ExternalLink className="size-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Apri colloquio in nuova scheda
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

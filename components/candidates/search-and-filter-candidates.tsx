@@ -110,85 +110,87 @@ export const SearchAndFilterCandidates = ({
   const currentSort = searchParams.get("sort") || "newest";
 
   return (
-    <div className="flex sm:flex-row flex-col gap-4">
-      <div className="relative flex-1">
-        {isPending ? (
-          <Loader2 className="top-2.5 left-2.5 absolute w-4 h-4 animate-spin" />
-        ) : (
-          <SearchIcon className="top-2.5 left-2.5 absolute w-4 h-4 text-muted-foreground" />
-        )}
-        <Input
-          type="search"
-          name="search"
-          placeholder="Cerca candidati..."
-          className="pl-8"
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            handleSearch(e.target.value);
-          }}
+    <div className="@container">
+      <div className="flex @[800px]:flex-row flex-col gap-4">
+        <div className="relative flex-1">
+          {isPending ? (
+            <Loader2 className="top-2.5 left-2.5 absolute w-4 h-4 animate-spin" />
+          ) : (
+            <SearchIcon className="top-2.5 left-2.5 absolute w-4 h-4 text-muted-foreground" />
+          )}
+          <Input
+            type="search"
+            name="search"
+            placeholder="Cerca candidati..."
+            className="pl-8"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              handleSearch(e.target.value);
+            }}
+            disabled={isPending}
+          />
+        </div>
+        <Select
+          name="status"
+          value={currentStatus}
+          onValueChange={handleStatus}
           disabled={isPending}
-        />
+        >
+          <SelectTrigger className="w-auto @[800px]w-full">
+            <SelectValue placeholder="Stato" />
+          </SelectTrigger>
+          <SelectContent>
+            {statusOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          name="position"
+          value={currentPosition}
+          onValueChange={handlePosition}
+          disabled={isPending}
+        >
+          <SelectTrigger className="w-auto @[800px]w-full">
+            <SelectValue placeholder="Posizione" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutte le posizioni</SelectItem>
+            {positions?.map((position) => (
+              <SelectItem key={position.id} value={position.id}>
+                {position.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          name="sort"
+          value={currentSort}
+          onValueChange={handleSort}
+          disabled={isPending}
+        >
+          <SelectTrigger className="w-auto @[800px]w-full">
+            <SelectValue placeholder="Ordinamento" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Più recenti</SelectItem>
+            <SelectItem value="oldest">Più vecchi</SelectItem>
+            <SelectItem value="name">Nome</SelectItem>
+            <SelectItem value="status">Stato</SelectItem>
+          </SelectContent>
+        </Select>
+        {(currentSearch ||
+          currentStatus !== "all" ||
+          currentPosition !== "all" ||
+          currentSort !== "newest") && (
+          <Button variant="outlineDestructive" asChild disabled={isPending}>
+            <Link href="/dashboard/candidates">Resetta</Link>
+          </Button>
+        )}
       </div>
-      <Select
-        name="status"
-        value={currentStatus}
-        onValueChange={handleStatus}
-        disabled={isPending}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Stato" />
-        </SelectTrigger>
-        <SelectContent>
-          {statusOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        name="position"
-        value={currentPosition}
-        onValueChange={handlePosition}
-        disabled={isPending}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Posizione" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tutte le posizioni</SelectItem>
-          {positions?.map((position) => (
-            <SelectItem key={position.id} value={position.id}>
-              {position.title}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        name="sort"
-        value={currentSort}
-        onValueChange={handleSort}
-        disabled={isPending}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Ordinamento" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="newest">Più recenti</SelectItem>
-          <SelectItem value="oldest">Più vecchi</SelectItem>
-          <SelectItem value="name">Nome</SelectItem>
-          <SelectItem value="status">Stato</SelectItem>
-        </SelectContent>
-      </Select>
-      {(currentSearch ||
-        currentStatus !== "all" ||
-        currentPosition !== "all" ||
-        currentSort !== "newest") && (
-        <Button variant="outlineDestructive" asChild disabled={isPending}>
-          <Link href="/dashboard/candidates">Resetta</Link>
-        </Button>
-      )}
     </div>
   );
 };

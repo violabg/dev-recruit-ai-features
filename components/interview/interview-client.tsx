@@ -19,20 +19,10 @@ import {
   submitAnswer,
 } from "@/lib/actions/interviews";
 import { createClient } from "@/lib/supabase/client";
+import { Interview } from "@/lib/supabase/types";
 import { BrainCircuit, Clock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-interface Interview {
-  id: string;
-  quiz_id: string;
-  candidate_id: string;
-  status: string;
-  started_at: string | null;
-  completed_at: string | null;
-  token: string;
-  answers?: Record<string, any>;
-}
 
 interface Candidate {
   id: string;
