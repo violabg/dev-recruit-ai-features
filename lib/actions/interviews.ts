@@ -46,7 +46,6 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
     p_page: page,
     p_limit: limit,
   });
-  console.log("🚀 ~ fetchInterviewsData ~ interviews:", interviews);
 
   if (error) {
     throw new Error(error.message);
