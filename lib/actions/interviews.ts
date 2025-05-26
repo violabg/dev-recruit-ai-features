@@ -36,7 +36,7 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
   } = filters;
 
   // Call the RPC (cast result for type safety)
-  const { data, error } = await supabase.rpc("search_interviews" as any, {
+  const { data: interviews, error } = await supabase.rpc("search_interviews", {
     p_user_id: user.id,
     p_search: search || null,
     p_status: status !== "all" ? status : null,
@@ -46,8 +46,7 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
     p_page: page,
     p_limit: limit,
   });
-
-  const interviews = (data as any[]) || [];
+  console.log("🚀 ~ fetchInterviewsData ~ interviews:", interviews);
 
   if (error) {
     throw new Error(error.message);
@@ -218,31 +217,6 @@ export async function deleteInterview(id: string) {
 
   return { success: true };
 }
-
-// New types for interviews page
-export type InterviewWithDetails = {
-  id: string;
-  token: string;
-  status: string;
-  started_at: string | null;
-  completed_at: string | null;
-  created_at: string | null;
-  score: number | null;
-  candidate: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-  quiz: {
-    id: string;
-    title: string;
-    position: {
-      id: string;
-      title: string;
-      skills: string[];
-    } | null;
-  } | null;
-};
 
 const candidateSelectionSchema = z.object({
   candidateIds: z.array(z.string()).min(1, {

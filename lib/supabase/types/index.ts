@@ -266,12 +266,12 @@ export type Database = {
       search_interviews: {
         Args: {
           p_user_id: string;
-          p_search?: string;
-          p_status?: string;
-          p_position_id?: string;
-          p_programming_language?: string;
-          p_page?: number;
-          p_limit?: number;
+          p_search?: string | null;
+          p_status?: string | null;
+          p_position_id?: string | null;
+          p_programming_language?: string | null;
+          p_page?: number | null;
+          p_limit?: number | null;
         };
         Returns: {
           id: string;
@@ -443,3 +443,6 @@ export type AssignedInterview = {
   quiz_id: string;
   quiz_title: string;
 };
+
+export type InterviewWithDetails =
+  Database["public"]["Functions"]["search_interviews"]["Returns"];

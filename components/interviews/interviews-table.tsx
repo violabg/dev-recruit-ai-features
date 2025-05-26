@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { InterviewWithDetails } from "@/lib/actions/interviews";
+import { InterviewWithDetails } from "@/lib/supabase/types";
 import {
   CheckCircle,
   ChevronLeft,
@@ -33,7 +33,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 type InterviewsTableProps = {
-  interviews: InterviewWithDetails[];
+  interviews: InterviewWithDetails;
   currentPage: number;
   totalPages: number;
   hasNextPage: boolean;
@@ -137,44 +137,40 @@ export function InterviewsTable({
               return (
                 <TableRow key={interview.id}>
                   <TableCell className="font-medium">
-                    {interview.candidate?.name || "N/A"}
+                    {interview.candidate_name || "N/A"}
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">
-                      {interview.quiz?.title || "N/A"}
+                      {interview.quiz_title || "N/A"}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">
-                      {interview.quiz?.position?.title || "N/A"}
+                      {interview.position_title || "N/A"}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {interview.quiz?.position?.skills
-                        ?.slice(0, 3)
-                        .map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {skill}
-                          </Badge>
-                        )) || []}
-                      {(interview.quiz?.position?.skills?.length || 0) > 3 && (
+                      {interview.position_skills?.slice(0, 3).map((skill) => (
+                        <Badge
+                          key={skill}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {skill}
+                        </Badge>
+                      )) || []}
+                      {(interview.position_skills?.length || 0) > 3 && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
                               <Badge variant="outline" className="text-xs">
-                                +
-                                {(interview.quiz?.position?.skills?.length ||
-                                  0) - 3}
+                                +{(interview.position_skills?.length || 0) - 3}
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="space-y-1">
-                                {interview.quiz?.position?.skills
+                                {interview.position_skills
                                   ?.slice(3)
                                   .map((skill) => (
                                     <div key={skill}>{skill}</div>
