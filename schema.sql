@@ -418,3 +418,73 @@ BEGIN
   );
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.search_interviews(
+  p_user_id UUID,
+  p_search TEXT DEFAULT NULL,
+  p_status TEXT DEFAULT NULL,
+  p_position_id UUID DEFAULT NULL,
+  p_programming_language TEXT DEFAULT NULL,
+  p_page INT DEFAULT 1,
+  p_limit INT DEFAULT 10
+)
+RETURNS TABLE (
+  id UUID,
+  token TEXT,
+  status TEXT,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ,
+  score FLOAT,
+  candidate_id UUID,
+  candidate_name TEXT,
+  candidate_email TEXT,
+  quiz_id UUID,
+  quiz_title TEXT,
+  position_id UUID,
+  position_title TEXT,
+  position_skills TEXT[]
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    i.id,
+    i.token,
+    i.status,
+    i.started_at,
+    i.completed_at,
+    i.created_at,
+    i.score,
+    c.id AS candidate_id,
+    c.name AS candidate_name,
+    c.email AS candidate_email,
+    q.id AS quiz_id,
+    q.title AS quiz_title,
+    p.id AS position_id,
+    p.title AS position_title,
+    p.skills AS position_skills
+  FROM interviews i
+  JOIN candidates c ON i.candidate_id = c.id
+  JOIN quizzes q ON i.quiz_id = q.id
+  JOIN positions p ON q.position_id = p.id
+  WHERE c.created_by = p_user_id
+    AND (p_status IS NULL OR p_status = 'all' OR i.status = p_status)
+    AND (p_position_id IS NULL OR p_position_id::text = 'all' OR p.id = p_position_id)
+    AND (
+      p_programming_language IS NULL
+      OR p_programming_language = 'all'
+      OR p_programming_language = ANY(p.skills)
+    )
+    AND (
+      p_search IS NULL
+      OR p_search = ''
+      OR c.name ILIKE '%' || p_search || '%'
+      OR c.email ILIKE '%' || p_search || '%'
+      OR q.title ILIKE '%' || p_search || '%'
+      OR p.title ILIKE '%' || p_search || '%'
+    )
+  ORDER BY i.created_at DESC
+  OFFSET ((p_page - 1) * p_limit)
+  LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
