@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden">
         <header className="top-0 z-30 sticky flex items-center gap-2 bg-background supports-[backdrop-filter]:bg-background/70 backdrop-blur-md border-b rounded-t-xl h-16 shrink-0">
           <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
