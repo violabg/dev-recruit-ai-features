@@ -14,6 +14,20 @@ export const questionSchema = z.object({
   sampleSolution: z.string().optional(),
 });
 
+export type Question = z.infer<typeof questionSchema>;
+
 export const quizDataSchema = z.object({
   questions: z.array(questionSchema),
 });
+
+export const quizSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  position_id: z.string(),
+  questions: z.array(questionSchema),
+  time_limit: z.number().nullable(),
+  created_at: z.string(),
+  created_by: z.string(),
+});
+
+export type QuizForm = z.infer<typeof quizSchema>;

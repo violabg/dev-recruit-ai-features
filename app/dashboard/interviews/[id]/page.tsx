@@ -43,8 +43,8 @@ export default async function InterviewDetailPage({
 
   if (interviewError || !interview) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Intervista non trovata</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Intervista non trovata</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
@@ -69,8 +69,8 @@ export default async function InterviewDetailPage({
 
   if (quizError || !quiz) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Quiz non trovato</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Quiz non trovato</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
@@ -87,8 +87,8 @@ export default async function InterviewDetailPage({
 
   if (candidateError || !candidate) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center">
-        <p className="text-lg font-medium">Candidato non trovato</p>
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Candidato non trovato</p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/quizzes">Torna ai quiz</Link>
         </Button>
@@ -104,16 +104,16 @@ export default async function InterviewDetailPage({
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/dashboard/quizzes/${quiz.id}`}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+            <ArrowLeft className="mr-1 w-4 h-4" />
             Torna al quiz
           </Link>
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Intervista: {quiz.title}</h1>
-          <div className="mt-1 flex items-center gap-2">
+          <h1 className="font-bold text-3xl">Intervista: {quiz.title}</h1>
+          <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline">{quiz.position.title}</Badge>
             <Badge
               variant={
@@ -138,16 +138,16 @@ export default async function InterviewDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="gap-4 grid md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Candidato</CardTitle>
+            <CardTitle className="font-medium text-sm">Candidato</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <div>
                 <div className="font-medium">{candidate.name}</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {candidate.email}
                 </div>
               </div>
@@ -156,16 +156,16 @@ export default async function InterviewDetailPage({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Stato</CardTitle>
+            <CardTitle className="font-medium text-sm">Stato</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Inizio:</span>
+                <span className="text-muted-foreground text-sm">Inizio:</span>
                 <span>{formatDate(interview.started_at, true)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Fine:</span>
+                <span className="text-muted-foreground text-sm">Fine:</span>
                 <span>{formatDate(interview.completed_at, true)}</span>
               </div>
             </div>
@@ -173,7 +173,7 @@ export default async function InterviewDetailPage({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Durata</CardTitle>
+            <CardTitle className="font-medium text-sm">Durata</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Question } from "@/lib/actions/quiz-schemas";
 import { createClient } from "@/lib/supabase/client";
 import { prismLanguage } from "@/lib/utils";
 import { Highlight, themes } from "prism-react-renderer";
@@ -15,7 +16,7 @@ import { toast } from "sonner";
 
 interface InterviewMonitorProps {
   interviewId: string;
-  quizQuestions: any[];
+  quizQuestions: Question[];
   answers: Record<string, any>;
   status: string;
 }
@@ -80,8 +81,8 @@ export function InterviewMonitor({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Monitoraggio in tempo reale</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="font-semibold text-xl">Monitoraggio in tempo reale</h2>
         <div className="flex items-center gap-2">
           <div
             className={`h-2 w-2 rounded-full ${
@@ -111,7 +112,7 @@ export function InterviewMonitor({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-10 gap-2">
+          <div className="gap-2 grid grid-cols-10">
             {quizQuestions.map((question, index) => {
               const isAnswered = !!answers[question.id];
               const isActive = question.id === currentQuestionId;
@@ -153,7 +154,7 @@ export function InterviewMonitor({
               }`}
             >
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <CardTitle className="text-lg">
                     {index + 1}. {question.question}
                   </CardTitle>
@@ -179,23 +180,24 @@ export function InterviewMonitor({
                 {isAnswered ? (
                   <div className="space-y-2">
                     <div className="font-medium">Risposta del candidato:</div>
-                    {question.type === "multiple_choice" && (
-                      <div className="rounded-md border p-3">
-                        {
-                          question.options[
-                            Number.parseInt(answers[question.id])
-                          ]
-                        }
-                      </div>
-                    )}
+                    {question.type === "multiple_choice" &&
+                      question.options && (
+                        <div className="p-3 border rounded-md">
+                          {
+                            question.options[
+                              Number.parseInt(answers[question.id])
+                            ]
+                          }
+                        </div>
+                      )}
 
                     {question.type === "open_question" && (
-                      <div className="rounded-md border p-3 whitespace-pre-wrap">
+                      <div className="p-3 border rounded-md whitespace-pre-wrap">
                         {answers[question.id]}
                       </div>
                     )}
 
-                    {question.type === "code_snippet" && (
+                    {question.type === "code_snippet" && question.language && (
                       <Highlight
                         theme={themes.vsDark}
                         code={answers[question.id].code}
@@ -215,7 +217,7 @@ export function InterviewMonitor({
                             }
                             style={style}
                           >
-                            <code className="whitespace-pre-wrap break-words">
+                            <code className="break-words whitespace-pre-wrap">
                               {tokens.map((line, i) => {
                                 const { key: lineKey, ...lineProps } =
                                   getLineProps({
@@ -247,7 +249,7 @@ export function InterviewMonitor({
                     )}
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Il candidato non ha ancora risposto a questa domanda.
                   </div>
                 )}

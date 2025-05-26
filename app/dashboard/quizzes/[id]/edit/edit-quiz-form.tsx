@@ -10,26 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { questionSchema } from "@/lib/actions/quiz-schemas";
+import { QuizForm, quizSchema } from "@/lib/actions/quiz-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
-
-const quizSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  position_id: z.string(),
-  questions: z.array(questionSchema),
-  time_limit: z.number().nullable(),
-  created_at: z.string(),
-  created_by: z.string(),
-});
-
-type QuizForm = z.infer<typeof quizSchema>;
 
 type Position = {
   id: string;

@@ -1,21 +1,10 @@
 import EditQuizForm from "@/app/dashboard/quizzes/[id]/edit/edit-quiz-form";
-import { questionSchema } from "@/lib/actions/quiz-schemas";
+import { quizSchema } from "@/lib/actions/quiz-schemas";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { z } from "zod";
 
 export const dynamic = "force-dynamic";
-
-const quizSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  position_id: z.string(),
-  questions: z.array(questionSchema),
-  time_limit: z.number().nullable(),
-  created_at: z.string(),
-  created_by: z.string(),
-});
 
 export default async function EditQuizPage({
   params,

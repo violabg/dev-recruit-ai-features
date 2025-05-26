@@ -22,8 +22,6 @@ const getData = async (
   supabase: SupabaseClient
 ) => {
   try {
-    console.log("Fetching data for candidate:", candidateId, "user:", userId);
-
     // Get candidate information
     const { data: candidate, error: candidateError } = await supabase
       .from("candidates")
@@ -52,13 +50,6 @@ const getData = async (
       );
     }
 
-    console.log(
-      "Found candidate:",
-      candidate.name,
-      "position_id:",
-      candidate.position_id
-    );
-
     // Get all quizzes for the candidate's position
     const { data: allQuizzes, error: quizzesError } = await supabase
       .from("quizzes")
@@ -76,16 +67,8 @@ const getData = async (
 
     if (quizzesError) {
       console.error("Quizzes error:", quizzesError);
-      console.log(
-        "Query parameters - position_id:",
-        candidate.position_id,
-        "user_id:",
-        userId
-      );
       throw new Error("Failed to load available quizzes");
     }
-
-    console.log("Found quizzes:", allQuizzes?.length || 0);
 
     // Get existing interviews for this candidate to filter out already assigned quizzes
     const { data: existingInterviews, error: existingInterviewsError } =
@@ -125,7 +108,7 @@ const getData = async (
     );
 
     // Transform interviews data to match AssignedInterview interface
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const assignedInterviews = (existingInterviews || []).map(
       (interview: any) => ({
         id: interview.id,

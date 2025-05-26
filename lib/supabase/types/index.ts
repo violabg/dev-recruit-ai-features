@@ -1,3 +1,5 @@
+import { Question } from "@/lib/actions/quiz-schemas";
+
 // Type for the search_interviews RPC result
 export type SearchInterviewsRow = {
   id: string;
@@ -72,7 +74,7 @@ export type Database = {
       };
       interviews: {
         Row: {
-          answers: Json | null;
+          answers: Record<string, any> | null;
           candidate_id: string;
           completed_at: string | null;
           created_at: string | null;
@@ -84,7 +86,7 @@ export type Database = {
           token: string;
         };
         Insert: {
-          answers?: Json | null;
+          answers?: Record<string, any> | null;
           candidate_id: string;
           completed_at?: string | null;
           created_at?: string | null;
@@ -96,7 +98,7 @@ export type Database = {
           token: string;
         };
         Update: {
-          answers?: Json | null;
+          answers?: Record<string, any> | null;
           candidate_id?: string;
           completed_at?: string | null;
           created_at?: string | null;
@@ -193,7 +195,7 @@ export type Database = {
           created_by: string;
           id: string;
           position_id: string;
-          questions: Json;
+          questions: Question[];
           time_limit: number | null;
           title: string;
         };
@@ -202,7 +204,7 @@ export type Database = {
           created_by: string;
           id?: string;
           position_id: string;
-          questions: Json;
+          questions: Question[];
           time_limit?: number | null;
           title: string;
         };
@@ -211,7 +213,7 @@ export type Database = {
           created_by?: string;
           id?: string;
           position_id?: string;
-          questions?: Json;
+          questions?: Question[];
           time_limit?: number | null;
           title?: string;
         };
