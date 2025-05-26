@@ -104,27 +104,8 @@ export default async function CandidatesPage({
 
       {/* Candidates list */}
       <Card>
-        <CardHeader className="space-y-0 pb-0">
-          <Tabs defaultValue={view} className="w-full">
-            <div className="flex justify-between items-center">
-              <TabsList>
-                <TabsTrigger value="table">Tabella</TabsTrigger>
-                <TabsTrigger value="grid">Griglia</TabsTrigger>
-              </TabsList>
-              <div className="text-muted-foreground text-sm">
-                {candidates?.length} candidati trovati
-              </div>
-            </div>
-            <TabsContent value="table" className="pt-4">
-              <CandidateTable candidates={candidates || []} />
-            </TabsContent>
-            <TabsContent value="grid" className="pt-4">
-              <CandidateGrid candidates={candidates || []} />
-            </TabsContent>
-          </Tabs>
-        </CardHeader>
         <CardContent>
-          {candidates?.length === 0 && (
+          {candidates?.length === 0 ? (
             <div className="flex flex-col justify-center items-center p-8 border border-dashed rounded-lg h-[200px] text-center">
               <div className="flex flex-col justify-center items-center mx-auto max-w-[420px] text-center">
                 <h3 className="mt-4 font-semibold text-lg">
@@ -143,6 +124,24 @@ export default async function CandidatesPage({
                 </Button>
               </div>
             </div>
+          ) : (
+            <Tabs defaultValue={view} className="w-full">
+              <div className="flex justify-between items-center">
+                <TabsList>
+                  <TabsTrigger value="table">Tabella</TabsTrigger>
+                  <TabsTrigger value="grid">Griglia</TabsTrigger>
+                </TabsList>
+                <div className="text-muted-foreground text-sm">
+                  {candidates?.length} candidati trovati
+                </div>
+              </div>
+              <TabsContent value="table" className="pt-4">
+                <CandidateTable candidates={candidates || []} />
+              </TabsContent>
+              <TabsContent value="grid" className="pt-4">
+                <CandidateGrid candidates={candidates || []} />
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>
