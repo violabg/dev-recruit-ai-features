@@ -5,7 +5,6 @@ import {
   Briefcase,
   FileQuestion,
   MessageSquareMore,
-  Settings,
   Users,
 } from "lucide-react";
 import * as React from "react";
@@ -50,11 +49,6 @@ const data = {
       label: "Colloqui",
       icon: MessageSquareMore,
     },
-    {
-      href: "/dashboard/settings",
-      label: "Impostazioni",
-      icon: Settings,
-    },
   ],
 };
 
@@ -67,7 +61,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild className="font-bold text-xl">
               <Link href="/dashboard" className="flex items-center gap-2">
                 <div>
-                  <BrainCircuit className="size-6" />
+                  <BrainCircuit className="size-6 text-primary" />
                 </div>
                 <div className="flex-1 grid leading-tight">DevRecruit AI</div>
               </Link>

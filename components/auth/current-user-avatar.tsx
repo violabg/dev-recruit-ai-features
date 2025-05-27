@@ -14,7 +14,9 @@ export const CurrentUserAvatar = () => {
   return (
     <Avatar>
       {profileImage && <AvatarImage src={profileImage} alt={initials} />}
-      <AvatarFallback>{initials}</AvatarFallback>
+      <AvatarFallback className="bg-primary text-white">
+        {initials}
+      </AvatarFallback>
     </Avatar>
   );
 };
