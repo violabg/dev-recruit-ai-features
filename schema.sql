@@ -248,7 +248,11 @@ RETURNS TABLE (
   position_id TEXT,
   position_title TEXT,
   count BIGINT
-) AS $$
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -264,11 +268,15 @@ BEGIN
   ORDER BY 
     count DESC;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Create function to generate unique tokens
 CREATE OR REPLACE FUNCTION generate_unique_token()
-RETURNS VARCHAR AS $$
+RETURNS VARCHAR
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   token VARCHAR;
   exists_already BOOLEAN;
@@ -288,18 +296,22 @@ BEGIN
   
   RETURN token;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Create trigger to automatically generate tokens
 CREATE OR REPLACE FUNCTION set_interview_token()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   IF NEW.token IS NULL THEN
     NEW.token := generate_unique_token();
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 CREATE OR REPLACE TRIGGER set_interview_token_trigger
 BEFORE INSERT ON public.interviews
@@ -309,8 +321,12 @@ EXECUTE FUNCTION set_interview_token();
 -- Create the count_candidates_by_status function in Supabase
 CREATE OR REPLACE FUNCTION count_candidates_by_status(user_id UUID)
 RETURNS TABLE(status TEXT, count BIGINT)
-LANGUAGE SQL
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
+BEGIN
+  RETURN QUERY
   SELECT 
     candidates.status,
     COUNT(*) as count
@@ -318,6 +334,7 @@ AS $$
   WHERE candidates.created_by = user_id
   GROUP BY candidates.status
   ORDER BY candidates.status;
+END;
 $$;
 
 -- Function to get assigned and unassigned candidates for a quiz
@@ -444,7 +461,11 @@ RETURNS TABLE (
   position_id UUID,
   position_title TEXT,
   position_skills TEXT[]
-) AS $$
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   RETURN QUERY
   SELECT
@@ -487,7 +508,7 @@ BEGIN
   OFFSET ((p_page - 1) * p_limit)
   LIMIT p_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Function to get candidate quiz assignment data
 CREATE OR REPLACE FUNCTION get_candidate_quiz_data(p_candidate_id UUID, p_user_id UUID)
