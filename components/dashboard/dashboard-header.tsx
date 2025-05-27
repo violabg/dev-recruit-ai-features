@@ -12,20 +12,13 @@ import {
 import { useSupabase } from "@/lib/supabase/supabase-provider";
 import { BrainCircuit, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
 import { LogoutButton } from "../auth/logout-button";
 import { ThemeToggle } from "../theme-toggle";
 import Breadcrumbs from "./Breadcumbs";
 
 export function DashboardHeader() {
-  const { supabase, user, loading } = useSupabase();
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-  };
+  const { user, loading } = useSupabase();
 
   return (
     <header className="top-0 z-30 sticky flex items-center gap-4 bg-background supports-[backdrop-filter]:bg-background/80 backdrop-blur-md px-6 border-b h-16">

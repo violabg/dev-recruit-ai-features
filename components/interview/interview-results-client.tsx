@@ -14,14 +14,16 @@ import {
   evaluateAnswer,
   generateOverallEvaluation,
 } from "@/lib/actions/evaluations";
+import { Question } from "@/lib/actions/quiz-schemas";
 import { prismLanguage } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface InterviewResultsClientProps {
   interviewId: string;
-  quizQuestions: any[];
+  quizQuestions: Question[];
   answers: Record<string, any>;
   candidateName: string;
 }
@@ -46,12 +48,13 @@ export function InterviewResultsClient({
       // Evaluate each question
       for (const question of quizQuestions) {
         if (!answers[question.id]) continue;
+        const options = question.options || [];
 
         let answer = "";
         switch (question.type) {
           case "multiple_choice":
             const answerIndex = parseInt(answers[question.id]);
-            answer = question.options[answerIndex];
+            answer = options[answerIndex];
             break;
           case "code_snippet":
             answer = answers[question.id].code;
@@ -223,7 +226,8 @@ export function InterviewResultsClient({
               onClick={evaluateAnswers}
               disabled={loading || getAnsweredQuestionsCount() === 0}
             >
-              {loading ? "Valutazione in corso..." : "Valuta risposte con AI"}
+              {loading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Valuta risposte con AI
             </Button>
           )}
 
@@ -321,15 +325,24 @@ export function InterviewResultsClient({
               {quizQuestions
                 .filter((q) => tabValue === "all" || q.type === tabValue)
                 .map((question, index) => {
-                  const isAnswered = !!answers[question.id];
-                  const evaluation = evaluations[question.id];
+                  const {
+                    correctAnswer = 0,
+                    explanation,
+                    id,
+                    language = "javascript",
+                    question: questionText,
+                    options = [],
+                    type,
+                  } = question;
+                  const isAnswered = !!answers[id];
+                  const evaluation = evaluations[id];
 
                   return (
-                    <Card key={question.id}>
+                    <Card key={id}>
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">
-                            {index + 1}. {question.question}
+                            {index + 1}. {questionText}
                           </CardTitle>
                           {evaluation && (
                             <div
@@ -346,9 +359,9 @@ export function InterviewResultsClient({
                           )}
                         </div>
                         <CardDescription>
-                          {question.type === "multiple_choice"
+                          {type === "multiple_choice"
                             ? "Risposta multipla"
-                            : question.type === "open_question"
+                            : type === "open_question"
                             ? "Domanda aperta"
                             : "Snippet di codice"}
                         </CardDescription>
@@ -360,34 +373,32 @@ export function InterviewResultsClient({
                               <div className="font-medium">
                                 Risposta del candidato:
                               </div>
-                              {question.type === "multiple_choice" && (
+                              {type === "multiple_choice" && (
                                 <div
                                   className={`rounded-md border p-3 ${
-                                    Number.parseInt(answers[question.id]) ===
-                                    Number.parseInt(question.correctAnswer)
+                                    Number.parseInt(answers[id]) ===
+                                    correctAnswer
                                       ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                                       : "border-red-500 bg-red-50 dark:bg-red-950/20"
                                   }`}
                                 >
-                                  {
-                                    question.options[
-                                      Number.parseInt(answers[question.id])
-                                    ]
-                                  }
+                                  {options[Number.parseInt(answers[id])]}
                                 </div>
                               )}
 
-                              {question.type === "open_question" && (
+                              {type === "open_question" && (
                                 <div className="p-3 border rounded-md whitespace-pre-wrap">
-                                  {answers[question.id]}
+                                  {answers[id]}
                                 </div>
                               )}
 
-                              {question.type === "code_snippet" && (
+                              {type === "code_snippet" && (
                                 <Highlight
                                   theme={themes.vsDark}
-                                  code={answers[question.id].code}
-                                  language={prismLanguage(question.language)}
+                                  code={answers[id].code}
+                                  language={prismLanguage(
+                                    language ?? "javascript"
+                                  )}
                                 >
                                   {({
                                     className,
@@ -440,17 +451,17 @@ export function InterviewResultsClient({
                               )}
                             </div>
 
-                            {question.type === "multiple_choice" && (
+                            {type === "multiple_choice" && (
                               <div className="space-y-2">
                                 <div className="font-medium">
                                   Risposta corretta:
                                 </div>
                                 <div className="bg-green-50 dark:bg-green-950/20 p-3 border border-green-500 rounded-md">
-                                  {question.options[question.correctAnswer]}
+                                  {options[correctAnswer]}
                                 </div>
-                                {question.explanation && (
+                                {explanation && (
                                   <div className="text-muted-foreground text-sm">
-                                    {question.explanation}
+                                    {explanation}
                                   </div>
                                 )}
                               </div>

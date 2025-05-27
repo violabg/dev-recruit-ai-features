@@ -11,14 +11,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { Question } from "@/lib/actions/quiz-schemas";
 import { useEffect, useState } from "react";
 
 interface QuestionProps {
-  question: any;
+  question: Question;
   questionNumber: number;
   totalQuestions: number;
-  onAnswer: (answer: any) => void;
-  currentAnswer: any;
+  onAnswer: (answer: Record<string, any> | null) => void;
+  currentAnswer: Record<string, any>;
 }
 
 export function InterviewQuestion({
@@ -73,7 +74,7 @@ export function InterviewQuestion({
             onValueChange={(value) => setAnswer(value)}
             className="space-y-3"
           >
-            {question.options.map((option: string, index: number) => (
+            {question.options?.map((option: string, index: number) => (
               <div
                 key={index}
                 className="flex items-center space-x-2 p-3 border rounded-md"

@@ -94,11 +94,6 @@ export function InterviewsTable({
     }
   };
 
-  const openInterviewLink = (token: string) => {
-    const interviewUrl = `${window.location.origin}/interview/${token}`;
-    window.open(interviewUrl, "_blank");
-  };
-
   const navigateToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", page.toString());

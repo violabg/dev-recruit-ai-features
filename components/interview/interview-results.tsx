@@ -1,10 +1,11 @@
 "use client";
 
+import { Question } from "@/lib/actions/quiz-schemas";
 import { InterviewResultsClient } from "./interview-results-client";
 
 interface InterviewResultsProps {
   interviewId: string;
-  quizQuestions: any[];
+  quizQuestions: Question[];
   answers: Record<string, any>;
   candidateName: string;
 }

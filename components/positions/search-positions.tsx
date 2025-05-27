@@ -1,32 +1,40 @@
-"use client"
+"use client";
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { useTransition } from "react"
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Input } from "@/components/ui/input";
+import { Loader2, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 
-export function SearchPositions({ defaultValue = "" }: { defaultValue?: string }) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
+export function SearchPositions({
+  defaultValue = "",
+}: {
+  defaultValue?: string;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   function handleSearch(term: string) {
-    const params = new URLSearchParams(searchParams)
+    const params = new URLSearchParams(searchParams);
 
     if (term) {
-      params.set("q", term)
+      params.set("q", term);
     } else {
-      params.delete("q")
+      params.delete("q");
     }
 
     startTransition(() => {
-      router.push(`/dashboard/positions?${params.toString()}`)
-    })
+      router.push(`/dashboard/positions?${params.toString()}`);
+    });
   }
 
   return (
     <div className="relative flex-1">
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {isPending ? (
+        <Loader2 className="top-2.5 left-2.5 absolute w-4 h-4 text-muted-foreground animate-spin" />
+      ) : (
+        <Search className="top-2.5 left-2.5 absolute w-4 h-4 text-muted-foreground" />
+      )}
       <Input
         type="search"
         placeholder="Cerca posizioni..."
@@ -35,5 +43,5 @@ export function SearchPositions({ defaultValue = "" }: { defaultValue?: string }
         onChange={(e) => handleSearch(e.target.value)}
       />
     </div>
-  )
+  );
 }
