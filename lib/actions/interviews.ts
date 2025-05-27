@@ -139,7 +139,7 @@ export async function submitAnswer(
   const { error } = await supabase
     .from("interviews")
     .update({
-      answers: updatedAnswers as Json,
+      answers: updatedAnswers,
     })
     .eq("id", interview.id); // Use interview.id here
 
