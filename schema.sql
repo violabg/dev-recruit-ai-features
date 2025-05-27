@@ -1,15 +1,47 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create tables
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL DEFAULT 'recruiter',
-  full_name TEXT,
-  company TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Users table (extends Supabase auth users)
+create table public.profiles (
+  id uuid not null references auth.users on delete cascade,
+  name text,
+  full_name text,
+  user_name text,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  primary key (id)
 );
+
+-- inserts a row into public.profiles
+create function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  insert into public.profiles (
+    id,
+    name,
+    full_name,
+    user_name,
+    avatar_url
+  )
+  values (
+    new.id,
+    new.raw_user_meta_data ->> 'name',
+    new.raw_user_meta_data ->> 'full_name',
+    new.raw_user_meta_data ->> 'user_name',
+    new.raw_user_meta_data ->> 'avatar_url'
+  );
+  return new;
+end;
+$$;
+
+-- trigger the function every time a user is created
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
 
 CREATE TABLE IF NOT EXISTS positions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -19,7 +51,7 @@ CREATE TABLE IF NOT EXISTS positions (
   skills TEXT[] NOT NULL,
   soft_skills TEXT[],
   contract_type TEXT,
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -30,7 +62,7 @@ CREATE TABLE IF NOT EXISTS candidates (
   position_id UUID NOT NULL REFERENCES positions(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'pending',
   resume_url TEXT,
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -40,7 +72,7 @@ CREATE TABLE IF NOT EXISTS quizzes (
   position_id UUID NOT NULL REFERENCES positions(id) ON DELETE CASCADE,
   questions JSONB NOT NULL,
   time_limit INTEGER,
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -69,17 +101,33 @@ ALTER TABLE quizzes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for profiles
-CREATE POLICY "Users can view their own profile"
-  ON profiles FOR SELECT
-  USING (auth.uid() = user_id);
+CREATE POLICY "Allow authenticated and anonymous users to select profiles"
+ON profiles
+FOR SELECT
+TO authenticated, anon
+USING (true);
 
-CREATE POLICY "Users can insert their own profile"
-  ON profiles FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+-- Explanation: Allow only authenticated users to insert profile. (Supabase creates profile on signup)
+CREATE POLICY "Allow authenticated users to insert profile"
+ON profiles
+FOR INSERT
+TO authenticated
+WITH CHECK ((select auth.uid()) = id);
 
-CREATE POLICY "Users can update their own profile"
-  ON profiles FOR UPDATE
-  USING (auth.uid() = user_id);
+-- Explanation: Allow only authenticated users to update profile.
+CREATE POLICY "Allow authenticated users to update profile"
+ON profiles
+FOR UPDATE
+TO authenticated
+USING ((select auth.uid()) = id)
+WITH CHECK ((select auth.uid()) = id);
+
+-- Explanation: Allow only authenticated users to delete profile.
+CREATE POLICY "Allow authenticated users to delete profile"
+ON profiles
+FOR DELETE
+TO authenticated
+USING ((select auth.uid()) = id);
 
 -- Create policies for positions
 CREATE POLICY "Anyone can view position title by quiz token"
@@ -185,62 +233,6 @@ CREATE POLICY "Users can delete interviews for their candidates"
 CREATE POLICY "Anyone can access interviews by token"
   ON interviews FOR SELECT
   USING (true);
-
--- Create function to get user by auth.uid
-CREATE OR REPLACE FUNCTION get_current_user()
-RETURNS jsonb
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT jsonb_build_object(
-    'id', auth.uid(),
-    'email', (SELECT email FROM auth.users WHERE id = auth.uid()),
-    'role', (SELECT role FROM profiles WHERE user_id = auth.uid())
-  )
-$$;
-
--- Create function to check if user owns a position
-CREATE OR REPLACE FUNCTION user_owns_position(position_id uuid)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM positions
-    WHERE id = position_id
-    AND created_by = auth.uid()
-  )
-$$;
-
--- Create function to check if user owns a candidate
-CREATE OR REPLACE FUNCTION user_owns_candidate(candidate_id uuid)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM candidates
-    WHERE id = candidate_id
-    AND created_by = auth.uid()
-  )
-$$;
-
--- Create function to check if user owns a quiz
-CREATE OR REPLACE FUNCTION user_owns_quiz(quiz_id uuid)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM quizzes
-    WHERE id = quiz_id
-    AND created_by = auth.uid()
-  )
-$$;
 
 -- Create a function to count quizzes by position
 CREATE OR REPLACE FUNCTION count_quizzes_by_position()

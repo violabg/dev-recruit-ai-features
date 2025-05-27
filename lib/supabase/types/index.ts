@@ -164,28 +164,28 @@ export type Database = {
       };
       profiles: {
         Row: {
-          company: string | null;
-          created_at: string | null;
-          full_name: string | null;
           id: string;
-          role: string;
-          user_id: string;
+          avatar_url: string | null;
+          full_name: string;
+          user_name: string;
+          created_at: string | null;
+          updated_at: string;
         };
         Insert: {
-          company?: string | null;
-          created_at?: string | null;
-          full_name?: string | null;
           id?: string;
-          role?: string;
-          user_id: string;
+          avatar_url?: string | null;
+          full_name?: string;
+          user_name?: string;
+          created_at?: string | null;
+          updated_at?: string;
         };
         Update: {
-          company?: string | null;
-          created_at?: string | null;
-          full_name?: string | null;
           id?: string;
-          role?: string;
-          user_id?: string;
+          avatar_url?: string | null;
+          full_name?: string;
+          user_name?: string;
+          created_at?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -265,10 +265,6 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
-      get_current_user: {
-        Args: Record<PropertyKey, never>;
-        Returns: Json;
-      };
       search_interviews: {
         Args: {
           p_user_id: string;
@@ -296,18 +292,6 @@ export type Database = {
           position_title: string;
           position_skills: string[];
         }[];
-      };
-      user_owns_candidate: {
-        Args: { candidate_id: string };
-        Returns: boolean;
-      };
-      user_owns_position: {
-        Args: { position_id: string };
-        Returns: boolean;
-      };
-      user_owns_quiz: {
-        Args: { quiz_id: string };
-        Returns: boolean;
       };
     };
     Enums: {

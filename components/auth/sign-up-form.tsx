@@ -38,10 +38,6 @@ const signUpSchema = z
       .string()
       .min(2, { message: "Cognome deve essere almeno 2 caratteri" })
       .max(30, { message: "Cognome deve essere massimo 30 caratteri" }),
-    company: z
-      .string()
-      .min(3, { message: "Nome azienda deve essere almeno 3 caratteri" })
-      .max(100, { message: "Nome azienda deve essere massimo 100 caratteri" }),
     email: z.string().email({ message: "Email non valida" }),
     password: z.string().min(6, { message: "Minimo 6 caratteri" }),
     repeatPassword: z.string().min(6, { message: "Minimo 6 caratteri" }),
@@ -63,7 +59,6 @@ export function SignUpForm({
     defaultValues: {
       first_name: "",
       last_name: "",
-      company: "",
       email: "",
       password: "",
       repeatPassword: "",
@@ -82,7 +77,6 @@ export function SignUpForm({
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            company: values.company,
             name: `${values.first_name} ${values.last_name}`,
             full_name: `${values.first_name} ${values.last_name}`,
           },
@@ -143,25 +137,6 @@ export function SignUpForm({
                         type="text"
                         placeholder="Rossi"
                         autoComplete="family-name"
-                        disabled={isLoading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="company"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Azienda</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="Nome Azienda"
-                        autoComplete="organization"
                         disabled={isLoading}
                         {...field}
                       />
