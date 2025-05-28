@@ -7,8 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "DevRecruit AI",
-  description:
-    "AI-powered technical recruitment platform with Apple Vision Pro design aesthetic",
+  description: "AI-powered technical recruitment platform",
   generator: "v0.dev",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "oklch(0.98 0.005 210)" },
