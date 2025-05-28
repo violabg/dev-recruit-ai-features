@@ -739,72 +739,39 @@
 
 /* Vision Pro Elevated Surfaces */
 .vision-elevated {
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+
+  /* Default glass background and border */
   background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(1.8);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
-
-  /* &::before { */
-  /* content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.08) 0%,
-      transparent 50%,
-      rgba(255, 255, 255, 0.04) 100%
-    );
-    pointer-events: none; */
-  /* } */
 }
 
-.vision-elevated-primary {
+/* Modifier classes for different background variants */
+.vision-elevated.vision-primary {
   background: var(--primary);
-  backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
 }
 
-.vision-elevated-secondary {
+.vision-elevated.vision-secondary {
   background: var(--secondary);
-  backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
 }
 
-.vision-elevated-destructive {
+.vision-elevated.vision-destructive {
   background: var(--destructive);
-  backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid var(--destructive);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
+  border-color: var(--destructive);
 }
 
-.vision-elevated-outline-destructive {
+.vision-elevated.vision-outline {
   background: transparent;
-  border: 1px solid var(--destructive);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
+  border: 1px solid var(--glass-border);
 }
 
-.vision-elevated-outline {
+.vision-elevated.vision-outline-destructive {
   background: transparent;
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
+  border: 1px solid var(--destructive);
 }
 
 /* Vision Pro Navigation Elements */

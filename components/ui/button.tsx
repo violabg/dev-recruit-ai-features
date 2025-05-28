@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border border-primary/30 hover:border-primary/50 vision-elevated-primary",
+          "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border border-primary/30 hover:border-primary/50 vision-elevated vision-primary",
         destructive:
-          "bg-gradient-to-br from-destructive to-destructive/80 text-white shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-[20px] border border-destructive/30 hover:border-destructive/50 vision-elevated-destructive",
+          "bg-gradient-to-br from-destructive to-destructive/80 text-white shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-[20px] border border-destructive/30 hover:border-destructive/50 vision-elevated vision-destructive",
         outline:
-          "border border-glass-border/80 hover:border-glass-border bg-glass-bg hover:bg-card-hover backdrop-blur-[20px] shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 text-foreground vision-elevated-outline",
+          "border border-glass-border/80 hover:border-glass-border bg-glass-bg hover:bg-card-hover backdrop-blur-[20px] shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 text-foreground vision-elevated vision-outline",
         outlineDestructive:
-          "shadow-vision-sm border border-destructive/50 hover:border-destructive/70 backdrop-blur-[20px] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5 hover:bg-destructive/5 vision-elevated-outline-destructive",
+          "shadow-vision-sm border border-destructive/50 hover:border-destructive/70 backdrop-blur-[20px] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5 hover:bg-destructive/5 vision-elevated vision-outline-destructive",
         secondary:
-          "bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-[20px] border border-secondary/30 hover:border-secondary/50 vision-elevated-secondary",
+          "bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-[20px] border border-secondary/30 hover:border-secondary/50 vision-elevated vision-secondary",
         ghost:
           "border border-transparent hover:border-glass-border/60 bg-transparent hover:bg-glass-bg/50 backdrop-blur-[20px] hover:text-accent-foreground text-foreground hover:-translate-y-0.5",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80 transition-colors",
