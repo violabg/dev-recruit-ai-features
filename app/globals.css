@@ -58,11 +58,11 @@
   --chart-5: oklch(0.62 0.15 45);
 
   /* Enhanced sidebar with glass effect */
-  --sidebar: oklch(0.97 0.005 210 / 0.85);
+  --sidebar: oklch(0.93 0 0 / 0.85);
   --sidebar-foreground: oklch(0.22 0.02 245);
   --sidebar-primary: oklch(0.52 0.18 235);
   --sidebar-primary-foreground: oklch(0.98 0.002 200);
-  --sidebar-accent: oklch(0.92 0.008 220);
+  --sidebar-accent: oklch(0.86 0 0);
   --sidebar-accent-foreground: oklch(0.25 0.02 245);
   --sidebar-border: oklch(0.88 0.008 220 / 0.4);
   --sidebar-ring: oklch(0.52 0.18 235 / 0.2);
@@ -131,7 +131,7 @@
   /* Enhanced primary in dark */
   --primary: oklch(0.56 0.13 242.95);
   --primary-hover: oklch(0.45 0.13 242.95);
-  --primary-foreground: oklch(0.12 0.015 240);
+  --primary-foreground: oklch(0.98 0.002 200);
 
   /* Sophisticated secondary system */
   /* Dark secondary system */

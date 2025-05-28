@@ -69,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <div className="absolute inset-0 bg-gradient-primary/20 opacity-0 group-hover:opacity-100 blur-lg rounded-full transition-opacity duration-300" />
                 </div>
                 <div className="flex-1 grid leading-tight">
-                  <span className="font-bold text-gradient tracking-tight">
+                  <span className="font-bold tracking-tight">
                     DevRecruit AI
                   </span>
                 </div>
