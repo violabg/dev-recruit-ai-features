@@ -83,7 +83,7 @@ export function ForgotPasswordForm({
           </CardContent>
         </Card>
       ) : (
-        <Card className="gradient-border glass-card">
+        <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Reimposta la password</CardTitle>
             <CardDescription>

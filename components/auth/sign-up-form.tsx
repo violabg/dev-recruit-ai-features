@@ -95,7 +95,7 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="gradient-border glass-card">
+      <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Registrati</CardTitle>
           <CardDescription>Crea un nuovo account</CardDescription>
