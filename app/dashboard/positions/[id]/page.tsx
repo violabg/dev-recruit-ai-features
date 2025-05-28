@@ -199,7 +199,9 @@ export default async function PositionDetailPage({
           <div className="flex justify-between">
             <h2 className="font-semibold text-xl">Candidati</h2>
             <Button asChild>
-              <Link href={`/dashboard/positions/${position.id}/candidates/new`}>
+              <Link
+                href={`/dashboard/candidates/new?positionId=${position.id}`}
+              >
                 <Plus className="mr-2 w-4 h-4" />
                 Aggiungi Candidato
               </Link>
@@ -264,7 +266,7 @@ export default async function PositionDetailPage({
                 </p>
                 <Button className="mt-2" size="sm" asChild>
                   <Link
-                    href={`/dashboard/positions/${position.id}/candidates/new`}
+                    href={`/dashboard/candidates/new?positionId=${position.id}`}
                   >
                     <Users className="mr-2 w-4 h-4" />
                     Aggiungi candidato

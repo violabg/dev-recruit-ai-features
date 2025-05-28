@@ -1,7 +1,16 @@
 import { CandidateNewForm } from "@/components/candidates/candidate-new-form";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function NewCandidatePage() {
+type NewCandidatePageProps = {
+  searchParams: Promise<{ positionId?: string }>;
+};
+
+export default async function NewCandidatePage({
+  searchParams,
+}: NewCandidatePageProps) {
+  const params = await searchParams;
+  const positionId = params.positionId;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,6 +34,12 @@ export default async function NewCandidatePage() {
     .eq("created_by", user.id)
     .order("title", { ascending: true });
 
+  // Validate that the positionId exists if provided
+  const validPositionId =
+    positionId && positions?.some((p) => p.id === positionId)
+      ? positionId
+      : undefined;
+
   return (
     <div className="space-y-6">
       <div>
@@ -36,7 +51,10 @@ export default async function NewCandidatePage() {
       <div className="max-w-xl">
         <div className="p-6 border rounded-md">
           <h2 className="mb-4 font-semibold text-xl">Crea candidato</h2>
-          <CandidateNewForm positions={positions || []} />
+          <CandidateNewForm
+            positions={positions || []}
+            defaultPositionId={validPositionId}
+          />
         </div>
       </div>
     </div>

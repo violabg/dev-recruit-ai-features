@@ -37,9 +37,13 @@ type CandidateFormValues = z.infer<typeof formSchema>;
 
 type CandidateNewFormProps = {
   positions: { id: string; title: string }[];
+  defaultPositionId?: string;
 };
 
-export const CandidateNewForm = ({ positions }: CandidateNewFormProps) => {
+export const CandidateNewForm = ({
+  positions,
+  defaultPositionId,
+}: CandidateNewFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +53,7 @@ export const CandidateNewForm = ({ positions }: CandidateNewFormProps) => {
     defaultValues: {
       name: "",
       email: "",
-      position_id: positions[0]?.id || "",
+      position_id: defaultPositionId || positions[0]?.id || "",
     },
   });
 
@@ -67,8 +71,12 @@ export const CandidateNewForm = ({ positions }: CandidateNewFormProps) => {
         } else {
           router.push("/dashboard/candidates");
         }
-      } catch (e: any) {
-        setError(e.message || "Errore nella creazione del candidato");
+      } catch (e: unknown) {
+        setError(
+          e instanceof Error
+            ? e.message
+            : "Errore nella creazione del candidato"
+        );
       }
     });
   };
@@ -109,10 +117,7 @@ export const CandidateNewForm = ({ positions }: CandidateNewFormProps) => {
             <FormItem>
               <FormLabel>Posizione</FormLabel>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona posizione" />
                   </SelectTrigger>
