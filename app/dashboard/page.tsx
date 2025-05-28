@@ -170,7 +170,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="font-bold text-3xl">Dashboard</h1>
-        <Button asChild>
+        <Button asChild variant={"default"}>
           <Link href="/dashboard/positions/new">
             <Plus className="mr-2 w-4 h-4" />
             Nuova Posizione

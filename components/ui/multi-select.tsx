@@ -119,7 +119,7 @@ export function MultiSelect({
                     handleUnselect(item);
                   }}
                 >
-                  <X className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                  <X className="w-3 h-3 hover:text-foreground" />
                 </span>
               </Badge>
             ))}
@@ -153,7 +153,7 @@ export function MultiSelect({
                                   : "opacity-50 [&_svg]:invisible"
                               )}
                             >
-                              <Check className="w-3 h-3" />
+                              <Check className="w-3 h-3 text-white" />
                             </div>
                             <span>{option.label}</span>
                           </CommandItem>
@@ -179,7 +179,7 @@ export function MultiSelect({
                                   : "opacity-50 [&_svg]:invisible"
                               )}
                             >
-                              <Check className="w-3 h-3" />
+                              <Check className="w-3 h-3 text-white" />
                             </div>
                             <span>{option.label}</span>
                           </CommandItem>
