@@ -63,3 +63,51 @@ export async function deletePosition(id: string) {
   revalidatePath("/dashboard/positions");
   redirect("/dashboard/positions");
 }
+
+export async function updatePosition(id: string, formData: FormData) {
+  const supabase = await createClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const experienceLevel = formData.get("experience_level") as string;
+  const skills = JSON.parse(formData.get("skills") as string);
+  const softSkills = JSON.parse(
+    (formData.get("soft_skills") as string) || "[]"
+  );
+  const contractType = formData.get("contract_type") as string;
+
+  const { data, error } = await supabase
+    .from("positions")
+    .update({
+      title,
+      description,
+      experience_level: experienceLevel,
+      skills,
+      soft_skills: softSkills,
+      contract_type: contractType,
+    })
+    .eq("id", id)
+    .eq("created_by", user.id) // Ensure user owns the position
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/positions");
+  revalidatePath(`/dashboard/positions/${id}`);
+
+  if (data && data[0]) {
+    redirect(`/dashboard/positions/${data[0].id}`);
+  } else {
+    redirect("/dashboard/positions");
+  }
+}

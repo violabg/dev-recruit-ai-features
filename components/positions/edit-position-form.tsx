@@ -27,7 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createPosition } from "@/lib/actions/positions";
+import { updatePosition } from "@/lib/actions/positions";
+import { Position } from "@/lib/supabase/types";
 import {
   contractTypes,
   databases,
@@ -53,19 +54,23 @@ const formSchema = z.object({
   contract_type: z.string().optional(),
 });
 
-export function NewPositionForm() {
+type EditPositionFormProps = {
+  position: Position;
+};
+
+export function EditPositionForm({ position }: EditPositionFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      experience_level: "",
-      skills: [],
-      soft_skills: [],
-      contract_type: "",
+      title: position.title,
+      description: position.description || "",
+      experience_level: position.experience_level,
+      skills: position.skills || [],
+      soft_skills: position.soft_skills || [],
+      contract_type: position.contract_type || "",
     },
   });
 
@@ -81,9 +86,9 @@ export function NewPositionForm() {
       formData.append("soft_skills", JSON.stringify(values.soft_skills || []));
       formData.append("contract_type", values.contract_type || "");
 
-      await createPosition(formData);
+      await updatePosition(position.id, formData);
     } catch (error) {
-      console.error("Error creating position:", error);
+      console.error("Error updating position:", error);
       setIsSubmitting(false);
     }
   }
@@ -266,10 +271,10 @@ export function NewPositionForm() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                Creazione in corso...
+                Aggiornamento in corso...
               </>
             ) : (
-              "Crea posizione"
+              "Aggiorna posizione"
             )}
           </Button>
         </div>
