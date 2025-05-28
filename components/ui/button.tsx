@@ -10,20 +10,20 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-gradient-to-r from-primary to-gradient-secondary text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 vision-button",
+          "bg-primary text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 hover:bg-primary-hover backdrop-blur-vision border border-primary/20",
         destructive:
-          "bg-gradient-to-r from-destructive to-destructive-hover text-white shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 vision-button",
+          "bg-destructive text-destructive-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 hover:bg-destructive-hover focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-vision border border-destructive/20",
         outline:
-          "border border-glass-border bg-glass-bg backdrop-blur-vision shadow-vision-sm hover:bg-card-hover hover:shadow-vision hover:-translate-y-0.5 dark:bg-glass-bg dark:border-glass-border vision-button",
+          "border border-glass-border bg-glass-bg backdrop-blur-vision shadow-vision-sm hover:bg-card-hover hover:shadow-vision hover:-translate-y-0.5 text-foreground",
         outlineDestructive:
-          "hover:bg-destructive/10 shadow-vision-sm border border-destructive/30 backdrop-blur-vision focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5 vision-button",
+          "hover:bg-destructive/10 shadow-vision-sm border border-destructive/30 backdrop-blur-vision focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5",
         secondary:
-          "bg-gradient-to-r from-secondary to-secondary-hover text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-vision vision-button",
+          "bg-secondary text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 hover:bg-secondary-hover backdrop-blur-vision border border-secondary/20",
         ghost:
-          "hover:bg-accent-hover hover:text-accent-foreground dark:hover:bg-accent/50 backdrop-blur-vision hover:-translate-y-0.5 transition-all duration-300",
-        link: "text-primary underline-offset-4 hover:underline text-gradient",
+          "hover:bg-accent-hover hover:text-accent-foreground text-foreground backdrop-blur-vision hover:-translate-y-0.5 transition-all duration-300",
+        link: "text-primary underline-offset-4 hover:underline",
         glass:
-          "bg-glass-bg border border-glass-border backdrop-blur-vision shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 vision-button",
+          "bg-glass-bg border border-glass-border backdrop-blur-vision shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 text-foreground",
       },
       size: {
         default: "h-10 px-6 py-2.5 has-[>svg]:px-4",
