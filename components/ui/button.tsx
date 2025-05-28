@@ -5,25 +5,25 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex relative justify-center items-center gap-2 disabled:opacity-50 backdrop-blur-vision aria-invalid:border-destructive focus-visible:border-ring rounded-xl outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 overflow-hidden font-medium text-vision-sm whitespace-nowrap transition-all [&_svg]:pointer-events-none disabled:pointer-events-none shrink-0 [&_svg]:shrink-0",
+  "group inline-flex relative justify-center items-center gap-2 disabled:opacity-50 backdrop-blur-vision aria-invalid:border-destructive focus-visible:border-ring rounded-xl outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 overflow-hidden font-medium text-vision-sm whitespace-nowrap transition-all duration-300 [&_svg]:pointer-events-none disabled:pointer-events-none shrink-0 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 hover:bg-primary-hover backdrop-blur-vision border border-primary/20",
+          "bg-primary/90 text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border-2 border-primary/50 hover:border-primary/90",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 hover:bg-destructive-hover focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-vision border border-destructive/20",
+          "bg-destructive/90 text-destructive-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-[20px] border-2 border-destructive/50 hover:border-destructive/90",
         outline:
-          "border border-glass-border bg-glass-bg backdrop-blur-vision shadow-vision-sm hover:bg-card-hover hover:shadow-vision hover:-translate-y-0.5 text-foreground",
+          "border-2 border-glass-border/80 hover:border-glass-border bg-glass-bg backdrop-blur-[20px] shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 text-foreground",
         outlineDestructive:
-          "hover:bg-destructive/10 shadow-vision-sm border border-destructive/30 backdrop-blur-vision focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5",
+          "shadow-vision-sm border-2 border-destructive/50 hover:border-destructive/90 backdrop-blur-[20px] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 hover:bg-secondary-hover backdrop-blur-vision border border-secondary/20",
+          "bg-secondary/90 text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-[20px] border-2 border-secondary/50 hover:border-secondary/90",
         ghost:
-          "hover:bg-accent-hover hover:text-accent-foreground text-foreground backdrop-blur-vision hover:-translate-y-0.5 transition-all duration-300",
+          "border-2 border-transparent hover:border-glass-border/60 bg-transparent hover:bg-glass-bg/50 backdrop-blur-[20px] hover:text-accent-foreground text-foreground hover:-translate-y-0.5",
         link: "text-primary underline-offset-4 hover:underline",
         glass:
-          "bg-glass-bg border border-glass-border backdrop-blur-vision shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 text-foreground",
+          "bg-glass-bg border-2 border-glass-border/80 hover:border-glass-border backdrop-blur-[20px] shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 text-foreground",
       },
       size: {
         default: "h-10 px-6 py-2.5 has-[>svg]:px-4",
@@ -46,19 +46,32 @@ function Button({
   variant,
   size,
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot : "button";
+  const hasShimmer = variant !== "link";
+
+  // Universal shimmer classes that work with both asChild and regular buttons
+  const shimmerClasses = hasShimmer
+    ? "before:absolute before:inset-0 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500 before:pointer-events-none before:content-[''] after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:skew-x-12 after:transition-transform after:-translate-x-full hover:after:translate-x-full after:duration-1000 after:ease-out after:opacity-0 hover:after:opacity-100 after:pointer-events-none after:content-['']"
+    : "";
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size }),
+        shimmerClasses,
+        className
+      )}
       {...props}
-    />
+    >
+      {children}
+    </Comp>
   );
 }
 

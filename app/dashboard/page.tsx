@@ -176,36 +176,6 @@ export default async function DashboardPage() {
             Nuova Posizione
           </Link>
         </Button>
-        <Button asChild variant={"secondary"}>
-          <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 w-4 h-4" />
-            secondary
-          </Link>
-        </Button>
-        <Button asChild variant={"outline"}>
-          <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 w-4 h-4" />
-            outline
-          </Link>
-        </Button>
-        <Button asChild variant={"ghost"}>
-          <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 w-4 h-4" />
-            ghost
-          </Link>
-        </Button>
-        <Button asChild variant={"glass"}>
-          <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 w-4 h-4" />
-            glass
-          </Link>
-        </Button>
-        <Button asChild variant={"link"}>
-          <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 w-4 h-4" />
-            link
-          </Link>
-        </Button>
       </div>
 
       {/* Stats cards */}

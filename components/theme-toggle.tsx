@@ -24,11 +24,6 @@ export function ThemeToggle() {
           <Sun className="w-[1.2rem] h-[1.2rem] text-primary group-hover:text-gradient-primary rotate-0 dark:-rotate-90 scale-100 dark:scale-0 transition-all duration-500 ease-vision" />
           <Moon className="absolute w-[1.2rem] h-[1.2rem] text-primary group-hover:text-gradient-secondary rotate-90 dark:rotate-0 scale-0 dark:scale-100 transition-all duration-500 ease-vision" />
           <span className="sr-only">Toggle theme</span>
-
-          {/* Glass shimmer effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 transition-transform -translate-x-full group-hover:translate-x-full duration-1000 ease-out" />
-          </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
