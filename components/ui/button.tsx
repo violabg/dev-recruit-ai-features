@@ -5,29 +5,33 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex justify-center items-center gap-2 disabled:opacity-50 aria-invalid:border-destructive focus-visible:border-ring rounded-md outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 font-medium text-sm whitespace-nowrap transition-all [&_svg]:pointer-events-none disabled:pointer-events-none shrink-0 [&_svg]:shrink-0",
+  "inline-flex relative justify-center items-center gap-2 disabled:opacity-50 backdrop-blur-vision aria-invalid:border-destructive focus-visible:border-ring rounded-xl outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 overflow-hidden font-medium text-vision-sm whitespace-nowrap transition-all [&_svg]:pointer-events-none disabled:pointer-events-none shrink-0 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+          "bg-gradient-to-r from-primary to-gradient-secondary text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 vision-button",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-gradient-to-r from-destructive to-destructive-hover text-white shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 vision-button",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-glass-border bg-glass-bg backdrop-blur-vision shadow-vision-sm hover:bg-card-hover hover:shadow-vision hover:-translate-y-0.5 dark:bg-glass-bg dark:border-glass-border vision-button",
         outlineDestructive:
-          "hover:bg-destructive/10 shadow-xs border border-destructive dark:border-destructive/60 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive",
+          "hover:bg-destructive/10 shadow-vision-sm border border-destructive/30 backdrop-blur-vision focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5 vision-button",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-gradient-to-r from-secondary to-secondary-hover text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-vision vision-button",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "hover:bg-accent-hover hover:text-accent-foreground dark:hover:bg-accent/50 backdrop-blur-vision hover:-translate-y-0.5 transition-all duration-300",
+        link: "text-primary underline-offset-4 hover:underline text-gradient",
+        glass:
+          "bg-glass-bg border border-glass-border backdrop-blur-vision shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 vision-button",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
+        default: "h-10 px-6 py-2.5 has-[>svg]:px-4",
+        sm: "h-9 rounded-lg gap-1.5 px-4 has-[>svg]:px-3",
+        lg: "h-12 rounded-xl px-8 has-[>svg]:px-6 text-vision-base",
+        icon: "size-10",
+        "icon-sm": "size-9",
+        "icon-lg": "size-12",
       },
     },
     defaultVariants: {
