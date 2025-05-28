@@ -50,7 +50,7 @@ export function NavMain({
                     "hover:bg-sidebar-accent/60 hover:backdrop-blur-vision hover:shadow-vision-sm",
                     "rounded-xl border border-transparent hover:border-sidebar-border/30",
                     isActive && [
-                      "bg-gradient-to-r from-primary/20 to-gradient-secondary/20",
+                      "bg-gradient-to-r from-primary/50 to-gradient-secondary/30",
                       "border-primary/30 shadow-vision text-primary-foreground",
                       "backdrop-blur-vision",
                     ]
@@ -76,7 +76,7 @@ export function NavMain({
                         className={cn(
                           "w-5 h-5 transition-all duration-300 group-hover:scale-110",
                           isActive
-                            ? "text-primary"
+                            ? "text-foreground"
                             : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"
                         )}
                       />
@@ -88,7 +88,7 @@ export function NavMain({
                       className={cn(
                         "flex-1 ml-3 font-medium text-vision-sm tracking-tight transition-colors duration-300",
                         isActive
-                          ? "text-primary"
+                          ? "text-foreground"
                           : "text-sidebar-foreground/80 group-hover:text-sidebar-foreground"
                       )}
                     >
