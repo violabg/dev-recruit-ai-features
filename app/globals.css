@@ -308,6 +308,24 @@
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  opacity: 0.6;
 }
 
 .glass-card:hover {
@@ -315,6 +333,30 @@
   transform: translateY(-2px);
   box-shadow: 0 12px 40px oklch(0.12 0.015 240 / 0.15),
     0 4px 16px oklch(0.12 0.015 240 / 0.1);
+}
+
+/* Enhanced glass surfaces */
+.glass-surface {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  pointer-events: none;
 }
 
 /* Enhanced Gradient Border */
@@ -597,4 +639,260 @@
 
 .depth-5 {
   box-shadow: var(--shadow-2xl);
+}
+
+/* Vision Pro Interactive Elements */
+.vision-interactive {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.vision-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.vision-interactive:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
+}
+
+/* Vision Pro Focus States */
+.vision-focus {
+  outline: none;
+  position: relative;
+}
+
+.vision-focus:focus-visible {
+  box-shadow: 0 0 0 3px oklch(var(--primary) / 0.2);
+  border-color: var(--primary);
+}
+
+/* Vision Pro Text Styles */
+.vision-text-primary {
+  background: linear-gradient(
+    135deg,
+    var(--gradient-primary) 0%,
+    var(--gradient-secondary) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-weight: 600;
+}
+
+.vision-text-secondary {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Vision Pro Loading States */
+.vision-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-loading::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Vision Pro Status Indicators */
+.vision-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vision-indicator::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Vision Pro Elevated Surfaces */
+.vision-elevated {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+
+  /* &::before { */
+  /* content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+    pointer-events: none; */
+  /* } */
+}
+
+.vision-elevated-primary {
+  background: var(--primary);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-elevated-secondary {
+  background: var(--secondary);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-elevated-destructive {
+  background: var(--destructive);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-elevated-outline-destructive {
+  background: transparent;
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-elevated-outline {
+  background: transparent;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Vision Pro Navigation Elements */
+.vision-nav-item {
+  position: relative;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.vision-nav-item:hover {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  transform: translateX(2px);
+}
+
+.vision-nav-item.active {
+  background: linear-gradient(
+    135deg,
+    var(--primary) / 0.1 0%,
+    var(--gradient-secondary) / 0.05 100%
+  );
+  border: 1px solid var(--primary) / 0.2;
+}
+
+/* Vision Pro Form Elements */
+.vision-input {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.vision-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px oklch(var(--primary) / 0.1);
+  background: var(--card-hover);
+}
+
+/* Vision Pro Modal/Dialog Enhancement */
+.vision-modal {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+/* Vision Pro Depth Classes */
+.depth-surface {
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--glass-border);
+}
+
+.depth-elevated {
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+}
+
+.depth-floating {
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+}
+
+.depth-modal {
+  box-shadow: var(--shadow-2xl);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
 }

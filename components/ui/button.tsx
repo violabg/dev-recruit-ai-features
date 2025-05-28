@@ -5,25 +5,25 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group inline-flex relative justify-center items-center gap-2 disabled:opacity-50 backdrop-blur-vision aria-invalid:border-destructive focus-visible:border-ring rounded-xl outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 overflow-hidden font-medium text-vision-sm whitespace-nowrap transition-all duration-300 [&_svg]:pointer-events-none disabled:pointer-events-none shrink-0 [&_svg]:shrink-0",
+  "group inline-flex relative justify-center items-center gap-2 disabled:opacity-50 backdrop-blur-vision aria-invalid:border-destructive focus-visible:border-ring rounded-xl outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 overflow-hidden font-medium text-vision-sm whitespace-nowrap transition-all duration-300 ease-vision [&_svg]:pointer-events-none disabled:pointer-events-none shrink-0 [&_svg]:shrink-0 vision-interactive",
   {
     variants: {
       variant: {
         default:
-          "bg-primary/90 text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border-2 border-primary/50 hover:border-primary/90",
+          "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border border-primary/30 hover:border-primary/50 vision-elevated-primary",
         destructive:
-          "bg-destructive/90 text-destructive-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-[20px] border-2 border-destructive/50 hover:border-destructive/90",
+          "bg-gradient-to-br from-destructive to-destructive/80 text-white shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-[20px] border border-destructive/30 hover:border-destructive/50 vision-elevated-destructive",
         outline:
-          "border-2 border-glass-border/80 hover:border-glass-border bg-glass-bg backdrop-blur-[20px] shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 text-foreground",
+          "border border-glass-border/80 hover:border-glass-border bg-glass-bg hover:bg-card-hover backdrop-blur-[20px] shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 text-foreground vision-elevated-outline",
         outlineDestructive:
-          "shadow-vision-sm border-2 border-destructive/50 hover:border-destructive/90 backdrop-blur-[20px] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5",
+          "shadow-vision-sm border border-destructive/50 hover:border-destructive/70 backdrop-blur-[20px] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive hover:-translate-y-0.5 hover:bg-destructive/5 vision-elevated-outline-destructive",
         secondary:
-          "bg-secondary/90 text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-[20px] border-2 border-secondary/50 hover:border-secondary/90",
+          "bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground shadow-vision-sm hover:shadow-vision hover:-translate-y-0.5 backdrop-blur-[20px] border border-secondary/30 hover:border-secondary/50 vision-elevated-secondary",
         ghost:
-          "border-2 border-transparent hover:border-glass-border/60 bg-transparent hover:bg-glass-bg/50 backdrop-blur-[20px] hover:text-accent-foreground text-foreground hover:-translate-y-0.5",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-transparent hover:border-glass-border/60 bg-transparent hover:bg-glass-bg/50 backdrop-blur-[20px] hover:text-accent-foreground text-foreground hover:-translate-y-0.5",
+        link: "text-primary underline-offset-4 hover:underline hover:text-primary/80 transition-colors",
         glass:
-          "bg-glass-bg border-2 border-glass-border/80 hover:border-glass-border backdrop-blur-[20px] shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 text-foreground",
+          "bg-glass-bg border border-glass-border/80 hover:border-glass-border backdrop-blur-[20px] shadow-glass hover:shadow-vision-md hover:-translate-y-0.5 text-foreground vision-elevated",
       },
       size: {
         default: "h-10 px-6 py-2.5 has-[>svg]:px-4",
