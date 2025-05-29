@@ -23,6 +23,7 @@ import { Interview } from "@/lib/supabase/types";
 import { BrainCircuit, Clock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ThemeToggle } from "../theme-toggle";
 
 interface Candidate {
   id: string;
@@ -269,11 +270,13 @@ export function InterviewClient({
       </div>
     );
   }
-
+  const totalQuestions = quiz.questions.length;
+  const totalAnswers = Object.keys(answers).length;
+  const completed = totalQuestions === totalAnswers;
   return (
     <div className="flex flex-col min-h-screen">
       <header className="top-0 z-10 sticky bg-background border-b">
-        <div className="flex justify-between items-center h-16 container">
+        <div className="flex justify-between items-center m-auto h-16 container">
           <div className="flex items-center gap-2">
             <BrainCircuit className="w-5 h-5 text-primary" />
             <span className="font-bold">DevRecruit AI</span>
@@ -294,6 +297,7 @@ export function InterviewClient({
             >
               Completa
             </Button>
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -318,7 +322,7 @@ export function InterviewClient({
             <InterviewQuestion
               question={quiz.questions[currentQuestionIndex]}
               questionNumber={currentQuestionIndex + 1}
-              totalQuestions={quiz.questions.length}
+              completed={completed}
               onAnswer={(answer) =>
                 handleAnswer(quiz.questions[currentQuestionIndex].id, answer)
               }
@@ -330,11 +334,11 @@ export function InterviewClient({
             <Button
               variant="outline"
               onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
-              disabled={currentQuestionIndex === 0}
+              disabled={currentQuestionIndex === 0 || completed}
             >
               Precedente
             </Button>
-            {currentQuestionIndex < quiz.questions.length - 1 ? (
+            {currentQuestionIndex < totalQuestions - 1 ? (
               <Button
                 onClick={() =>
                   setCurrentQuestionIndex(currentQuestionIndex + 1)
@@ -344,7 +348,12 @@ export function InterviewClient({
                 Successiva
               </Button>
             ) : (
-              <Button onClick={handleCompleteInterview}>Completa quiz</Button>
+              <Button
+                onClick={handleCompleteInterview}
+                disabled={totalQuestions !== totalAnswers}
+              >
+                Completa quiz
+              </Button>
             )}
           </div>
         </div>

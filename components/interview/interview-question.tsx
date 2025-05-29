@@ -17,9 +17,9 @@ import { useEffect, useState } from "react";
 interface QuestionProps {
   question: Question;
   questionNumber: number;
-  totalQuestions: number;
   onAnswer: (answer: Record<string, any> | null) => void;
   currentAnswer: Record<string, any>;
+  completed: boolean;
 }
 
 export function InterviewQuestion({
@@ -27,7 +27,7 @@ export function InterviewQuestion({
   questionNumber,
   onAnswer,
   currentAnswer,
-  totalQuestions,
+  completed,
 }: QuestionProps) {
   // Reset answer and code when question changes
   const [answer, setAnswer] = useState<any>(currentAnswer || null);
@@ -127,10 +127,7 @@ export function InterviewQuestion({
         <div className="flex justify-end">
           <Button
             onClick={handleSubmitAnswer}
-            disabled={
-              (answer === null && code === "") ||
-              questionNumber === totalQuestions
-            }
+            disabled={(answer === null && code === "") || completed}
           >
             Salva risposta
           </Button>
