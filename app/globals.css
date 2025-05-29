@@ -273,17 +273,6 @@
   );
 }
 
-@utility container {
-  margin-inline: auto;
-  padding-inline: 2rem;
-  @media (width >= --theme(--breakpoint-sm)) {
-    max-width: none;
-  }
-  @media (width >= 1400px) {
-    max-width: 1400px;
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -301,88 +290,62 @@
 }
 
 /* Vision Pro Glass Card System */
-.glass-card {
+@utility glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card:hover {
-  background: var(--card-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px oklch(0.12 0.015 240 / 0.15),
-    0 4px 16px oklch(0.12 0.015 240 / 0.1);
-}
-
-/* Enhanced Gradient Border */
-.gradient-border {
   position: relative;
-  border-radius: var(--radius-lg);
   overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    opacity: 0.6;
+  }
+
+  &:hover {
+    background: var(--card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px oklch(0.12 0.015 240 / 0.15),
+      0 4px 16px oklch(0.12 0.015 240 / 0.1);
+  }
 }
 
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding: 1px;
+/* Enhanced glass surfaces */
+@utility glass-suface {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    135deg,
-    var(--gradient-primary) 0%,
-    var(--gradient-secondary) 50%,
-    var(--gradient-accent) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* Enhanced Button Glass Borders and Gradient Animations */
-.button-glass-border {
   position: relative;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
+  overflow: hidden;
 
-.button-glass-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  background: linear-gradient(
-    135deg,
-    var(--glass-border) 0%,
-    var(--border-hover) 25%,
-    var(--glass-border) 50%,
-    var(--border-hover) 75%,
-    var(--glass-border) 100%
-  );
-  border-radius: inherit;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: xor;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  transition: opacity 0.3s ease;
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.button-glass-border:hover::before {
-  opacity: 1;
-  background: linear-gradient(
-    135deg,
-    var(--border-hover) 0%,
-    var(--glass-border) 25%,
-    var(--border-hover) 50%,
-    var(--glass-border) 75%,
-    var(--border-hover) 100%
-  );
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+  }
 }
 
 /* Button Gradient Animation */
@@ -396,139 +359,8 @@
   }
 }
 
-.button-gradient-hover {
-  background-size: 200% 100%;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.button-gradient-hover:hover {
-  animation: button-gradient-shift 2s ease infinite;
-}
-
-/* Enhanced Glass Button Effects */
-.button-enhanced-glass {
-  position: relative;
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 2px solid;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.05);
-}
-
-.button-enhanced-glass::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.button-enhanced-glass:hover::after {
-  opacity: 1;
-}
-
-/* Button Shimmer Effect */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.button-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.button-shimmer::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s;
-}
-
-.button-shimmer:hover::before {
-  animation: shimmer 0.6s ease-out;
-}
-
-/* Enhanced Button Shimmer Animation */
-@keyframes button-shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
-/* Custom button animation utilities */
-@layer utilities {
-  .animate-button-shimmer {
-    background: linear-gradient(
-      90deg,
-      transparent 25%,
-      rgba(255, 255, 255, 0.5) 50%,
-      transparent 75%
-    );
-    background-size: 200% 100%;
-    animation: button-shimmer 2s ease-in-out infinite;
-  }
-
-  .animate-button-glow {
-    animation: button-shimmer 1.5s ease-in-out infinite;
-  }
-}
-
-/* Override default hover for better button effects */
-.button-enhanced {
-  position: relative;
-  overflow: hidden;
-}
-
-.button-enhanced::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  transition: left 0.5s ease;
-  z-index: 10;
-}
-
-.button-enhanced:hover::after {
-  left: 100%;
-}
-
 /* Enhanced Text Gradients */
-.text-gradient {
+@utility text-gradient {
   background: linear-gradient(
     135deg,
     var(--gradient-primary) 0%,
@@ -542,7 +374,7 @@
   animation: gradient-shift 6s ease infinite;
 }
 
-.gradient-bg {
+@utility gradient-bg {
   background: linear-gradient(
     135deg,
     var(--gradient-primary) 0%,
@@ -574,27 +406,247 @@
   }
 }
 
-.float-animation {
+@utility float-animation {
   animation: float 6s ease-in-out infinite;
 }
 
 /* Enhanced Depth Layers */
-.depth-1 {
+@utility depth-1 {
   box-shadow: var(--shadow-sm);
 }
 
-.depth-2 {
+@utility depth-2 {
   box-shadow: var(--shadow-md);
 }
 
-.depth-3 {
+@utility depth-3 {
   box-shadow: var(--shadow-lg);
 }
 
-.depth-4 {
+@utility depth-4 {
   box-shadow: var(--shadow-xl);
 }
 
-.depth-5 {
+@utility depth-5 {
   box-shadow: var(--shadow-2xl);
+}
+
+/* Vision Pro Interactive Elements */
+@utility vision-interactive {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active {
+    transform: translateY(0);
+    transition-duration: 0.1s;
+  }
+}
+
+/* Vision Pro Focus States */
+@utility vision-focus {
+  outline: none;
+  position: relative;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px oklch(var(--primary) / 0.2);
+    border-color: var(--primary);
+  }
+}
+
+/* Vision Pro Text Styles */
+@utility vision-text-primary {
+  background: linear-gradient(
+    135deg,
+    var(--gradient-primary) 0%,
+    var(--gradient-secondary) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-weight: 600;
+}
+
+@utility vision-text-secondary {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Vision Pro Loading States */
+@utility vision-loading {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Vision Pro Status Indicators */
+@utility vision-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+}
+
+/* Vision Pro Elevated Surfaces */
+@utility vision-elevated {
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+
+  /* Default glass background and border */
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+
+  &.vision-primary {
+    background: var(--primary);
+  }
+
+  &.vision-secondary {
+    background: var(--secondary);
+  }
+
+  &.vision-destructive {
+    background: var(--destructive);
+    border-color: var(--destructive);
+  }
+
+  &.vision-outline {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+  }
+
+  &.vision-outline-destructive {
+    background: transparent;
+    border: 1px solid var(--destructive);
+  }
+}
+
+/* Vision Pro Navigation Elements */
+@utility vision-nav-item {
+  position: relative;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  &:hover {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    transform: translateX(2px);
+  }
+
+  &.active {
+    background: linear-gradient(
+      135deg,
+      var(--primary) / 0.1 0%,
+      var(--gradient-secondary) / 0.05 100%
+    );
+    border: 1px solid var(--primary) / 0.2;
+  }
+}
+
+/* Vision Pro Form Elements */
+@utility vision-input {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px oklch(var(--primary) / 0.1);
+    background: var(--card-hover);
+  }
+}
+
+/* Vision Pro Modal/Dialog Enhancement */
+@utility vision-modal {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2xl);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+  }
+}
+
+/* Vision Pro Depth Classes */
+@utility depth-surface {
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--glass-border);
+}
+
+@utility depth-elevated {
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+}
+
+@utility depth-floating {
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+}
+
+@utility depth-modal {
+  box-shadow: var(--shadow-2xl);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
 }

@@ -19,13 +19,13 @@ export default function PasswordInput({
     <div className="relative">
       <Input
         id={id}
-        className={cn("pe-9", className)}
+        className={cn("pe-12", className)}
         placeholder="Password"
         type={isVisible ? "text" : "password"}
         {...props}
       />
       <button
-        className="focus:z-10 absolute inset-y-0 flex justify-center items-center disabled:opacity-50 focus-visible:border-ring rounded-e-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 w-9 h-full text-muted-foreground/80 hover:text-foreground transition-[color,box-shadow] disabled:cursor-not-allowed disabled:pointer-events-none end-0"
+        className="focus:z-10 absolute inset-y-0 flex justify-center items-center disabled:opacity-50 focus-visible:border-ring rounded-e-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 w-12 h-full text-muted-foreground/80 hover:text-foreground transition-all duration-300 ease-vision disabled:cursor-not-allowed disabled:pointer-events-none end-0 hover:bg-glass-bg/50 backdrop-blur-vision"
         type="button"
         onClick={toggleVisibility}
         aria-label={isVisible ? "Hide password" : "Show password"}
