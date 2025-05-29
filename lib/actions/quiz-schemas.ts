@@ -26,6 +26,7 @@ export const quizSchema = z.object({
   position_id: z.string(),
   questions: z.array(questionSchema),
   time_limit: z.number().nullable(),
+  difficulty: z.number().min(1).max(5).optional(),
   created_at: z.string(),
   created_by: z.string(),
 });

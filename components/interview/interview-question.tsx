@@ -34,7 +34,6 @@ export function InterviewQuestion({
   // Reset answer and code when question changes
   const [answer, setAnswer] = useState<any>(currentAnswer || null);
   const [code, setCode] = useState<string>("");
-
   // Reset state when question changes
   useEffect(() => {
     setAnswer(currentAnswer || null);

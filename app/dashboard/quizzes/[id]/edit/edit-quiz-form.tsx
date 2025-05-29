@@ -7,7 +7,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { QuizForm, quizSchema } from "@/lib/actions/quiz-schemas";
@@ -37,7 +47,10 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
 
   const form = useForm<QuizForm>({
     resolver: zodResolver(quizSchema),
-    defaultValues: quiz,
+    defaultValues: {
+      ...quiz,
+      difficulty: quiz.difficulty || 3, // Default to medium difficulty if not set
+    },
     mode: "onChange",
   });
 
@@ -52,6 +65,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
       formData.append("quiz_id", data.id);
       formData.append("title", data.title);
       formData.append("time_limit", data.time_limit?.toString() || "");
+      formData.append("difficulty", data.difficulty?.toString() || "3");
       formData.append("questions", JSON.stringify(data.questions));
       const res = await fetch("/api/quiz-edit/update", {
         method: "POST",
@@ -113,7 +127,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
         quizTitle: quiz.title,
         // experienceLevel and skills are fetched by the server action
         questionCount: fields.length,
-        difficulty: 3, // Or get from somewhere if dynamic
+        difficulty: form.getValues("difficulty") || 3,
         previousQuestions: currentQuestions,
         includeMultipleChoice,
         includeOpenQuestions,
@@ -138,51 +152,292 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Modifica quiz: {quiz.title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="gap-4 grid md:grid-cols-2">
-            <div>
-              <label className="font-medium">Titolo</label>
-              <Input {...form.register("title")} className="mt-1" />
-            </div>
-            <div>
-              <label className="font-medium">Limite di tempo (minuti)</label>
-              <Input
-                type="number"
-                {...form.register("time_limit", { valueAsNumber: true })}
-                className="mt-1"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Modifica quiz: {quiz.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="gap-4 grid xl:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Titolo</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="time_limit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Limite di tempo (minuti)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="difficulty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Difficoltà:{" "}
+                      {
+                        [
+                          "Molto facile",
+                          "Facile",
+                          "Media",
+                          "Difficile",
+                          "Molto difficile",
+                        ][(field.value || 3) - 1]
+                      }
+                    </FormLabel>
+                    <FormControl>
+                      <Slider
+                        min={1}
+                        max={5}
+                        step={1}
+                        defaultValue={[field.value || 3]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Seleziona il livello di difficoltà (1-5)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">{position.title}</Badge>
-            <Badge variant="outline">{position.experience_level}</Badge>
-            {position.skills.map((s) => (
-              <Badge key={s} variant="secondary">
-                {s}
-              </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{position.title}</Badge>
+              <Badge variant="outline">{position.experience_level}</Badge>
+              {position.skills.map((s) => (
+                <Badge key={s} variant="secondary">
+                  {s}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleRegenerateQuiz}
+            disabled={aiQuizLoading}
+          >
+            {aiQuizLoading ? (
+              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 w-4 h-4" />
+            )}
+            Genera nuovo quiz con AI
+          </Button>
+          <Button
+            type="submit"
+            variant="default"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? (
+              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+            ) : null}
+            Salva modifiche
+          </Button>
+        </div>
+        <Tabs defaultValue="questions">
+          <TabsList>
+            <TabsTrigger value="questions">Domande</TabsTrigger>
+          </TabsList>
+          <TabsContent value="questions" className="space-y-4 pt-4">
+            {fields.map((field, index) => (
+              <Card key={field.id} className="relative">
+                <CardHeader className="flex flex-row justify-between items-center">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Badge
+                      variant="outline"
+                      className="flex justify-center items-center p-0 rounded-full w-6 h-6"
+                    >
+                      {index + 1}
+                    </Badge>
+                    <span>
+                      {field.type === "multiple_choice"
+                        ? "Risposta multipla"
+                        : field.type === "open_question"
+                        ? "Domanda aperta"
+                        : "Snippet di codice"}
+                    </span>
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => handleRegenerateQuestion(index)}
+                      disabled={aiLoading === `q${index}` || aiQuizLoading}
+                    >
+                      {aiLoading === `q${index}` ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      Rigenera con AI
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => remove(index)}
+                    >
+                      &times;
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="font-medium">Domanda</label>
+                    <Textarea
+                      {...form.register(`questions.${index}.question`)}
+                      className="mt-1"
+                    />
+                  </div>
+                  {field.type === "multiple_choice" && (
+                    <div className="flex flex-col gap-2">
+                      <label className="font-medium">Opzioni</label>
+                      <div className="flex flex-col items-start gap-4">
+                        {field.options?.map((opt, optIdx) => (
+                          <div
+                            key={optIdx}
+                            className="flex items-center gap-2 w-full"
+                          >
+                            <Input
+                              {...form.register(
+                                `questions.${index}.options.${optIdx}`
+                              )}
+                              className="w-full"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                const opts =
+                                  form.getValues(
+                                    `questions.${index}.options`
+                                  ) || [];
+                                opts.splice(optIdx, 1);
+                                form.setValue(
+                                  `questions.${index}.options`,
+                                  opts
+                                );
+                              }}
+                            >
+                              &times;
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            const opts =
+                              form.getValues(`questions.${index}.options`) ||
+                              [];
+                            form.setValue(`questions.${index}.options`, [
+                              ...opts,
+                              "",
+                            ]);
+                          }}
+                        >
+                          + Aggiungi opzione
+                        </Button>
+                      </div>
+                      <div className="flex flex-col gap-2 mt-2">
+                        <label className="font-medium">
+                          Risposta corretta (indice)
+                        </label>
+                        <Input
+                          type="number"
+                          {...form.register(`questions.${index}.correctAnswer`)}
+                          className="w-24"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2 mt-2">
+                        <label className="font-medium">Spiegazione</label>
+                        <Textarea
+                          {...form.register(`questions.${index}.explanation`)}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {field.type === "open_question" && (
+                    <div className="flex flex-col gap-2">
+                      <label className="font-medium">Risposta di esempio</label>
+                      <Textarea
+                        {...form.register(`questions.${index}.sampleAnswer`)}
+                        className="mt-1"
+                      />
+                      <div className="flex flex-col gap-2 mt-2">
+                        <label className="font-medium">
+                          Parole chiave (separate da virgola)
+                        </label>
+                        <Input
+                          defaultValue={field.keywords?.join(", ") || ""}
+                          onBlur={(e) => {
+                            const val = e.target.value
+                              .split(",")
+                              .map((s: string) => s.trim())
+                              .filter(Boolean);
+                            form.setValue(`questions.${index}.keywords`, val);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {field.type === "code_snippet" && (
+                    <div className="space-y-2">
+                      <div className="flex flex-col gap-2">
+                        <label className="font-medium">Snippet di codice</label>
+                        <Textarea
+                          {...form.register(`questions.${index}.codeSnippet`)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="font-medium">
+                          Soluzione di esempio
+                        </label>
+                        <Textarea
+                          {...form.register(
+                            `questions.${index}.sampleSolution`
+                          )}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))}
-          </div>
-        </CardContent>
-      </Card>
-      <div className="flex items-center gap-4">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={handleRegenerateQuiz}
-          disabled={aiQuizLoading}
-        >
-          {aiQuizLoading ? (
-            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-          ) : (
-            <Sparkles className="mr-2 w-4 h-4" />
-          )}
-          Genera nuovo quiz con AI
-        </Button>
+          </TabsContent>
+        </Tabs>
         <Button
           type="submit"
           variant="default"
@@ -193,188 +448,8 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           ) : null}
           Salva modifiche
         </Button>
-      </div>
-      <Tabs defaultValue="questions">
-        <TabsList>
-          <TabsTrigger value="questions">Domande</TabsTrigger>
-        </TabsList>
-        <TabsContent value="questions" className="space-y-4 pt-4">
-          {fields.map((field, index) => (
-            <Card key={field.id} className="relative">
-              <CardHeader className="flex flex-row justify-between items-center">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Badge
-                    variant="outline"
-                    className="flex justify-center items-center p-0 rounded-full w-6 h-6"
-                  >
-                    {index + 1}
-                  </Badge>
-                  <span>
-                    {field.type === "multiple_choice"
-                      ? "Risposta multipla"
-                      : field.type === "open_question"
-                      ? "Domanda aperta"
-                      : "Snippet di codice"}
-                  </span>
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => handleRegenerateQuestion(index)}
-                    disabled={aiLoading === `q${index}` || aiQuizLoading}
-                  >
-                    {aiLoading === `q${index}` ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    Rigenera con AI
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="destructive"
-                    onClick={() => remove(index)}
-                  >
-                    &times;
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-medium">Domanda</label>
-                  <Textarea
-                    {...form.register(`questions.${index}.question`)}
-                    className="mt-1"
-                  />
-                </div>
-                {field.type === "multiple_choice" && (
-                  <div className="flex flex-col gap-2">
-                    <label className="font-medium">Opzioni</label>
-                    <div className="flex flex-col items-start gap-4">
-                      {field.options?.map((opt, optIdx) => (
-                        <div
-                          key={optIdx}
-                          className="flex items-center gap-2 w-full"
-                        >
-                          <Input
-                            {...form.register(
-                              `questions.${index}.options.${optIdx}`
-                            )}
-                            className="w-full"
-                          />
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              const opts =
-                                form.getValues(`questions.${index}.options`) ||
-                                [];
-                              opts.splice(optIdx, 1);
-                              form.setValue(`questions.${index}.options`, opts);
-                            }}
-                          >
-                            &times;
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          const opts =
-                            form.getValues(`questions.${index}.options`) || [];
-                          form.setValue(`questions.${index}.options`, [
-                            ...opts,
-                            "",
-                          ]);
-                        }}
-                      >
-                        + Aggiungi opzione
-                      </Button>
-                    </div>
-                    <div className="flex flex-col gap-2 mt-2">
-                      <label className="font-medium">
-                        Risposta corretta (indice)
-                      </label>
-                      <Input
-                        type="number"
-                        {...form.register(`questions.${index}.correctAnswer`)}
-                        className="w-24"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2 mt-2">
-                      <label className="font-medium">Spiegazione</label>
-                      <Textarea
-                        {...form.register(`questions.${index}.explanation`)}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                )}
-                {field.type === "open_question" && (
-                  <div className="flex flex-col gap-2">
-                    <label className="font-medium">Risposta di esempio</label>
-                    <Textarea
-                      {...form.register(`questions.${index}.sampleAnswer`)}
-                      className="mt-1"
-                    />
-                    <div className="flex flex-col gap-2 mt-2">
-                      <label className="font-medium">
-                        Parole chiave (separate da virgola)
-                      </label>
-                      <Input
-                        defaultValue={field.keywords?.join(", ") || ""}
-                        onBlur={(e) => {
-                          const val = e.target.value
-                            .split(",")
-                            .map((s: string) => s.trim())
-                            .filter(Boolean);
-                          form.setValue(`questions.${index}.keywords`, val);
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                {field.type === "code_snippet" && (
-                  <div className="space-y-2">
-                    <div className="flex flex-col gap-2">
-                      <label className="font-medium">Snippet di codice</label>
-                      <Textarea
-                        {...form.register(`questions.${index}.codeSnippet`)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="font-medium">
-                        Soluzione di esempio
-                      </label>
-                      <Textarea
-                        {...form.register(`questions.${index}.sampleSolution`)}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-      </Tabs>
-      <Button
-        type="submit"
-        variant="default"
-        disabled={form.formState.isSubmitting}
-      >
-        {form.formState.isSubmitting ? (
-          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-        ) : null}
-        Salva modifiche
-      </Button>
-    </form>
+      </form>
+    </Form>
   );
 };
 
