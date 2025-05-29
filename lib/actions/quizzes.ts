@@ -201,6 +201,7 @@ export async function generateNewQuizAction({
         - question: Italian text, must be code related and ask to fix bugs, don't include code in the question text do it in the codeSnippet field
         - codeSnippet: Valid code string, must be relevant to the question and contain a bug if the question is about fixing bugs,
         - sampleSolution: Valid code string, must be the corrected version of the code snippet
+        - language: Programming language of the code snippet (e.g., "javascript", "python", "java") MUST be always included
 
       Content Rules:
 

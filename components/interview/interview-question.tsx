@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Question } from "@/lib/actions/quiz-schemas";
+import { prismLanguage } from "@/lib/utils";
+import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useState } from "react";
 
 interface QuestionProps {
@@ -31,18 +33,12 @@ export function InterviewQuestion({
 }: QuestionProps) {
   // Reset answer and code when question changes
   const [answer, setAnswer] = useState<any>(currentAnswer || null);
-  const [code, setCode] = useState<string>(
-    currentAnswer?.code ??
-      (question.type === "code_snippet" ? question.codeSnippet || "" : "")
-  );
+  const [code, setCode] = useState<string>("");
 
   // Reset state when question changes
   useEffect(() => {
     setAnswer(currentAnswer || null);
-    setCode(
-      currentAnswer?.code ??
-        (question.type === "code_snippet" ? question.codeSnippet || "" : "")
-    );
+    setCode(currentAnswer?.code ?? "");
   }, [question, currentAnswer]);
 
   const handleSubmitAnswer = () => {
@@ -105,11 +101,50 @@ export function InterviewQuestion({
             {question.codeSnippet && (
               <div>
                 <h3 className="mb-2 font-medium">Codice:</h3>
-                <pre className="bg-muted p-4 rounded-md overflow-x-auto text-sm">
-                  <code className="break-words whitespace-pre-wrap">
-                    {question.codeSnippet}
-                  </code>
-                </pre>
+                <Highlight
+                  theme={themes.vsDark}
+                  code={question.codeSnippet}
+                  language={prismLanguage(question.language || "javascript")}
+                >
+                  {({
+                    className,
+                    style,
+                    tokens,
+                    getLineProps,
+                    getTokenProps,
+                  }) => (
+                    <pre
+                      className={
+                        "mt-1 overflow-x-auto rounded-md bg-muted p-4 text-sm" +
+                        className
+                      }
+                      style={style}
+                    >
+                      <code className="break-words whitespace-pre-wrap">
+                        {tokens.map((line, i) => {
+                          const { key: lineKey, ...lineProps } = getLineProps({
+                            line,
+                            key: i,
+                          });
+                          return (
+                            <div key={String(lineKey)} {...lineProps}>
+                              {line.map((token, key) => {
+                                const { key: tokenKey, ...rest } =
+                                  getTokenProps({
+                                    token,
+                                    key,
+                                  });
+                                return (
+                                  <span key={String(tokenKey)} {...rest} />
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </code>
+                    </pre>
+                  )}
+                </Highlight>
               </div>
             )}
             <div>

@@ -83,7 +83,7 @@ export default async function InterviewPage({
       </div>
     );
   }
-
+  console.log("quiz :>> ", quiz);
   return (
     <InterviewClient interview={interview} quiz={quiz} candidate={candidate} />
   );
