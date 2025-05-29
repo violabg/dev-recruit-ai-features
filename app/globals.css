@@ -273,17 +273,6 @@
   );
 }
 
-@utility container {
-  margin-inline: auto;
-  padding-inline: 2rem;
-  @media (width >= --theme(--breakpoint-sm)) {
-    max-width: none;
-  }
-  @media (width >= 1400px) {
-    max-width: 1400px;
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -301,7 +290,7 @@
 }
 
 /* Vision Pro Glass Card System */
-.glass-card {
+@utility glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
@@ -310,33 +299,33 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-}
 
-.glass-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  opacity: 0.6;
-}
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    opacity: 0.6;
+  }
 
-.glass-card:hover {
-  background: var(--card-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px oklch(0.12 0.015 240 / 0.15),
-    0 4px 16px oklch(0.12 0.015 240 / 0.1);
+  &:hover {
+    background: var(--card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px oklch(0.12 0.015 240 / 0.15),
+      0 4px 16px oklch(0.12 0.015 240 / 0.1);
+  }
 }
 
 /* Enhanced glass surfaces */
-.glass-surface {
+@utility glass-suface {
   background: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
@@ -344,19 +333,19 @@
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
-}
 
-.glass-surface::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
-  pointer-events: none;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+  }
 }
 
 /* Button Gradient Animation */
@@ -370,17 +359,8 @@
   }
 }
 
-.button-gradient-hover {
-  background-size: 200% 100%;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.button-gradient-hover:hover {
-  animation: button-gradient-shift 2s ease infinite;
-}
-
 /* Enhanced Text Gradients */
-.text-gradient {
+@utility text-gradient {
   background: linear-gradient(
     135deg,
     var(--gradient-primary) 0%,
@@ -394,7 +374,7 @@
   animation: gradient-shift 6s ease infinite;
 }
 
-.gradient-bg {
+@utility gradient-bg {
   background: linear-gradient(
     135deg,
     var(--gradient-primary) 0%,
@@ -426,61 +406,60 @@
   }
 }
 
-.float-animation {
+@utility float-animation {
   animation: float 6s ease-in-out infinite;
 }
 
 /* Enhanced Depth Layers */
-.depth-1 {
+@utility depth-1 {
   box-shadow: var(--shadow-sm);
 }
 
-.depth-2 {
+@utility depth-2 {
   box-shadow: var(--shadow-md);
 }
 
-.depth-3 {
+@utility depth-3 {
   box-shadow: var(--shadow-lg);
 }
 
-.depth-4 {
+@utility depth-4 {
   box-shadow: var(--shadow-xl);
 }
 
-.depth-5 {
+@utility depth-5 {
   box-shadow: var(--shadow-2xl);
 }
 
 /* Vision Pro Interactive Elements */
-.vision-interactive {
+@utility vision-interactive {
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-}
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
 
-.vision-interactive:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.vision-interactive:active {
-  transform: translateY(0);
-  transition-duration: 0.1s;
+  &:active {
+    transform: translateY(0);
+    transition-duration: 0.1s;
+  }
 }
 
 /* Vision Pro Focus States */
-.vision-focus {
+@utility vision-focus {
   outline: none;
   position: relative;
-}
 
-.vision-focus:focus-visible {
-  box-shadow: 0 0 0 3px oklch(var(--primary) / 0.2);
-  border-color: var(--primary);
+  &:focus-visible {
+    box-shadow: 0 0 0 3px oklch(var(--primary) / 0.2);
+    border-color: var(--primary);
+  }
 }
 
 /* Vision Pro Text Styles */
-.vision-text-primary {
+@utility vision-text-primary {
   background: linear-gradient(
     135deg,
     var(--gradient-primary) 0%,
@@ -492,32 +471,31 @@
   font-weight: 600;
 }
 
-.vision-text-secondary {
+@utility vision-text-secondary {
   color: var(--muted-foreground);
   font-weight: 500;
   opacity: 0.8;
 }
 
 /* Vision Pro Loading States */
-.vision-loading {
+@utility vision-loading {
   position: relative;
   overflow: hidden;
-}
-
-.vision-loading::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  animation: shimmer 2s infinite;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: shimmer 2s infinite;
+  }
 }
 
 @keyframes shimmer {
@@ -530,25 +508,25 @@
 }
 
 /* Vision Pro Status Indicators */
-.vision-indicator {
+@utility vision-indicator {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-}
 
-.vision-indicator::before {
-  content: "";
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--primary);
-  box-shadow: 0 0 10px var(--primary);
-  animation: pulse-glow 2s ease-in-out infinite;
+  &::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
 }
 
 /* Vision Pro Elevated Surfaces */
-.vision-elevated {
+@utility vision-elevated {
   backdrop-filter: blur(20px) saturate(1.8);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -558,74 +536,73 @@
   /* Default glass background and border */
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-}
 
-/* Modifier classes for different background variants */
-.vision-elevated.vision-primary {
-  background: var(--primary);
-}
+  &.vision-primary {
+    background: var(--primary);
+  }
 
-.vision-elevated.vision-secondary {
-  background: var(--secondary);
-}
+  &.vision-secondary {
+    background: var(--secondary);
+  }
 
-.vision-elevated.vision-destructive {
-  background: var(--destructive);
-  border-color: var(--destructive);
-}
+  &.vision-destructive {
+    background: var(--destructive);
+    border-color: var(--destructive);
+  }
 
-.vision-elevated.vision-outline {
-  background: transparent;
-  border: 1px solid var(--glass-border);
-}
+  &.vision-outline {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+  }
 
-.vision-elevated.vision-outline-destructive {
-  background: transparent;
-  border: 1px solid var(--destructive);
+  &.vision-outline-destructive {
+    background: transparent;
+    border: 1px solid var(--destructive);
+  }
 }
 
 /* Vision Pro Navigation Elements */
-.vision-nav-item {
+@utility vision-nav-item {
   position: relative;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-}
 
-.vision-nav-item:hover {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  transform: translateX(2px);
-}
+  &:hover {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    transform: translateX(2px);
+  }
 
-.vision-nav-item.active {
-  background: linear-gradient(
-    135deg,
-    var(--primary) / 0.1 0%,
-    var(--gradient-secondary) / 0.05 100%
-  );
-  border: 1px solid var(--primary) / 0.2;
+  &.active {
+    background: linear-gradient(
+      135deg,
+      var(--primary) / 0.1 0%,
+      var(--gradient-secondary) / 0.05 100%
+    );
+    border: 1px solid var(--primary) / 0.2;
+  }
 }
 
 /* Vision Pro Form Elements */
-.vision-input {
+@utility vision-input {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-}
 
-.vision-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px oklch(var(--primary) / 0.1);
-  background: var(--card-hover);
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px oklch(var(--primary) / 0.1);
+    background: var(--card-hover);
+  }
 }
 
 /* Vision Pro Modal/Dialog Enhancement */
-.vision-modal {
+@utility vision-modal {
   background: var(--glass-bg);
   backdrop-filter: blur(24px) saturate(1.8);
   border: 1px solid var(--glass-border);
@@ -633,41 +610,41 @@
   box-shadow: var(--shadow-2xl);
   position: relative;
   overflow: hidden;
-}
 
-.vision-modal::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
-  pointer-events: none;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+  }
 }
 
 /* Vision Pro Depth Classes */
-.depth-surface {
+@utility depth-surface {
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--glass-border);
 }
 
-.depth-elevated {
+@utility depth-elevated {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
 }
 
-.depth-floating {
+@utility depth-floating {
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
 }
 
-.depth-modal {
+@utility depth-modal {
   box-shadow: var(--shadow-2xl);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
