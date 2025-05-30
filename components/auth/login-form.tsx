@@ -162,7 +162,7 @@ export function LoginForm({
               {/* {error && <p className=\"text-destructive-500 text-sm\">{error}</p>} */}
               <Button
                 type="submit"
-                className="flex justify-center items-center gap-2 bg-background hover:bg-accent border border-input w-full text-black dark:text-white transition-colors hover:text-accent-foreground"
+                className="flex justify-center items-center gap-2 bg-background border-input w-full"
                 disabled={isLoading}
               >
                 <GithubIcon className="w-5 h-5" />
