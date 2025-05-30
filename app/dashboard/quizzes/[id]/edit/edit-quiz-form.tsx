@@ -180,7 +180,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           <CardContent className="space-y-4">
             <div className="gap-4 grid xl:grid-cols-3">
               <FormField
-                control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
@@ -193,7 +192,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                 )}
               />
               <FormField
-                control={form.control}
                 name="time_limit"
                 render={({ field }) => (
                   <FormItem>
@@ -211,7 +209,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                 )}
               />
               <FormField
-                control={form.control}
                 name="difficulty"
                 render={({ field }) => (
                   <FormItem>
@@ -328,26 +325,29 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="font-medium">Domanda</label>
-                    <Textarea
-                      {...form.register(`questions.${index}.question`)}
-                      className="mt-1"
-                    />
-                  </div>
+                  <FormField
+                    name={`questions.${index}.question`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Domanda</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Inserisci la domanda..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   {field.type === "multiple_choice" && (
-                    <MultipleChoiceForm
-                      form={form}
-                      index={index}
-                      field={field}
-                    />
+                    <MultipleChoiceForm index={index} />
                   )}
                   {field.type === "open_question" && (
-                    <OpenQuestionForm form={form} index={index} field={field} />
+                    <OpenQuestionForm index={index} />
                   )}
                   {field.type === "code_snippet" && (
                     <CodeSnippetForm
-                      form={form}
                       index={index}
                       field={field}
                       questionLanguages={questionLanguages}

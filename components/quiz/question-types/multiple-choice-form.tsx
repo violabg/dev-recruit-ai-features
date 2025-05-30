@@ -1,73 +1,102 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Question, QuizForm } from "@/lib/actions/quiz-schemas";
-import { UseFormReturn } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 
 type MultipleChoiceFormProps = {
-  form: UseFormReturn<QuizForm>;
   index: number;
-  field: Question;
 };
 
-export const MultipleChoiceForm = ({
-  form,
-  index,
-  field,
-}: MultipleChoiceFormProps) => {
+export const MultipleChoiceForm = ({ index }: MultipleChoiceFormProps) => {
+  const form = useFormContext();
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: `questions.${index}.options`,
+  });
+
   return (
-    <div className="flex flex-col gap-2">
-      <label className="font-medium">Opzioni</label>
-      <div className="flex flex-col items-start gap-4">
-        {field.options?.map((opt: string, optIdx: number) => (
-          <div key={optIdx} className="flex items-center gap-2 w-full">
-            <Input
-              {...form.register(`questions.${index}.options.${optIdx}`)}
-              className="w-full"
-            />
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={() => {
-                const opts = form.getValues(`questions.${index}.options`) || [];
-                opts.splice(optIdx, 1);
-                form.setValue(`questions.${index}.options`, opts);
-              }}
-            >
-              &times;
-            </Button>
-          </div>
-        ))}
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={() => {
-            const opts = form.getValues(`questions.${index}.options`) || [];
-            form.setValue(`questions.${index}.options`, [...opts, ""]);
-          }}
-        >
-          + Aggiungi opzione
-        </Button>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label className="font-medium">Opzioni</label>
+        <div className="flex flex-col items-start gap-4">
+          {fields.map((field, optIdx) => (
+            <div key={field.id} className="flex items-center gap-2 w-full">
+              <FormField
+                name={`questions.${index}.options.${optIdx}`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input placeholder={`Opzione ${optIdx + 1}`} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => remove(optIdx)}
+              >
+                &times;
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => append("")}
+          >
+            + Aggiungi opzione
+          </Button>
+        </div>
       </div>
-      <div className="flex flex-col gap-2 mt-2">
-        <label className="font-medium">Risposta corretta (indice)</label>
-        <Input
-          type="number"
-          {...form.register(`questions.${index}.correctAnswer`)}
-          className="w-24"
-        />
-      </div>
-      <div className="flex flex-col gap-2 mt-2">
-        <label className="font-medium">Spiegazione</label>
-        <Textarea
-          {...form.register(`questions.${index}.explanation`)}
-          className="mt-1"
-        />
-      </div>
+      <FormField
+        name={`questions.${index}.correctAnswer`}
+        render={({ field }) => {
+          return (
+            <FormItem>
+              <FormLabel>Risposta corretta (indice)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="0, 1, 2..."
+                  {...field}
+                  onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                  value={field.value}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
+      />
+      <FormField
+        name={`questions.${index}.explanation`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Spiegazione</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Spiega perché questa è la risposta corretta..."
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
