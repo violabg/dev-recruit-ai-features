@@ -27,7 +27,7 @@ export const prismLanguage = (language: string) => {
     case "py":
       return "python";
     case "java":
-      return "java";
+      return "typescript";
     case "c#":
     case "csharp":
       return "csharp";

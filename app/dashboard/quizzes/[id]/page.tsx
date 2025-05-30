@@ -1,4 +1,9 @@
 import {
+  CodeSnippetDisplay,
+  MultipleChoiceDisplay,
+  OpenQuestionDisplay,
+} from "@/components/quiz/question-display";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -15,20 +20,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteQuiz } from "@/lib/actions/quizzes";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, prismLanguage } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { ArrowLeft, Clock, Edit, Link2, Send, Trash } from "lucide-react";
 import Link from "next/link";
-import { Highlight, themes } from "prism-react-renderer";
-
-type Quiz = {
-  id: string;
-  title: string;
-  position_id: string;
-  questions: any[];
-  time_limit: number | null;
-  created_at: string;
-  created_by: string;
-};
 
 type Position = {
   id: string;
@@ -49,7 +43,7 @@ export default async function QuizDetailPage({
     .from("quizzes")
     .select("*")
     .eq("id", id)
-    .single<Quiz>();
+    .single();
 
   if (quizError || !quiz) {
     return (
@@ -188,192 +182,15 @@ export default async function QuizDetailPage({
                   </div>
 
                   {question.type === "multiple_choice" && (
-                    <div className="flex flex-col gap-2">
-                      <h3 className="font-medium">Opzioni:</h3>
-                      <div className="flex flex-col gap-4 mt-2">
-                        {question.options.map(
-                          (option: string, optIndex: number) => (
-                            <div
-                              key={optIndex}
-                              className={`flex items-center gap-2 rounded-md border p-2 ${
-                                Number.parseInt(question.correctAnswer) ===
-                                optIndex
-                                  ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                                  : ""
-                              }`}
-                            >
-                              <div
-                                className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                                  Number.parseInt(question.correctAnswer) ===
-                                  optIndex
-                                    ? "border-green-500 bg-green-500 text-white"
-                                    : ""
-                                }`}
-                              >
-                                {Number.parseInt(question.correctAnswer) ===
-                                  optIndex && (
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="w-3 h-3"
-                                  >
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                  </svg>
-                                )}
-                              </div>
-                              <span>{option}</span>
-                            </div>
-                          )
-                        )}
-                      </div>
-                      {question.explanation && (
-                        <div className="flex flex-col gap-2 mt-2">
-                          <h3 className="font-medium">Spiegazione:</h3>
-                          <p className="mt-1 text-muted-foreground text-sm">
-                            {question.explanation}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    <MultipleChoiceDisplay question={question} />
                   )}
 
                   {question.type === "open_question" && (
-                    <div className="flex flex-col gap-2">
-                      <h3 className="font-medium">Risposta di esempio:</h3>
-                      <p className="mt-1 text-muted-foreground text-sm">
-                        {question.sampleAnswer}
-                      </p>
-                      {question.keywords && question.keywords.length > 0 && (
-                        <div className="flex flex-col gap-2 mt-2">
-                          <h3 className="font-medium">Parole chiave:</h3>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {question.keywords.map(
-                              (keyword: string, kwIndex: number) => (
-                                <Badge key={kwIndex} variant="secondary">
-                                  {keyword}
-                                </Badge>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <OpenQuestionDisplay question={question} />
                   )}
 
                   {question.type === "code_snippet" && (
-                    <div className="space-y-3">
-                      {question.codeSnippet && (
-                        <div className="flex flex-col gap-2">
-                          <h3 className="font-medium">Snippet di codice:</h3>
-                          <Highlight
-                            theme={themes.vsDark}
-                            code={question.codeSnippet}
-                            language={prismLanguage(question.language)}
-                          >
-                            {({
-                              className,
-                              style,
-                              tokens,
-                              getLineProps,
-                              getTokenProps,
-                            }) => (
-                              <pre
-                                className={
-                                  "mt-1 overflow-x-auto rounded-md bg-muted p-4 text-sm" +
-                                  className
-                                }
-                                style={style}
-                              >
-                                <code className="break-words whitespace-pre-wrap">
-                                  {tokens.map((line, i) => {
-                                    const { key: lineKey, ...lineProps } =
-                                      getLineProps({
-                                        line,
-                                        key: i,
-                                      });
-                                    return (
-                                      <div key={String(lineKey)} {...lineProps}>
-                                        {line.map((token, key) => {
-                                          const { key: tokenKey, ...rest } =
-                                            getTokenProps({
-                                              token,
-                                              key,
-                                            });
-                                          return (
-                                            <span
-                                              key={String(tokenKey)}
-                                              {...rest}
-                                            />
-                                          );
-                                        })}
-                                      </div>
-                                    );
-                                  })}
-                                </code>
-                              </pre>
-                            )}
-                          </Highlight>
-                        </div>
-                      )}
-                      {question.sampleSolution && (
-                        <div className="flex flex-col gap-2">
-                          <h3 className="font-medium">Soluzione di esempio:</h3>
-                          <Highlight
-                            theme={themes.vsDark}
-                            code={question.sampleSolution}
-                            language={prismLanguage(question.language)}
-                          >
-                            {({
-                              className,
-                              style,
-                              tokens,
-                              getLineProps,
-                              getTokenProps,
-                            }) => (
-                              <pre
-                                className={
-                                  "mt-1 overflow-x-auto rounded-md bg-muted p-4 text-sm" +
-                                  className
-                                }
-                                style={style}
-                              >
-                                <code className="break-words whitespace-pre-wrap">
-                                  {tokens.map((line, i) => {
-                                    const { key: lineKey, ...lineProps } =
-                                      getLineProps({
-                                        line,
-                                        key: i,
-                                      });
-                                    return (
-                                      <div key={String(lineKey)} {...lineProps}>
-                                        {line.map((token, key) => {
-                                          const { key: tokenKey, ...rest } =
-                                            getTokenProps({
-                                              token,
-                                              key,
-                                            });
-                                          return (
-                                            <span
-                                              key={String(tokenKey)}
-                                              {...rest}
-                                            />
-                                          );
-                                        })}
-                                      </div>
-                                    );
-                                  })}
-                                </code>
-                              </pre>
-                            )}
-                          </Highlight>
-                        </div>
-                      )}
-                    </div>
+                    <CodeSnippetDisplay question={question} />
                   )}
                 </CardContent>
               </Card>
