@@ -1,7 +1,10 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { prismLanguage } from "@/lib/utils";
 import { ArrowRight, BrainCircuit, CheckCircle, Users } from "lucide-react";
 import Link from "next/link";
+import { Highlight, themes } from "prism-react-renderer";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -9,9 +12,9 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col items-center min-h-screen">
       <main className="flex-1">
-        <section className="bg-gradient-to-b from-background via-background/90 to-muted/20 py-20 md:py-32 backdrop-blur-vision">
+        <section className="bg-gradient-to-b from-background via-background/90 to-muted/20 backdrop-blur-vision py-20 md:py-32">
           <div className="px-4 md:px-6 container">
             <div className="items-center gap-6 lg:gap-12 grid lg:grid-cols-2">
               <div className="flex flex-col justify-center space-y-4">
@@ -25,7 +28,8 @@ export default async function Home() {
                     dall&apos;intelligenza artificiale.
                   </p>
                 </div>
-                <div className="flex min-[400px]:flex-row flex-col gap-2">
+                <div className="flex min-[400px]:flex-row flex-col items-center gap-2">
+                  <ThemeToggle />
                   <Link href={user ? "/dashboard" : "/auth/login"}>
                     <Button size="lg" className="gap-1.5">
                       Inizia ora
@@ -36,14 +40,14 @@ export default async function Home() {
               </div>
               <div className="relative mx-auto lg:mx-0">
                 <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-purple-500 opacity-20 blur-3xl rounded-lg" />
-                <div className="relative glass-card border border-glass-border backdrop-blur-vision shadow-vision-lg p-6 rounded-xl vision-elevated">
+                <div className="relative shadow-vision-lg backdrop-blur-vision p-6 border border-glass-border rounded-xl glass-card vision-elevated">
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 font-semibold text-lg">
                       <BrainCircuit className="w-5 h-5 text-primary" />
                       <span>Quiz generato dall&apos;AI</span>
                     </div>
                     <div className="space-y-3 text-sm">
-                      <div className="glass-bg backdrop-blur-vision border border-glass-border p-3 rounded-lg">
+                      <div className="backdrop-blur-vision p-3 border border-glass-border rounded-lg glass-bg">
                         <p className="font-medium">
                           Domanda 1: Cosa è un closure in JavaScript?
                         </p>
@@ -66,17 +70,59 @@ export default async function Home() {
                           </div>
                         </div>
                       </div>
-                      <div className="glass-bg backdrop-blur-vision border border-glass-border p-3 rounded-lg">
+                      <div className="backdrop-blur-vision p-3 border border-glass-border rounded-lg glass-bg">
                         <p className="font-medium">
                           Domanda 2: Identifica l&apos;errore nel seguente
                           codice:
                         </p>
-                        <pre className="bg-black mt-2 p-2 rounded overflow-x-auto text-white text-xs">
-                          {`function fetchData() {
-  return fetch('/api/data')
-    .then(res => res.json);
-}`}
-                        </pre>
+                        <Highlight
+                          theme={themes.vsDark}
+                          code={`function fetchData() {\n  return fetch('/api/data')\n  .then(res => res.json());\n}`}
+                          language={prismLanguage("JavaScript")}
+                        >
+                          {({
+                            className,
+                            style,
+                            tokens,
+                            getLineProps,
+                            getTokenProps,
+                          }) => (
+                            <pre
+                              className={
+                                "mt-1 overflow-x-auto rounded-md bg-muted p-4 text-sm" +
+                                className
+                              }
+                              style={style}
+                            >
+                              <code className="break-words whitespace-pre-wrap">
+                                {tokens.map((line, i) => {
+                                  const { key: lineKey, ...lineProps } =
+                                    getLineProps({
+                                      line,
+                                      key: i,
+                                    });
+                                  return (
+                                    <div key={String(lineKey)} {...lineProps}>
+                                      {line.map((token, key) => {
+                                        const { key: tokenKey, ...rest } =
+                                          getTokenProps({
+                                            token,
+                                            key,
+                                          });
+                                        return (
+                                          <span
+                                            key={String(tokenKey)}
+                                            {...rest}
+                                          />
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })}
+                              </code>
+                            </pre>
+                          )}
+                        </Highlight>
                       </div>
                     </div>
                   </div>
@@ -97,8 +143,8 @@ export default async function Home() {
               </p>
             </div>
             <div className="gap-8 grid md:grid-cols-3">
-              <div className="flex flex-col items-center space-y-4 p-6 text-center glass-card border border-glass-border backdrop-blur-vision rounded-xl shadow-vision-sm hover:shadow-vision transition-all duration-300 ease-vision vision-elevated vision-interactive">
-                <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-4 rounded-2xl backdrop-blur-vision border border-primary/20">
+              <div className="flex flex-col items-center space-y-4 shadow-vision-sm hover:shadow-vision backdrop-blur-vision p-6 border border-glass-border rounded-xl text-center transition-all duration-300 ease-vision glass-card vision-elevated vision-interactive">
+                <div className="bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-vision p-4 border border-primary/20 rounded-2xl">
                   <BrainCircuit className="w-7 h-7 text-primary" />
                 </div>
                 <h3 className="font-bold text-xl">
@@ -109,8 +155,8 @@ export default async function Home() {
                   posizione e livello di esperienza.
                 </p>
               </div>
-              <div className="flex flex-col items-center space-y-4 p-6 text-center glass-card border border-glass-border backdrop-blur-vision rounded-xl shadow-vision-sm hover:shadow-vision transition-all duration-300 ease-vision vision-elevated vision-interactive">
-                <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-4 rounded-2xl backdrop-blur-vision border border-primary/20">
+              <div className="flex flex-col items-center space-y-4 shadow-vision-sm hover:shadow-vision backdrop-blur-vision p-6 border border-glass-border rounded-xl text-center transition-all duration-300 ease-vision glass-card vision-elevated vision-interactive">
+                <div className="bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-vision p-4 border border-primary/20 rounded-2xl">
                   <Users className="w-7 h-7 text-primary" />
                 </div>
                 <h3 className="font-bold text-xl">Colloqui in tempo reale</h3>
@@ -119,8 +165,8 @@ export default async function Home() {
                   colloqui tecnici.
                 </p>
               </div>
-              <div className="flex flex-col items-center space-y-4 p-6 text-center glass-card border border-glass-border backdrop-blur-vision rounded-xl shadow-vision-sm hover:shadow-vision transition-all duration-300 ease-vision vision-elevated vision-interactive">
-                <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-4 rounded-2xl backdrop-blur-vision border border-primary/20">
+              <div className="flex flex-col items-center space-y-4 shadow-vision-sm hover:shadow-vision backdrop-blur-vision p-6 border border-glass-border rounded-xl text-center transition-all duration-300 ease-vision glass-card vision-elevated vision-interactive">
+                <div className="bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-vision p-4 border border-primary/20 rounded-2xl">
                   <CheckCircle className="w-7 h-7 text-primary" />
                 </div>
                 <h3 className="font-bold text-xl">Valutazione oggettiva</h3>
@@ -133,7 +179,7 @@ export default async function Home() {
           </div>
         </section>
       </main>
-      <footer className="py-8 md:py-12 border-t border-glass-border bg-glass-bg/30 backdrop-blur-vision">
+      <footer className="bg-glass-bg/30 backdrop-blur-vision py-8 md:py-12 border-glass-border border-t">
         <div className="flex md:flex-row flex-col md:justify-between md:items-center gap-4 container">
           <div className="flex items-center gap-2 text-sm">
             <BrainCircuit className="w-4 h-4" />
