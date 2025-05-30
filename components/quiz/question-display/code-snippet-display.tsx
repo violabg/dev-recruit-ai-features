@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { prismLanguage } from "@/lib/utils";
 import { Highlight, themes } from "prism-react-renderer";
 
@@ -14,7 +15,14 @@ export const CodeSnippetDisplay = ({ question }: CodeSnippetDisplayProps) => {
     <div className="space-y-3">
       {question.codeSnippet && (
         <div className="flex flex-col gap-2">
-          <h3 className="font-medium">Snippet di codice:</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium">Snippet di codice:</h3>
+            {question.language && (
+              <Badge variant="secondary" className="text-xs">
+                {question.language}
+              </Badge>
+            )}
+          </div>
           <Highlight
             theme={themes.vsDark}
             code={question.codeSnippet}
@@ -54,7 +62,14 @@ export const CodeSnippetDisplay = ({ question }: CodeSnippetDisplayProps) => {
       )}
       {question.sampleSolution && (
         <div className="flex flex-col gap-2">
-          <h3 className="font-medium">Soluzione di esempio:</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium">Soluzione di esempio:</h3>
+            {question.language && (
+              <Badge variant="secondary" className="text-xs">
+                {question.language}
+              </Badge>
+            )}
+          </div>
           <Highlight
             theme={themes.vsDark}
             code={question.sampleSolution}
