@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { SupabaseProvider } from "@/lib/supabase/supabase-provider";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type React from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -9,15 +9,16 @@ export const metadata: Metadata = {
   title: "DevRecruit AI",
   description: "AI-powered technical recruitment platform",
   generator: "v0.dev",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "oklch(0.98 0.005 210)" },
     { media: "(prefers-color-scheme: dark)", color: "oklch(0.12 0.015 240)" },
   ],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
 };
 
 // Update the RootLayout component to handle Supabase provider errors gracefully
