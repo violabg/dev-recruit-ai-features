@@ -8,7 +8,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "DevRecruit AI",
   description: "AI-powered technical recruitment platform",
-  generator: "v0.dev",
 };
 
 export const viewport: Viewport = {
