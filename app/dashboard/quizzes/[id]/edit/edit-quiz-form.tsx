@@ -4,6 +4,7 @@ import {
   GenerateQuizRequest,
   GenerateQuizResponse,
 } from "@/app/api/quiz-edit/generate-quiz/route";
+import { programmingLanguages } from "@/components/positions/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,16 +18,30 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { QuizForm, quizSchema } from "@/lib/actions/quiz-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { useTheme } from "next-themes";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
+
+const CodeEditor = dynamic(
+  () => import("@uiw/react-textarea-code-editor").then((mod) => mod.default),
+  { ssr: false }
+);
 
 type Position = {
   id: string;
@@ -41,9 +56,31 @@ type EditQuizFormProps = {
 };
 
 const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
+  console.log("🚀 ~ EditQuizForm ~ quiz:", quiz);
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [aiQuizLoading, setAiQuizLoading] = useState(false);
+  const [questionLanguages, setQuestionLanguages] = useState<
+    Record<number, string>
+  >({});
+
+  // Language mapping for CodeEditor
+  const getLanguageCode = (language: string): string => {
+    const langMap: Record<string, string> = {
+      javascript: "js",
+      typescript: "ts",
+      python: "python",
+      java: "java",
+      "C#": "csharp",
+      php: "php",
+      ruby: "ruby",
+      go: "go",
+      swift: "swift",
+      kotlin: "kotlin",
+    };
+    return langMap[language.toLowerCase()] || "js";
+  };
 
   const form = useForm<QuizForm>({
     resolver: zodResolver(quizSchema),
@@ -58,6 +95,17 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     control: form.control,
     name: "questions",
   });
+
+  // Initialize language state for existing code snippet questions
+  useEffect(() => {
+    const initialLanguages: Record<number, string> = {};
+    fields.forEach((field, index) => {
+      if (field.type === "code_snippet") {
+        initialLanguages[index] = "JavaScript"; // Default to JavaScript
+      }
+    });
+    setQuestionLanguages(initialLanguages);
+  }, [fields]);
 
   const onSubmit = async (data: QuizForm) => {
     try {
@@ -412,23 +460,99 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                     </div>
                   )}
                   {field.type === "code_snippet" && (
-                    <div className="space-y-2">
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="font-medium">
+                          Linguaggio di programmazione
+                        </label>
+                        <Select
+                          value={field.language || "JavaScript"}
+                          onValueChange={(value) =>
+                            setQuestionLanguages((prev) => ({
+                              ...prev,
+                              [index]: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Seleziona linguaggio" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {programmingLanguages.map((lang) => (
+                              <SelectItem key={lang} value={lang.toLowerCase()}>
+                                {lang}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex flex-col gap-2">
                         <label className="font-medium">Snippet di codice</label>
-                        <Textarea
-                          {...form.register(`questions.${index}.codeSnippet`)}
-                          className="mt-1"
+                        <CodeEditor
+                          value={
+                            form.watch(`questions.${index}.codeSnippet`) || ""
+                          }
+                          language={getLanguageCode(
+                            questionLanguages[index] || "JavaScript"
+                          )}
+                          placeholder="Inserisci il codice qui..."
+                          onChange={(evn) =>
+                            form.setValue(
+                              `questions.${index}.codeSnippet`,
+                              evn.target.value
+                            )
+                          }
+                          padding={15}
+                          data-color-mode={
+                            resolvedTheme === "dark" ? "dark" : "light"
+                          }
+                          style={{
+                            fontSize: 14,
+                            backgroundColor:
+                              resolvedTheme === "dark" ? "#1a1a1a" : "#f8f9fa",
+                            fontFamily:
+                              "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
+                            borderRadius: "6px",
+                            border: "1px solid",
+                            borderColor:
+                              resolvedTheme === "dark" ? "#374151" : "#d1d5db",
+                          }}
                         />
                       </div>
                       <div className="flex flex-col gap-2">
                         <label className="font-medium">
                           Soluzione di esempio
                         </label>
-                        <Textarea
-                          {...form.register(
-                            `questions.${index}.sampleSolution`
+                        <CodeEditor
+                          value={
+                            form.watch(`questions.${index}.sampleSolution`) ||
+                            ""
+                          }
+                          language={getLanguageCode(
+                            questionLanguages[index] || "JavaScript"
                           )}
-                          className="mt-1"
+                          placeholder="Inserisci la soluzione qui..."
+                          onChange={(evn) =>
+                            form.setValue(
+                              `questions.${index}.sampleSolution`,
+                              evn.target.value
+                            )
+                          }
+                          padding={15}
+                          data-color-mode={
+                            resolvedTheme === "dark" ? "dark" : "light"
+                          }
+                          style={{
+                            fontSize: 14,
+                            backgroundColor:
+                              resolvedTheme === "dark" ? "#1a1a1a" : "#f8f9fa",
+                            fontFamily:
+                              "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
+                            borderRadius: "6px",
+                            border: "1px solid",
+                            borderColor:
+                              resolvedTheme === "dark" ? "#374151" : "#d1d5db",
+                          }}
                         />
                       </div>
                     </div>

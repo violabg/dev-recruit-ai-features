@@ -13,14 +13,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Question } from "@/lib/actions/quiz-schemas";
 import { prismLanguage } from "@/lib/utils";
+import Editor from "@monaco-editor/react";
+import { useTheme } from "next-themes";
 import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useState } from "react";
+
+type QuestionAnswer = string | { code: string } | null;
 
 interface QuestionProps {
   question: Question;
   questionNumber: number;
-  onAnswer: (answer: Record<string, any> | null) => void;
-  currentAnswer: Record<string, any>;
+  onAnswer: (answer: QuestionAnswer) => void;
+  currentAnswer: QuestionAnswer;
   completed: boolean;
 }
 
@@ -31,13 +35,33 @@ export function InterviewQuestion({
   currentAnswer,
   completed,
 }: QuestionProps) {
+  const { theme, resolvedTheme } = useTheme();
+
+  // Use resolvedTheme to handle 'system' theme properly
+  const monacoTheme =
+    resolvedTheme === "dark" || theme === "dark" ? "vs-dark" : "light";
+
   // Reset answer and code when question changes
-  const [answer, setAnswer] = useState<any>(currentAnswer || null);
+  const [answer, setAnswer] = useState<string | null>(
+    typeof currentAnswer === "string" ? currentAnswer : null
+  );
   const [code, setCode] = useState<string>("");
   // Reset state when question changes
   useEffect(() => {
-    setAnswer(currentAnswer || null);
-    setCode(currentAnswer?.code ?? "");
+    if (typeof currentAnswer === "string") {
+      setAnswer(currentAnswer);
+      setCode("");
+    } else if (
+      currentAnswer &&
+      typeof currentAnswer === "object" &&
+      "code" in currentAnswer
+    ) {
+      setAnswer(null);
+      setCode(currentAnswer.code);
+    } else {
+      setAnswer(null);
+      setCode("");
+    }
   }, [question, currentAnswer]);
 
   const handleSubmitAnswer = () => {
@@ -148,12 +172,32 @@ export function InterviewQuestion({
             )}
             <div>
               <h3 className="mb-2 font-medium">La tua soluzione:</h3>
-              <Textarea
-                placeholder="Scrivi il tuo codice qui..."
-                className="min-h-40 font-mono"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
+              <div className="border rounded-md overflow-hidden">
+                <Editor
+                  height="300px"
+                  language={question.language || "javascript"}
+                  theme={monacoTheme}
+                  value={code}
+                  onChange={(value) => setCode(value || "")}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    lineNumbers: "on",
+                    roundedSelection: false,
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    wordWrap: "on",
+                    folding: true,
+                    contextmenu: true,
+                    selectOnLineNumbers: true,
+                    scrollbar: {
+                      vertical: "visible",
+                      horizontal: "visible",
+                    },
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}
