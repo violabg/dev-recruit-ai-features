@@ -37,7 +37,7 @@ type Story = StoryObj<typeof meta>;
 
 export const RecruitmentDashboard: Story = {
   render: () => (
-    <div className="bg-background p-8 min-h-screen">
+    <div className="bg-background p-8 min-h-dvh">
       <div className="space-y-8 mx-auto max-w-7xl">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -340,7 +340,7 @@ export const RecruitmentDashboard: Story = {
 
 export const ComponentShowcase: Story = {
   render: () => (
-    <div className="bg-background p-8 min-h-screen">
+    <div className="bg-background p-8 min-h-dvh">
       <div className="space-y-12 mx-auto max-w-4xl">
         <div className="text-center">
           <h1 className="mb-4 font-bold text-4xl">UI Component Showcase</h1>

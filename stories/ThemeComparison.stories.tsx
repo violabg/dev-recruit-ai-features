@@ -132,7 +132,7 @@ const ComponentShowcase = () => (
 
 export const SideBySideComparison: Story = {
   render: () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
+    <div className="grid grid-cols-1 lg:grid-cols-2 min-h-dvh">
       {/* Light Theme */}
       <div className="border-gray-200 border-r">
         <ThemeWrapper theme="light">
@@ -180,7 +180,7 @@ export const DarkTheme: Story = {
 
 export const InteractiveDemo: Story = {
   render: () => (
-    <div className="bg-background p-8 min-h-screen text-foreground">
+    <div className="bg-background p-8 min-h-dvh text-foreground">
       <div className="space-y-8 mx-auto max-w-4xl">
         <div className="text-center">
           <h1 className="mb-2 font-bold text-3xl">Theme Demo</h1>

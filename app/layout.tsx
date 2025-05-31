@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" suppressHydrationWarning>
-      <body className="bg-background min-h-screen font-sans text-foreground antialiased">
+      <body className="bg-background min-h-dvh font-sans text-foreground antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -36,7 +36,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SupabaseProvider>
-            <div className="relative min-h-screen">{children}</div>
+            <div className="relative min-h-dvh">{children}</div>
             <Toaster
               richColors
               position="top-right"

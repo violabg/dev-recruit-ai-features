@@ -13,7 +13,7 @@ import Link from "next/link";
 
 export function InterviewComplete() {
   return (
-    <div className="flex flex-col justify-center items-center p-4 min-h-screen">
+    <div className="flex flex-col justify-center items-center p-4 min-h-dvh">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center bg-green-100 dark:bg-green-900 mx-auto mb-4 rounded-full w-12 h-12">

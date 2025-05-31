@@ -12,7 +12,7 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
   return (
-    <div className="flex flex-col items-center min-h-screen">
+    <div className="flex flex-col items-center min-h-dvh">
       <main className="flex-1">
         <section className="bg-gradient-to-b from-background via-background/90 to-muted/20 backdrop-blur-vision py-20 md:py-32">
           <div className="px-4 md:px-6 container">

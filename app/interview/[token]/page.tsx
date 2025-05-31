@@ -20,7 +20,7 @@ export default async function InterviewPage({
 
   if (interviewError || !interview) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen">
+      <div className="flex flex-col justify-center items-center min-h-dvh">
         <div className="bg-card shadow-lg p-6 border rounded-lg w-full max-w-md">
           <h1 className="font-bold text-2xl text-center">
             Intervista non trovata
@@ -51,7 +51,7 @@ export default async function InterviewPage({
 
   if (quizError || !quiz) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen">
+      <div className="flex flex-col justify-center items-center min-h-dvh">
         <div className="bg-card shadow-lg p-6 border rounded-lg w-full max-w-md">
           <h1 className="font-bold text-2xl text-center">Quiz non trovato</h1>
           <p className="mt-2 text-muted-foreground text-center">
@@ -71,7 +71,7 @@ export default async function InterviewPage({
 
   if (candidateError || !candidate) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen">
+      <div className="flex flex-col justify-center items-center min-h-dvh">
         <div className="bg-card shadow-lg p-6 border rounded-lg w-full max-w-md">
           <h1 className="font-bold text-2xl text-center">
             Candidato non trovato

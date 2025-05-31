@@ -176,7 +176,7 @@ export function InterviewClient({
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen">
+      <div className="flex flex-col justify-center items-center min-h-dvh">
         <div className="flex flex-col items-center gap-2">
           <div className="border-4 border-primary border-t-transparent rounded-full w-8 h-8 animate-spin" />
           <p className="font-medium text-lg">Caricamento intervista...</p>
@@ -191,7 +191,7 @@ export function InterviewClient({
 
   if (!isStarted) {
     return (
-      <div className="flex flex-col justify-center items-center p-4 min-h-screen">
+      <div className="flex flex-col justify-center items-center p-4 min-h-dvh">
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <div className="flex justify-center items-center gap-2 text-primary">
@@ -274,7 +274,7 @@ export function InterviewClient({
   const totalAnswers = Object.keys(answers).length;
   const completed = totalQuestions === totalAnswers;
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-dvh">
       <header className="top-0 z-10 sticky bg-background border-b">
         <div className="flex justify-between items-center m-auto h-16 container">
           <div className="flex items-center gap-2">

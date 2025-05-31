@@ -34,7 +34,7 @@ const preview: Preview = {
       const theme = context.globals.theme || "light";
       return (
         <div
-          className={`${theme} min-h-screen bg-background text-foreground p-8 min-w-[50vw]`}
+          className={`${theme} min-h-dvh bg-background text-foreground p-8 min-w-[50vw]`}
         >
           <Story />
         </div>
