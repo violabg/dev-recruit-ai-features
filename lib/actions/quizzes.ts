@@ -4,7 +4,7 @@ import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server";
-import { LLM_MODEL } from "../utils";
+import { getOptimalModel } from "../utils";
 import { questionSchema, quizDataSchema } from "./quiz-schemas";
 
 // Quiz actions
@@ -163,7 +163,7 @@ export async function generateNewQuizAction({
   let quizData;
   try {
     const result = await generateObject({
-      model: groq(LLM_MODEL),
+      model: groq(getOptimalModel("quiz_generation")),
       prompt,
       system: `
       You are a technical recruitment expert specializing in creating assessment quizzes. Generate valid JSON that adheres to the following specifications:
@@ -282,7 +282,7 @@ export async function generateNewQuestionAction({
     ", "
   )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.`;
   const { object: question } = await generateObject({
-    model: groq(LLM_MODEL),
+    model: groq(getOptimalModel("question_generation")),
     prompt,
     system:
       "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera una domanda pertinente, sfidante ma equa, con risposta corretta.",

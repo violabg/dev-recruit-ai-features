@@ -1,6 +1,60 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// Available LLM models with their capabilities
+export const LLM_MODELS = {
+  // Production models - stable and reliable
+  VERSATILE: "llama-3.3-70b-versatile", // 128K context, 32K output - Best for complex tasks
+  INSTANT: "llama-3.1-8b-instant", // 128K context, 8K output - Fast for simple tasks
+
+  // Preview models - experimental, may be discontinued
+  REASONING: "deepseek-r1-distill-llama-70b", // 128K context - Best for evaluation/reasoning
+  MAVERICK: "meta-llama/llama-4-maverick-17b-128e-instruct", // 131K context, 8K output
+} as const;
+
+// Task types for model selection
+export type LLMTaskType =
+  | "quiz_generation" // Complex quiz creation with multiple questions
+  | "question_generation" // Single question creation
+  | "evaluation" // Answer evaluation and scoring
+  | "overall_evaluation" // Comprehensive candidate assessment
+  | "simple_task"; // Basic text processing
+
+/**
+ * Returns the optimal LLM model for a given task type.
+ * Balances performance, cost, and reliability based on task complexity.
+ */
+export const getOptimalModel = (taskType: LLMTaskType): string => {
+  switch (taskType) {
+    case "quiz_generation":
+      // Complex multi-question generation needs high capability and large output
+      return LLM_MODELS.VERSATILE;
+
+    case "question_generation":
+      // Single question generation can use faster model
+      return LLM_MODELS.INSTANT;
+
+    case "evaluation":
+      // Answer evaluation benefits from reasoning capabilities
+      return LLM_MODELS.REASONING;
+
+    case "overall_evaluation":
+      // Comprehensive assessment needs high capability
+      return LLM_MODELS.VERSATILE;
+
+    case "simple_task":
+      // Basic tasks use fastest model
+      return LLM_MODELS.INSTANT;
+
+    default:
+      // Default to versatile model for unknown tasks
+      return LLM_MODELS.VERSATILE;
+  }
+};
+
+// Legacy export for backward compatibility
+export const LLM_MODEL = getOptimalModel("quiz_generation");
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -64,7 +118,7 @@ export function formatDate(dateString: string | null, showTime?: boolean) {
   return new Intl.DateTimeFormat("it-IT", formatOptions).format(date);
 }
 
-export function getStatusColor(status: string) {
+export const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
       return "bg-yellow-500 text-black";
@@ -79,6 +133,4 @@ export function getStatusColor(status: string) {
     default:
       return "bg-gray-500";
   }
-}
-
-export const LLM_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct";
+};

@@ -3,7 +3,7 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { LLM_MODEL } from "../utils";
+import { getOptimalModel } from "../utils";
 
 // Evaluation types
 type EvaluationResult = {
@@ -132,7 +132,7 @@ export async function evaluateAnswer(question: any, answer: any) {
 
   // Use Groq to evaluate the answer with generateObject
   const { object: result } = await generateObject<EvaluationResult>({
-    model: groq(LLM_MODEL),
+    model: groq(getOptimalModel("evaluation")),
     prompt,
     system:
       "Sei un esperto valutatore tecnico che analizza le risposte dei candidati durante i colloqui di lavoro. Fornisci valutazioni oggettive, dettagliate e costruttive.",
@@ -182,7 +182,7 @@ export async function generateOverallEvaluation(
 
   // Generate overall evaluation using AI
   const { object: result } = await generateObject<OverallEvaluation>({
-    model: groq(LLM_MODEL),
+    model: groq(getOptimalModel("overall_evaluation")),
     prompt,
     system:
       "Sei un esperto di reclutamento tecnico che fornisce valutazioni oggettive e costruttive dei candidati. Basa la tua valutazione esclusivamente sulle informazioni fornite.",
