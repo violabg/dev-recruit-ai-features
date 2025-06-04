@@ -62,7 +62,11 @@ const OverallEvaluationSchema = z.object({
 });
 
 // Evaluation actions
-export async function evaluateAnswer(question: any, answer: any) {
+export async function evaluateAnswer(
+  question: any,
+  answer: any,
+  specificModel?: string
+) {
   if (!question || !answer) {
     throw new Error("Missing required fields");
   }
@@ -132,7 +136,7 @@ export async function evaluateAnswer(question: any, answer: any) {
 
   // Use Groq to evaluate the answer with generateObject
   const { object: result } = await generateObject<EvaluationResult>({
-    model: groq(getOptimalModel("evaluation")),
+    model: groq(getOptimalModel("evaluation", specificModel)),
     prompt,
     system:
       "Sei un esperto valutatore tecnico che analizza le risposte dei candidati durante i colloqui di lavoro. Fornisci valutazioni oggettive, dettagliate e costruttive.",
@@ -150,7 +154,8 @@ export async function generateOverallEvaluation(
   answeredCount: number,
   totalCount: number,
   percentageScore: number,
-  evaluations: Record<string, any>
+  evaluations: Record<string, any>,
+  specificModel?: string
 ) {
   // Extract strengths and weaknesses from evaluations
   const allStrengths: string[] = [];
@@ -182,7 +187,7 @@ export async function generateOverallEvaluation(
 
   // Generate overall evaluation using AI
   const { object: result } = await generateObject<OverallEvaluation>({
-    model: groq(getOptimalModel("overall_evaluation")),
+    model: groq(getOptimalModel("overall_evaluation", specificModel)),
     prompt,
     system:
       "Sei un esperto di reclutamento tecnico che fornisce valutazioni oggettive e costruttive dei candidati. Basa la tua valutazione esclusivamente sulle informazioni fornite.",

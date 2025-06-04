@@ -18,10 +18,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { generateAndSaveQuiz } from "@/lib/actions/quizzes";
+import { LLM_MODELS } from "@/lib/utils";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -36,6 +44,7 @@ const formSchema = z.object({
   difficulty: z.number().min(1).max(5),
   timeLimit: z.number().min(0).max(120),
   enableTimeLimit: z.boolean(),
+  llmModel: z.string(),
 });
 
 type Position = {
@@ -67,6 +76,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
       difficulty: 3,
       timeLimit: 30,
       enableTimeLimit: true,
+      llmModel: LLM_MODELS.VERSATILE,
     },
   });
 
@@ -93,16 +103,18 @@ export const QuizForm = ({ position }: QuizFormProps) => {
       );
       formData.append("enable_time_limit", values.enableTimeLimit.toString());
       formData.append("time_limit", values.timeLimit.toString());
+      formData.append("llm_model", values.llmModel);
 
       const quizId = await generateAndSaveQuiz(formData);
       toast.success("Quiz generato con successo!");
       router.push(`/dashboard/quizzes/${quizId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error generating quiz:", error);
       toast.error("Errore", {
         description:
-          error.message ||
-          "Si è verificato un errore durante la generazione del quiz",
+          error instanceof Error
+            ? error.message
+            : "Si è verificato un errore durante la generazione del quiz",
       });
       setGenerating(false);
     }
@@ -149,7 +161,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
           )}
         />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="gap-4 grid md:grid-cols-2">
           <FormField
             control={form.control}
             name="questionCount"
@@ -209,13 +221,13 @@ export const QuizForm = ({ position }: QuizFormProps) => {
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Tipi di domande</h3>
-          <div className="grid gap-4 md:grid-cols-2">
+          <h3 className="font-medium text-lg">Tipi di domande</h3>
+          <div className="gap-4 grid md:grid-cols-2">
             <FormField
               control={form.control}
               name="includeMultipleChoice"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex flex-row justify-between items-center p-3 border rounded-lg">
                   <div className="space-y-0.5">
                     <FormLabel>Domande a risposta multipla</FormLabel>
                     <FormDescription>
@@ -235,7 +247,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
               control={form.control}
               name="includeOpenQuestions"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex flex-row justify-between items-center p-3 border rounded-lg">
                   <div className="space-y-0.5">
                     <FormLabel>Domande aperte</FormLabel>
                     <FormDescription>
@@ -255,7 +267,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
               control={form.control}
               name="includeCodeSnippets"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex flex-row justify-between items-center p-3 border rounded-lg">
                   <div className="space-y-0.5">
                     <FormLabel>Snippet di codice</FormLabel>
                     <FormDescription>
@@ -278,7 +290,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
           control={form.control}
           name="enableTimeLimit"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-md">
               <FormControl>
                 <Switch
                   checked={field.value}
@@ -320,6 +332,52 @@ export const QuizForm = ({ position }: QuizFormProps) => {
           />
         )}
 
+        <FormField
+          control={form.control}
+          name="llmModel"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modello LLM</FormLabel>
+              <FormControl>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona un modello LLM" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={LLM_MODELS.VERSATILE}>
+                      🚀 Versatile - Llama 3.3 70B (Raccomandato)
+                    </SelectItem>
+                    <SelectItem value={LLM_MODELS.INSTANT}>
+                      ⚡ Instant - Llama 3.1 8B (Veloce)
+                    </SelectItem>
+                    <SelectItem value={LLM_MODELS.REASONING}>
+                      🧠 Reasoning - DeepSeek R1 70B (Valutazione)
+                    </SelectItem>
+                    <SelectItem value={LLM_MODELS.MAVERICK}>
+                      🔬 Maverick - Llama 4 17B (Sperimentale)
+                    </SelectItem>
+                    <SelectItem value={LLM_MODELS.SCOUT}>
+                      🎯 Scout - Llama 4 Scout 17B (Sperimentale)
+                    </SelectItem>
+                    <SelectItem value={LLM_MODELS.GEMMA2_9B_IT}>
+                      💎 Gemma2 9B (Google)
+                    </SelectItem>
+                    <SelectItem value={LLM_MODELS.QWEN_QWQ_32B}>
+                      🌟 Qwen QWQ 32B (Alibaba)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormDescription>
+                Seleziona il modello LLM per la generazione del quiz.
+                <strong>Versatile</strong> è raccomandato per la qualità
+                migliore.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Annulla
@@ -327,12 +385,12 @@ export const QuizForm = ({ position }: QuizFormProps) => {
           <Button type="submit" disabled={generating}>
             {generating ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                 Generazione in corso...
               </>
             ) : (
               <>
-                <BrainCircuit className="mr-2 h-4 w-4" />
+                <BrainCircuit className="mr-2 w-4 h-4" />
                 Genera Quiz
               </>
             )}

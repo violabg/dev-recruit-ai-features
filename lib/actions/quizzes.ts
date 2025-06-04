@@ -19,6 +19,7 @@ type GenerateNewQuizActionParams = {
   includeCodeSnippets: boolean;
   instructions?: string;
   previousQuestions?: { question: string }[];
+  specificModel?: string;
 };
 
 export async function generateAndSaveQuiz(formData: FormData) {
@@ -48,6 +49,7 @@ export async function generateAndSaveQuiz(formData: FormData) {
   const timeLimit = enableTimeLimit
     ? Number.parseInt(formData.get("time_limit") as string)
     : null;
+  const llmModel = formData.get("llm_model") as string;
 
   // Generate quiz using the refactored action
   const quizData = await generateNewQuizAction({
@@ -59,6 +61,7 @@ export async function generateAndSaveQuiz(formData: FormData) {
     includeOpenQuestions,
     includeCodeSnippets,
     instructions,
+    specificModel: llmModel,
   });
 
   // Save the quiz to the database
@@ -98,6 +101,7 @@ export async function generateNewQuizAction({
   includeCodeSnippets,
   instructions,
   previousQuestions,
+  specificModel,
 }: GenerateNewQuizActionParams) {
   const supabase = await createClient();
   // Get position details
@@ -163,7 +167,7 @@ export async function generateNewQuizAction({
   let quizData;
   try {
     const result = await generateObject({
-      model: groq(getOptimalModel("quiz_generation")),
+      model: groq(getOptimalModel("quiz_generation", specificModel)),
       prompt,
       system: `
       You are a technical recruitment expert specializing in creating assessment quizzes. Generate valid JSON that adheres to the following specifications:
@@ -261,6 +265,7 @@ type GenerateNewQuestionActionParams = {
   skills: string[];
   type: "multiple_choice" | "open_question" | "code_snippet";
   previousQuestions?: { question: string; type?: string }[]; // Adjusted to be more specific
+  specificModel?: string;
   // currentIndex is removed as it was unused and not relevant to AI generation logic
 };
 
@@ -271,6 +276,7 @@ export async function generateNewQuestionAction({
   skills,
   type,
   previousQuestions,
+  specificModel,
 }: GenerateNewQuestionActionParams) {
   let previousContext = "";
   if (previousQuestions && previousQuestions.length > 0) {
@@ -282,7 +288,7 @@ export async function generateNewQuestionAction({
     ", "
   )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.`;
   const { object: question } = await generateObject({
-    model: groq(getOptimalModel("question_generation")),
+    model: groq(getOptimalModel("question_generation", specificModel)),
     prompt,
     system:
       "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera una domanda pertinente, sfidante ma equa, con risposta corretta.",

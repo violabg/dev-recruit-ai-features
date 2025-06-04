@@ -12,6 +12,7 @@ const generateQuizRequestSchema = z.object({
   includeMultipleChoice: z.boolean(),
   includeOpenQuestions: z.boolean(),
   includeCodeSnippets: z.boolean(),
+  specificModel: z.string().optional(),
 });
 
 export type GenerateQuizRequest = z.infer<typeof generateQuizRequestSchema>;
@@ -43,6 +44,7 @@ export async function POST(
       includeMultipleChoice,
       includeOpenQuestions,
       includeCodeSnippets,
+      specificModel,
     } = validationResult.data;
 
     const aiQuiz = await generateNewQuizAction({
@@ -54,6 +56,7 @@ export async function POST(
       includeOpenQuestions,
       includeCodeSnippets,
       previousQuestions,
+      specificModel,
     });
 
     return NextResponse.json(aiQuiz);

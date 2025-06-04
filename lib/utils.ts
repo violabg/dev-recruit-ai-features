@@ -6,10 +6,29 @@ export const LLM_MODELS = {
   // Production models - stable and reliable
   VERSATILE: "llama-3.3-70b-versatile", // 128K context, 32K output - Best for complex tasks
   INSTANT: "llama-3.1-8b-instant", // 128K context, 8K output - Fast for simple tasks
+  GEMMA2_9B_IT: "gemma2-9b-it", // 8K context - Google model
+  LLAMA_GUARD_4_12B: "meta-llama/llama-guard-4-12b", // 131K context - Content moderation
+  LLAMA3_70B_8192: "llama3-70b-8192", // 8K context - Legacy Meta model
+  LLAMA3_8B_8192: "llama3-8b-8192", // 8K context - Legacy Meta model
+  WHISPER_LARGE_V3: "whisper-large-v3", // Audio transcription
+  WHISPER_LARGE_V3_TURBO: "whisper-large-v3-turbo", // Fast audio transcription
+  DISTIL_WHISPER_LARGE_V3_EN: "distil-whisper-large-v3-en", // English audio transcription
 
   // Preview models - experimental, may be discontinued
   REASONING: "deepseek-r1-distill-llama-70b", // 128K context - Best for evaluation/reasoning
   MAVERICK: "meta-llama/llama-4-maverick-17b-128e-instruct", // 131K context, 8K output
+  SCOUT: "meta-llama/llama-4-scout-17b-16e-instruct", // 131K context, 8K output
+  ALLAM_2_7B: "allam-2-7b", // 4K context - Saudi Data and AI Authority model
+  LLAMA_PROMPT_GUARD_2_22M: "meta-llama/llama-prompt-guard-2-22m", // 512 context - Prompt safety
+  LLAMA_PROMPT_GUARD_2_86M: "meta-llama/llama-prompt-guard-2-86m", // 512 context - Prompt safety
+  MISTRAL_SABA_24B: "mistral-saba-24b", // 32K context - Mistral model
+  PLAYAI_TTS: "playai-tts", // 10K context - Text to speech
+  PLAYAI_TTS_ARABIC: "playai-tts-arabic", // 10K context - Arabic text to speech
+  QWEN_QWQ_32B: "qwen-qwq-32b", // 128K context - Alibaba Cloud model
+
+  // Preview systems - compound models with tools
+  COMPOUND_BETA: "compound-beta", // 128K context, 8K output - Agentic system
+  COMPOUND_BETA_MINI: "compound-beta-mini", // 128K context, 8K output - Lightweight agentic system
 } as const;
 
 // Task types for model selection
@@ -20,11 +39,71 @@ export type LLMTaskType =
   | "overall_evaluation" // Comprehensive candidate assessment
   | "simple_task"; // Basic text processing
 
+// Type for available model names
+export type LLMModelName = (typeof LLM_MODELS)[keyof typeof LLM_MODELS];
+
+/**
+ * Returns an array of all available model names
+ */
+export const getAllAvailableModels = (): LLMModelName[] => {
+  return Object.values(LLM_MODELS);
+};
+
+/**
+ * Returns an object with model categories for easier selection
+ */
+export const getModelsByCategory = () => {
+  return {
+    production: {
+      text: [
+        LLM_MODELS.VERSATILE,
+        LLM_MODELS.INSTANT,
+        LLM_MODELS.GEMMA2_9B_IT,
+        LLM_MODELS.LLAMA3_70B_8192,
+        LLM_MODELS.LLAMA3_8B_8192,
+      ],
+      moderation: [LLM_MODELS.LLAMA_GUARD_4_12B],
+      audio: [
+        LLM_MODELS.WHISPER_LARGE_V3,
+        LLM_MODELS.WHISPER_LARGE_V3_TURBO,
+        LLM_MODELS.DISTIL_WHISPER_LARGE_V3_EN,
+      ],
+    },
+    preview: {
+      text: [
+        LLM_MODELS.REASONING,
+        LLM_MODELS.MAVERICK,
+        LLM_MODELS.SCOUT,
+        LLM_MODELS.ALLAM_2_7B,
+        LLM_MODELS.MISTRAL_SABA_24B,
+        LLM_MODELS.QWEN_QWQ_32B,
+      ],
+      safety: [
+        LLM_MODELS.LLAMA_PROMPT_GUARD_2_22M,
+        LLM_MODELS.LLAMA_PROMPT_GUARD_2_86M,
+      ],
+      tts: [LLM_MODELS.PLAYAI_TTS, LLM_MODELS.PLAYAI_TTS_ARABIC],
+      systems: [LLM_MODELS.COMPOUND_BETA, LLM_MODELS.COMPOUND_BETA_MINI],
+    },
+  };
+};
+
 /**
  * Returns the optimal LLM model for a given task type.
  * Balances performance, cost, and reliability based on task complexity.
+ * @param taskType - The type of task to perform
+ * @param specificModel - Optional specific model to use instead of the optimal one
  */
-export const getOptimalModel = (taskType: LLMTaskType): string => {
+export const getOptimalModel = (
+  taskType: LLMTaskType,
+  specificModel?: string
+): string => {
+  // If a specific model is provided, use it
+  if (specificModel) {
+    return specificModel;
+  }
+
+  // Otherwise, return the optimal model for the task type
   switch (taskType) {
     case "quiz_generation":
       // Complex multi-question generation needs high capability and large output
