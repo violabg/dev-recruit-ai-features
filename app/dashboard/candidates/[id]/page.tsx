@@ -101,16 +101,18 @@ export default async function CandidateDetailPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {candidate.interviews.map((interview: any) => (
+              {candidate.interviews.map((interview) => (
                 <div
                   key={interview.id}
                   className="flex justify-between items-center pb-2 last:pb-0 border-b last:border-b-0"
                 >
                   <div>
                     <div className="font-medium">{interview.status}</div>
-                    <div className="text-muted-foreground text-sm">
-                      {new Date(interview.created_at).toLocaleString()}
-                    </div>
+                    {interview.created_at && (
+                      <div className="text-muted-foreground text-sm">
+                        {new Date(interview.created_at).toLocaleString()}
+                      </div>
+                    )}
                   </div>
                   <div className="font-semibold">
                     {interview.score !== null

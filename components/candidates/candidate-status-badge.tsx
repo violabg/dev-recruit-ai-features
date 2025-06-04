@@ -15,18 +15,6 @@ const statusText: Record<string, string> = {
   rejected: "Rifiutato",
 };
 
-// Map status to variant
-const statusVariant: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  pending: "outline",
-  contacted: "secondary",
-  interviewing: "default",
-  hired: "default",
-  rejected: "destructive",
-};
-
 // Candidate status badge component
 export function CandidateStatusBadge({ status }: CandidateStatusBadgeProps) {
   return (

@@ -77,7 +77,7 @@ export default async function CandidatesPage({
             <div className="font-bold text-2xl">{totalCandidates}</div>
           </CardContent>
         </Card>
-        {statusCounts?.map((status: any) => (
+        {statusCounts?.map((status) => (
           <Card key={status.status}>
             <CardHeader className="flex flex-row justify-between items-center pb-2">
               <CardTitle className="font-medium text-sm">

@@ -1,3 +1,4 @@
+import { Question } from "@/lib/actions/quiz-schemas";
 import { createClient } from "@/lib/supabase/server";
 
 type Position = {
@@ -13,7 +14,7 @@ export type Quiz = {
   position_id: string;
   positions: Position | null;
   time_limit: number | null;
-  questions: any[];
+  questions: Question[];
 };
 
 export async function fetchQuizzesData({
@@ -107,7 +108,7 @@ export async function fetchQuizzesData({
     uniqueLevels = experienceLevelsData
       ? [
           ...new Set(
-            experienceLevelsData.map((p: any) => p.experience_level as string)
+            experienceLevelsData.map((p) => p.experience_level as string)
           ),
         ]
       : [];

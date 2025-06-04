@@ -105,7 +105,7 @@ export default async function QuizzesPage({
               <CardContent>
                 {positionCounts && positionCounts.length > 0 ? (
                   <div className="space-y-2">
-                    {positionCounts.map((item: any) => (
+                    {positionCounts.map((item) => (
                       <div
                         key={item.position_id}
                         className="flex justify-between"

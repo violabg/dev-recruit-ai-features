@@ -101,7 +101,7 @@ export function InterviewClient({
           table: "interviews",
           filter: `id=eq.${interview.id}`,
         },
-        (payload: any) => {
+        (payload) => {
           // Update local state if the interview is updated
           if (payload.new.status === "completed") {
             setIsCompleted(true);

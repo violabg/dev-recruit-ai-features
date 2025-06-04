@@ -40,7 +40,7 @@ export function InterviewMonitor({
     // Subscribe to the interview channel
     const channel = supabase
       .channel(`interview_${interviewId}`)
-      .on("broadcast", { event: "answer_submitted" }, (payload: any) => {
+      .on("broadcast", { event: "answer_submitted" }, (payload) => {
         if (payload.payload.interview_id === interviewId) {
           setAnswers((prev) => ({
             ...prev,
@@ -49,14 +49,14 @@ export function InterviewMonitor({
           setCurrentQuestionId(payload.payload.question_id);
         }
       })
-      .on("broadcast", { event: "interview_started" }, (payload: any) => {
+      .on("broadcast", { event: "interview_started" }, (payload) => {
         if (payload.payload.interview_id === interviewId) {
           toast.error("Intervista iniziata", {
             description: "Il candidato ha iniziato l'intervista",
           });
         }
       })
-      .on("broadcast", { event: "interview_completed" }, (payload: any) => {
+      .on("broadcast", { event: "interview_completed" }, (payload) => {
         if (payload.payload.interview_id === interviewId) {
           toast.success("Intervista completata", {
             description: "Il candidato ha completato l'intervista",

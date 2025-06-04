@@ -103,7 +103,7 @@ export async function fetchCandidatesData({
 
   // Calculate total candidates
   const totalCandidates =
-    statusCounts?.reduce((acc: number, curr: any) => acc + curr.count, 0) || 0;
+    statusCounts?.reduce((acc: number, curr) => acc + curr.count, 0) || 0;
 
   return {
     user,
