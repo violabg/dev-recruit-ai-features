@@ -9,6 +9,7 @@ import {
   MultipleChoiceForm,
   OpenQuestionForm,
 } from "@/components/quiz/question-types";
+import { AIGenerationDialog } from "@/components/ui/ai-generation-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,7 @@ import { QuizForm, quizSchema } from "@/lib/actions/quiz-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -49,9 +50,13 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
   const router = useRouter();
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [aiQuizLoading, setAiQuizLoading] = useState(false);
-  const [questionLanguages, setQuestionLanguages] = useState<
-    Record<number, string>
-  >({});
+
+  // Dialog states
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<
+    number | null
+  >(null);
 
   const form = useForm<QuizForm>({
     resolver: zodResolver(quizSchema),
@@ -66,17 +71,6 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     control: form.control,
     name: "questions",
   });
-
-  // Initialize language state for existing code snippet questions
-  useEffect(() => {
-    const initialLanguages: Record<number, string> = {};
-    fields.forEach((field, index) => {
-      if (field.type === "code_snippet") {
-        initialLanguages[index] = "JavaScript"; // Default to JavaScript
-      }
-    });
-    setQuestionLanguages(initialLanguages);
-  }, [fields]);
 
   const onSubmit = async (data: QuizForm) => {
     try {
@@ -99,7 +93,11 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     }
   };
 
-  const handleRegenerateQuestion = async (index: number) => {
+  const handleRegenerateQuestion = async (
+    index: number,
+    instructions?: string,
+    llmModel?: string
+  ) => {
     setAiLoading(`q${index}`);
     try {
       const current = form.getValues(`questions.${index}`);
@@ -113,6 +111,8 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           skills: position.skills,
           type: current.type,
           previousQuestions: form.getValues("questions"),
+          instructions,
+          specificModel: llmModel,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -127,7 +127,10 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     }
   };
 
-  const handleRegenerateQuiz = async () => {
+  const handleRegenerateQuiz = async (
+    instructions?: string,
+    llmModel?: string
+  ) => {
     setAiQuizLoading(true);
     try {
       const currentQuestions = form.getValues("questions");
@@ -151,6 +154,8 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
         includeMultipleChoice,
         includeOpenQuestions,
         includeCodeSnippets,
+        instructions,
+        specificModel: llmModel,
       } as GenerateQuizRequest;
 
       const res = await fetch("/api/quiz-edit/generate-quiz", {
@@ -168,6 +173,36 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     } finally {
       setAiQuizLoading(false);
     }
+  };
+
+  // Dialog handlers
+  const handleQuizDialogGenerate = async (data: {
+    instructions?: string;
+    llmModel: string;
+  }) => {
+    await handleRegenerateQuiz(data.instructions, data.llmModel);
+  };
+
+  const handleQuestionDialogGenerate = async (data: {
+    instructions?: string;
+    llmModel: string;
+  }) => {
+    if (selectedQuestionIndex !== null) {
+      await handleRegenerateQuestion(
+        selectedQuestionIndex,
+        data.instructions,
+        data.llmModel
+      );
+    }
+  };
+
+  const openQuizDialog = () => {
+    setQuizDialogOpen(true);
+  };
+
+  const openQuestionDialog = (index: number) => {
+    setSelectedQuestionIndex(index);
+    setQuestionDialogOpen(true);
   };
 
   return (
@@ -256,7 +291,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           <Button
             type="button"
             variant="secondary"
-            onClick={handleRegenerateQuiz}
+            onClick={openQuizDialog}
             disabled={aiQuizLoading}
           >
             {aiQuizLoading ? (
@@ -304,7 +339,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => handleRegenerateQuestion(index)}
+                      onClick={() => openQuestionDialog(index)}
                       disabled={aiLoading === `q${index}` || aiQuizLoading}
                     >
                       {aiLoading === `q${index}` ? (
@@ -347,12 +382,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                     <OpenQuestionForm index={index} />
                   )}
                   {field.type === "code_snippet" && (
-                    <CodeSnippetForm
-                      index={index}
-                      field={field}
-                      questionLanguages={questionLanguages}
-                      setQuestionLanguages={setQuestionLanguages}
-                    />
+                    <CodeSnippetForm index={index} field={field} />
                   )}
                 </CardContent>
               </Card>
@@ -370,6 +400,29 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
           Salva modifiche
         </Button>
       </form>
+
+      {/* AI Generation Dialogs */}
+      <AIGenerationDialog
+        open={quizDialogOpen}
+        onOpenChange={setQuizDialogOpen}
+        title="Rigenera Quiz con AI"
+        description="Configura le opzioni per rigenerare l'intero quiz utilizzando l'intelligenza artificiale."
+        onGenerate={handleQuizDialogGenerate}
+        loading={aiQuizLoading}
+      />
+
+      <AIGenerationDialog
+        open={questionDialogOpen}
+        onOpenChange={setQuestionDialogOpen}
+        title="Rigenera Domanda con AI"
+        description="Configura le opzioni per rigenerare questa domanda utilizzando l'intelligenza artificiale."
+        onGenerate={handleQuestionDialogGenerate}
+        loading={
+          selectedQuestionIndex !== null
+            ? aiLoading === `q${selectedQuestionIndex}`
+            : false
+        }
+      />
     </Form>
   );
 };

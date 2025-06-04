@@ -266,6 +266,7 @@ type GenerateNewQuestionActionParams = {
   type: "multiple_choice" | "open_question" | "code_snippet";
   previousQuestions?: { question: string; type?: string }[]; // Adjusted to be more specific
   specificModel?: string;
+  instructions?: string;
   // currentIndex is removed as it was unused and not relevant to AI generation logic
 };
 
@@ -277,6 +278,7 @@ export async function generateNewQuestionAction({
   type,
   previousQuestions,
   specificModel,
+  instructions,
 }: GenerateNewQuestionActionParams) {
   let previousContext = "";
   if (previousQuestions && previousQuestions.length > 0) {
@@ -286,7 +288,9 @@ export async function generateNewQuestionAction({
   }
   const prompt = `Genera una domanda di tipo ${type} per un quiz intitolato "${quizTitle}" per la posizione "${positionTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
     ", "
-  )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.`;
+  )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.${
+    instructions ? `\n\nIstruzioni aggiuntive: ${instructions}` : ""
+  }`;
   const { object: question } = await generateObject({
     model: groq(getOptimalModel("question_generation", specificModel)),
     prompt,

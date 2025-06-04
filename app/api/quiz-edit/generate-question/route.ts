@@ -12,6 +12,7 @@ export async function POST(req: Request) {
       type,
       previousQuestions,
       specificModel,
+      instructions,
       // currentIndex, // No longer used by generateNewQuestionAction
     } = body;
     // Optionally use previousQuestions/currentIndex to instruct the AI to avoid duplicates
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
       type,
       previousQuestions,
       specificModel,
+      instructions,
     });
     // Optionally, you can add logic to ensure the new question is different from previousQuestions
     return NextResponse.json(aiQuestion);

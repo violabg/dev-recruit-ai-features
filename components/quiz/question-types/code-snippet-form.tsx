@@ -28,18 +28,10 @@ const CodeEditor = dynamic(
 type CodeSnippetFormProps = {
   index: number;
   field: Question;
-  questionLanguages: Record<number, string>;
-  setQuestionLanguages: React.Dispatch<
-    React.SetStateAction<Record<number, string>>
-  >;
 };
 
-export const CodeSnippetForm = ({
-  index,
-  field,
-  questionLanguages,
-  setQuestionLanguages,
-}: CodeSnippetFormProps) => {
+export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
+  console.log("🚀 ~ field:", field);
   const { resolvedTheme } = useTheme();
 
   return (
@@ -54,10 +46,6 @@ export const CodeSnippetForm = ({
                 value={formField.value || field.language || "JavaScript"}
                 onValueChange={(value) => {
                   formField.onChange(value);
-                  setQuestionLanguages((prev) => ({
-                    ...prev,
-                    [index]: value,
-                  }));
                 }}
               >
                 <SelectTrigger className="w-48">
@@ -84,9 +72,7 @@ export const CodeSnippetForm = ({
             <FormControl>
               <CodeEditor
                 value={formField.value || ""}
-                language={getLanguageCode(
-                  questionLanguages[index] || "JavaScript"
-                )}
+                language={getLanguageCode(field.language || "JavaScript")}
                 placeholder="Inserisci il codice qui..."
                 onChange={(evn) => formField.onChange(evn.target.value)}
                 padding={15}
@@ -115,9 +101,7 @@ export const CodeSnippetForm = ({
             <FormControl>
               <CodeEditor
                 value={formField.value || ""}
-                language={getLanguageCode(
-                  questionLanguages[index] || "JavaScript"
-                )}
+                language={getLanguageCode(field.language || "JavaScript")}
                 placeholder="Inserisci la soluzione qui..."
                 onChange={(evn) => formField.onChange(evn.target.value)}
                 padding={15}

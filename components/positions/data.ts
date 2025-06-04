@@ -9,6 +9,11 @@ export const programmingLanguages = [
   "Go",
   "Swift",
   "Kotlin",
+  "Rust",
+  "C++",
+  "C",
+  "Dart",
+  "SQL",
 ];
 
 export const frameworks = [

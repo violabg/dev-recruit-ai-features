@@ -18,13 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LLMModelSelect } from "@/components/ui/llm-model-select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -339,34 +333,10 @@ export const QuizForm = ({ position }: QuizFormProps) => {
             <FormItem>
               <FormLabel>Modello LLM</FormLabel>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona un modello LLM" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={LLM_MODELS.VERSATILE}>
-                      🚀 Versatile - Llama 3.3 70B (Raccomandato)
-                    </SelectItem>
-                    <SelectItem value={LLM_MODELS.INSTANT}>
-                      ⚡ Instant - Llama 3.1 8B (Veloce)
-                    </SelectItem>
-                    <SelectItem value={LLM_MODELS.REASONING}>
-                      🧠 Reasoning - DeepSeek R1 70B (Valutazione)
-                    </SelectItem>
-                    <SelectItem value={LLM_MODELS.MAVERICK}>
-                      🔬 Maverick - Llama 4 17B (Sperimentale)
-                    </SelectItem>
-                    <SelectItem value={LLM_MODELS.SCOUT}>
-                      🎯 Scout - Llama 4 Scout 17B (Sperimentale)
-                    </SelectItem>
-                    <SelectItem value={LLM_MODELS.GEMMA2_9B_IT}>
-                      💎 Gemma2 9B (Google)
-                    </SelectItem>
-                    <SelectItem value={LLM_MODELS.QWEN_QWQ_32B}>
-                      🌟 Qwen QWQ 32B (Alibaba)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <LLMModelSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
               </FormControl>
               <FormDescription>
                 Seleziona il modello LLM per la generazione del quiz.
