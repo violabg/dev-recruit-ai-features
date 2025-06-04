@@ -31,7 +31,6 @@ type CodeSnippetFormProps = {
 };
 
 export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
-  console.log("🚀 ~ field:", field);
   const { resolvedTheme } = useTheme();
 
   return (

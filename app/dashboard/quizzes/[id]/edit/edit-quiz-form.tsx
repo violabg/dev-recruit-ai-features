@@ -23,8 +23,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { QuizForm, quizSchema } from "@/lib/actions/quiz-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +33,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
+
+const quizQuestionTypes = [
+  { value: "all", label: "Tutte" },
+  { value: "multiple_choice", label: "Risposta multipla" },
+  { value: "open_question", label: "Domanda aperta" },
+  { value: "code_snippet", label: "Snippet di codice" },
+];
 
 type Position = {
   id: string;
@@ -50,13 +57,12 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
   const router = useRouter();
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [aiQuizLoading, setAiQuizLoading] = useState(false);
-
-  // Dialog states
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<
     number | null
   >(null);
+  const [questionTypeFilter, setQuestionTypeFilter] = useState<string>("all");
 
   const form = useForm<QuizForm>({
     resolver: zodResolver(quizSchema),
@@ -71,6 +77,18 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
     control: form.control,
     name: "questions",
   });
+
+  // Filter questions based on selected type
+  const filteredQuestions = fields.filter((field) => {
+    if (questionTypeFilter === "all") return true;
+    return field.type === questionTypeFilter;
+  });
+
+  // Get filtered indices for correct mapping
+  const getOriginalIndex = (filteredIndex: number) => {
+    const filteredField = filteredQuestions[filteredIndex];
+    return fields.findIndex((field) => field.id === filteredField.id);
+  };
 
   const onSubmit = async (data: QuizForm) => {
     try {
@@ -312,12 +330,54 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
             Salva modifiche
           </Button>
         </div>
-        <Tabs defaultValue="questions">
-          <TabsList>
-            <TabsTrigger value="questions">Domande</TabsTrigger>
-          </TabsList>
-          <TabsContent value="questions" className="space-y-4 pt-4">
-            {fields.map((field, index) => (
+        <div className="space-y-4">
+          {/* Question Type Filter */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-xl">Domande</h3>
+                  <Badge variant="secondary" className="ml-2">
+                    {questionTypeFilter === "all"
+                      ? `${fields.length} domande totali`
+                      : `${filteredQuestions.length} di ${fields.length} domande`}
+                  </Badge>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <fieldset className="space-y-3">
+                <fieldset className="font-medium text-foreground text-sm leading-none">
+                  Filtra per tipo di domanda
+                </fieldset>
+                <RadioGroup
+                  value={questionTypeFilter}
+                  onValueChange={setQuestionTypeFilter}
+                  className="flex flex-row space-x-6"
+                >
+                  {quizQuestionTypes.map((item) => (
+                    <label
+                      key={`${item.value}`}
+                      className="relative flex flex-col items-center gap-3 has-data-disabled:opacity-50 shadow-xs px-2 py-3 border border-input has-data-[state=checked]:border-primary/50 has-focus-visible:border-ring rounded-md outline-none has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50 text-center transition-[color,box-shadow] cursor-pointer has-data-disabled:cursor-not-allowed"
+                    >
+                      <RadioGroupItem
+                        id={`${item.value}`}
+                        value={item.value}
+                        className="sr-only after:absolute after:inset-0"
+                      />
+                      <p className="font-medium text-foreground text-sm leading-none">
+                        {item.label}
+                      </p>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </fieldset>
+            </CardContent>
+          </Card>
+
+          {filteredQuestions.map((field, filteredIndex) => {
+            const originalIndex = getOriginalIndex(filteredIndex);
+            return (
               <Card key={field.id} className="relative">
                 <CardHeader className="flex flex-row justify-between items-center">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -325,7 +385,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                       variant="outline"
                       className="flex justify-center items-center p-0 rounded-full w-6 h-6"
                     >
-                      {index + 1}
+                      {originalIndex + 1}
                     </Badge>
                     <span>
                       {field.type === "multiple_choice"
@@ -339,10 +399,12 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => openQuestionDialog(index)}
-                      disabled={aiLoading === `q${index}` || aiQuizLoading}
+                      onClick={() => openQuestionDialog(originalIndex)}
+                      disabled={
+                        aiLoading === `q${originalIndex}` || aiQuizLoading
+                      }
                     >
-                      {aiLoading === `q${index}` ? (
+                      {aiLoading === `q${originalIndex}` ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <RefreshCw className="w-4 h-4" />
@@ -353,7 +415,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                       type="button"
                       size="icon"
                       variant="destructive"
-                      onClick={() => remove(index)}
+                      onClick={() => remove(originalIndex)}
                     >
                       &times;
                     </Button>
@@ -361,7 +423,7 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
-                    name={`questions.${index}.question`}
+                    name={`questions.${originalIndex}.question`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Domanda</FormLabel>
@@ -376,19 +438,19 @@ const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
                     )}
                   />
                   {field.type === "multiple_choice" && (
-                    <MultipleChoiceForm index={index} />
+                    <MultipleChoiceForm index={originalIndex} />
                   )}
                   {field.type === "open_question" && (
-                    <OpenQuestionForm index={index} />
+                    <OpenQuestionForm index={originalIndex} />
                   )}
                   {field.type === "code_snippet" && (
-                    <CodeSnippetForm index={index} field={field} />
+                    <CodeSnippetForm index={originalIndex} field={field} />
                   )}
                 </CardContent>
               </Card>
-            ))}
-          </TabsContent>
-        </Tabs>
+            );
+          })}
+        </div>
         <Button
           type="submit"
           variant="default"
