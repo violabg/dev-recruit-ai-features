@@ -3,7 +3,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15.3.2-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.1.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Latest-green)](https://supabase.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-2.49.4-green)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1.4-38B2AC)](https://tailwindcss.com/)
 
 An advanced AI-powered technical recruitment platform that streamlines the hiring process through intelligent quiz generation, candidate assessment, and interview management.
@@ -24,6 +24,7 @@ An advanced AI-powered technical recruitment platform that streamlines the hirin
 - [📚 API Reference](#-api-reference)
 - [🔍 Testing](#-testing)
 - [🚀 Deployment](#-deployment)
+- [📖 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
@@ -191,7 +192,7 @@ Visit [http://localhost:3000](http://localhost:3000) to access the application.
 
 ### Core Tables
 
-#### [`profiles`](schema.sql:5)
+#### `profiles`
 
 Extends Supabase auth.users with additional profile information.
 
@@ -207,7 +208,7 @@ CREATE TABLE profiles (
 );
 ```
 
-#### [`positions`](schema.sql:46)
+#### `positions`
 
 Job position definitions with skills and requirements.
 
@@ -225,7 +226,7 @@ CREATE TABLE positions (
 );
 ```
 
-#### [`candidates`](schema.sql:58)
+#### `candidates`
 
 Candidate information linked to positions.
 
@@ -242,7 +243,7 @@ CREATE TABLE candidates (
 );
 ```
 
-#### [`quizzes`](schema.sql:69)
+#### `quizzes`
 
 AI-generated technical assessments.
 
@@ -258,7 +259,7 @@ CREATE TABLE quizzes (
 );
 ```
 
-#### [`interviews`](schema.sql:79)
+#### `interviews`
 
 Interview sessions with candidate responses and scoring.
 
@@ -287,17 +288,23 @@ The application implements **Row Level Security (RLS)** to ensure data isolation
 
 ### Database Functions
 
-#### [`generate_unique_token()`](schema.sql:266)
+#### `generate_unique_token()`
 
-Generates cryptographically secure interview tokens.
+Generates cryptographically secure interview tokens for secure interview access.
 
-#### [`get_candidates_for_quiz_assignment()`](schema.sql:333)
+#### `get_candidates_for_quiz_assignment()`
 
-Returns assigned and unassigned candidates for quiz management.
+Returns assigned and unassigned candidates for quiz management, enabling efficient candidate-quiz assignment workflows.
 
-#### [`search_interviews()`](schema.sql:431)
+#### `search_interviews()`
 
-Advanced interview search with filtering capabilities.
+Advanced interview search with filtering capabilities including status, position, programming language, and text search.
+
+#### `get_candidate_quiz_data()`
+
+Retrieves comprehensive candidate data including available quizzes and assigned interviews for quiz assignment management.
+
+All database functions are defined in [`schema.sql`](schema.sql) with proper security policies and RLS implementation.
 
 ## 🔧 Technology Stack
 
@@ -346,7 +353,8 @@ Advanced interview search with filtering capabilities.
 dev-recruit-ai/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API route handlers
-│   │   └── quiz-edit/           # Quiz generation endpoints
+│   │   ├── quiz-edit/           # Quiz generation & editing endpoints
+│   │   └── quiz/                # Quiz CRUD operations
 │   ├── auth/                     # Authentication pages
 │   ├── dashboard/               # Main application pages
 │   │   ├── candidates/          # Candidate management
@@ -361,9 +369,20 @@ dev-recruit-ai/
 │   ├── interview/               # Interview interface components
 │   ├── quiz/                    # Quiz management components
 │   └── ui/                      # Base UI components
+├── docs/                        # Project documentation
+│   ├── AI_INTEGRATION_IMPROVEMENTS.md
+│   ├── ARCHITECTURE_CONSOLIDATION_PLAN.md
+│   ├── CACHE_IMPLEMENTATION.md
+│   ├── IMPLEMENTATION_SUMMARY.md
+│   └── VISION_PRO_STYLE_GUIDE.md
 ├── lib/                         # Utility libraries
 │   ├── actions/                 # Server actions
-│   └── supabase/               # Database configuration
+│   ├── data/                    # Cached data layer
+│   ├── schemas/                 # Zod validation schemas
+│   ├── services/                # AI service & error handling
+│   ├── supabase/               # Database configuration
+│   └── utils/                   # Utility functions
+├── stories/                     # Storybook component stories
 └── public/                      # Static assets
 ```
 
@@ -371,7 +390,7 @@ dev-recruit-ai/
 
 #### Dashboard Layout
 
-[`app/dashboard/layout.tsx`](app/dashboard/layout.tsx:1) provides the main application shell:
+**[`app/dashboard/layout.tsx`](app/dashboard/layout.tsx)** provides the main application shell:
 
 ```tsx
 export default function DashboardLayout({ children }) {
@@ -393,7 +412,7 @@ export default function DashboardLayout({ children }) {
 
 #### App Sidebar
 
-[`components/dashboard/app-sidebar.tsx`](components/dashboard/app-sidebar.tsx:25) defines navigation:
+**[`components/dashboard/app-sidebar.tsx`](components/dashboard/app-sidebar.tsx)** defines navigation:
 
 ```tsx
 const navigation = [
@@ -423,50 +442,69 @@ graph LR
 
 #### Core Generation Function
 
-[`lib/actions/quizzes.ts:generateNewQuizAction`](lib/actions/quizzes.ts:94)
+**Enhanced AI Service Integration** - [`lib/services/ai-service.ts`](lib/services/ai-service.ts)
+
+The application now uses an enhanced AI service with comprehensive error handling, retry mechanisms, and security features:
 
 ```typescript
-export async function generateNewQuizAction({
-  positionId,
-  quizTitle,
-  questionCount,
-  difficulty,
-  includeMultipleChoice,
-  includeOpenQuestions,
-  includeCodeSnippets,
-  instructions,
-  previousQuestions,
-  specificModel,
-}) {
-  // Get position details
-  const { data: position } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("id", positionId)
-    .single();
+export class AIQuizService {
+  async generateQuiz(
+    params: GenerateQuizParams
+  ): Promise<{ questions: Question[] }> {
+    const startTime = performance.now();
 
-  // Construct AI prompt
-  const prompt = `
-    Genera un quiz tecnico per una posizione di "${position.title}" 
-    con livello "${position.experience_level}".
-    Competenze richieste: ${position.skills.join(", ")}
-    // ... detailed prompt construction
-  `;
+    try {
+      const model = getOptimalModel("quiz_generation", params.specificModel);
+      const prompt = this.buildQuizPrompt(params);
 
-  // Generate using Groq AI
-  const result = await generateObject({
-    model: groq(getOptimalModel("quiz_generation", specificModel)),
-    prompt,
-    schema: quizDataSchema,
-  });
+      const result = await withTimeout(
+        withRetry(async () => {
+          const response = await generateObject({
+            model: groq(model),
+            prompt,
+            system: this.system,
+            schema: quizDataSchema,
+            temperature: 0.7,
+          });
 
-  return result.object;
+          if (!response.object || !response.object.questions) {
+            throw new AIGenerationError(
+              "Invalid response structure from AI model",
+              AIErrorCode.INVALID_RESPONSE
+            );
+          }
+
+          return response.object;
+        }, this.config),
+        this.config.timeout
+      );
+
+      return { questions: convertToStrictQuestions(result.questions) };
+    } catch (error) {
+      // Enhanced error handling with fallback strategies
+      if (params.specificModel && this.config.fallbackModels.length > 0) {
+        // Try fallback models...
+      }
+      throw new AIGenerationError(
+        "Generation failed",
+        AIErrorCode.GENERATION_FAILED
+      );
+    }
+  }
 }
 ```
 
+**Key Features:**
+
+- **Retry Logic**: Exponential backoff with 3 attempts
+- **Model Fallbacks**: Automatic switching to backup models
+- **Input Sanitization**: Protection against prompt injection
+- **Performance Monitoring**: Built-in timing and metrics
+- **Security**: Input validation and sanitization
+
 ### AI Model Selection
 
-[`lib/utils.ts:getOptimalModel`](lib/utils.ts:1) optimizes model selection based on task type:
+The AI service optimizes model selection based on task type through the `getOptimalModel` utility function:
 
 ```typescript
 export function getOptimalModel(taskType: string, specificModel?: string) {
@@ -533,7 +571,7 @@ export function getOptimalModel(taskType: string, specificModel?: string) {
 
 #### Quiz Generation
 
-[`app/api/quiz-edit/generate-quiz/route.ts`](app/api/quiz-edit/generate-quiz/route.ts:22)
+**[`app/api/quiz-edit/generate-quiz/route.ts`](app/api/quiz-edit/generate-quiz/route.ts)**
 
 ```typescript
 export async function POST(req: Request) {
@@ -551,9 +589,15 @@ export async function POST(req: Request) {
 
 #### Question Generation
 
-[`app/api/quiz-edit/generate-question/route.ts`](app/api/quiz-edit/generate-question/route.ts:1)
+**[`app/api/quiz-edit/generate-question/route.ts`](app/api/quiz-edit/generate-question/route.ts)**
 
-Individual question generation for quiz editing and expansion.
+Individual question generation for quiz editing and expansion with rate limiting and enhanced error handling.
+
+#### Quiz Saving
+
+**[`app/api/quiz/save/route.ts`](app/api/quiz/save/route.ts)**
+
+Secure quiz saving with user authentication and validation.
 
 ## 🔒 Authentication & Security
 
@@ -570,7 +614,7 @@ The application uses **Supabase Auth** with multiple providers:
 
 #### Server-Side Authentication
 
-[`lib/supabase/server.ts`](lib/supabase/server.ts:1) handles server-side auth:
+**[`lib/supabase/server.ts`](lib/supabase/server.ts)** handles server-side auth:
 
 ```typescript
 export async function createClient() {
@@ -597,7 +641,7 @@ export async function createClient() {
 
 #### Middleware Protection
 
-[`middleware.ts`](middleware.ts:1) protects routes:
+**[`middleware.ts`](middleware.ts)** protects routes:
 
 ```typescript
 export async function middleware(request: NextRequest) {
@@ -671,7 +715,7 @@ components/
 
 #### Button Component
 
-[`components/ui/button.tsx`](components/ui/button.tsx:1)
+**[`components/ui/button.tsx`](components/ui/button.tsx)**
 
 ```typescript
 const buttonVariants = cva(
@@ -701,22 +745,26 @@ const buttonVariants = cva(
 
 #### Question Type Forms
 
-[`components/quiz/question-types/`](components/quiz/question-types/)
+**[`components/quiz/question-types/`](components/quiz/question-types/)**
 
 **Multiple Choice Form:**
-[`components/quiz/question-types/multiple-choice-form.tsx`](components/quiz/question-types/multiple-choice-form.tsx:1)
+[`components/quiz/question-types/multiple-choice-form.tsx`](components/quiz/question-types/multiple-choice-form.tsx)
 
 **Open Question Form:**
-[`components/quiz/question-types/open-question-form.tsx`](components/quiz/question-types/open-question-form.tsx:1)
+[`components/quiz/question-types/open-question-form.tsx`](components/quiz/question-types/open-question-form.tsx)
 
 **Code Snippet Form:**
-[`components/quiz/question-types/code-snippet-form.tsx`](components/quiz/question-types/code-snippet-form.tsx:1)
+[`components/quiz/question-types/code-snippet-form.tsx`](components/quiz/question-types/code-snippet-form.tsx)
 
 #### Question Display Components
 
-[`components/quiz/question-display/`](components/quiz/question-display/)
+**[`components/quiz/question-display/`](components/quiz/question-display/)**
 
-These components handle rendering different question types during interviews.
+These components handle rendering different question types during interviews:
+
+- **Multiple Choice Display:** [`multiple-choice-display.tsx`](components/quiz/question-display/multiple-choice-display.tsx)
+- **Open Question Display:** [`open-question-display.tsx`](components/quiz/question-display/open-question-display.tsx)
+- **Code Snippet Display:** [`code-snippet-display.tsx`](components/quiz/question-display/code-snippet-display.tsx)
 
 ### Form Management
 
@@ -734,7 +782,8 @@ const form = useForm<QuizFormData>({
 ```
 
 **Zod Validation Schemas:**
-[`lib/actions/quiz-schemas.ts`](lib/actions/quiz-schemas.ts:1)
+
+The application uses comprehensive validation schemas in [`lib/schemas/`](lib/schemas/) for type safety:
 
 ```typescript
 export const questionSchema = z.discriminatedUnion("type", [
@@ -759,7 +808,7 @@ The application features a **glass morphism design** inspired by Apple's Vision 
 
 #### Design Tokens
 
-[`app/globals.css`](app/globals.css:1)
+**[`app/globals.css`](app/globals.css)**
 
 ```css
 :root {
@@ -794,7 +843,7 @@ The application features a **glass morphism design** inspired by Apple's Vision 
 ### Theme System
 
 **Dual Theme Support:**
-[`components/theme-provider.tsx`](components/theme-provider.tsx:1)
+**[`components/theme-provider.tsx`](components/theme-provider.tsx)**
 
 ```typescript
 export function ThemeProvider({ children, ...props }) {
@@ -891,7 +940,7 @@ export const Default: Story = {
 ### Code Quality
 
 **ESLint Configuration:**
-[`eslint.config.mjs`](eslint.config.mjs:1)
+**[`eslint.config.mjs`](eslint.config.mjs)**
 
 ```javascript
 export default [
@@ -905,7 +954,7 @@ export default [
 ```
 
 **TypeScript Configuration:**
-[`tsconfig.json`](tsconfig.json:1)
+**[`tsconfig.json`](tsconfig.json)**
 
 ```json
 {
@@ -924,7 +973,7 @@ export default [
 ### Performance Optimization
 
 **Next.js Configuration:**
-[`next.config.mjs`](next.config.mjs:1)
+**[`next.config.mjs`](next.config.mjs)**
 
 ```javascript
 /** @type {import('next').NextConfig} */
@@ -944,7 +993,7 @@ const nextConfig = {
 
 #### Quiz Management
 
-[`lib/actions/quizzes.ts`](lib/actions/quizzes.ts:1)
+**[`lib/actions/quizzes.ts`](lib/actions/quizzes.ts)**
 
 **generateAndSaveQuiz(formData: FormData)**
 
@@ -955,21 +1004,21 @@ const nextConfig = {
 
 **generateNewQuizAction(params: GenerateNewQuizActionParams)**
 
-- AI-powered quiz generation
+- AI-powered quiz generation with enhanced error handling
 - **Parameters**: Quiz generation parameters
 - **Returns**: Generated quiz data
 - **Usage**: API endpoint integration
 
 **generateNewQuestionAction(params: GenerateNewQuestionActionParams)**
 
-- Generates individual questions
+- Generates individual questions with fallback strategies
 - **Parameters**: Question generation parameters
 - **Returns**: Generated question object
 - **Usage**: Quiz editing and expansion
 
 #### Candidate Management
 
-[`lib/actions/candidates.ts`](lib/actions/candidates.ts:1)
+**[`lib/actions/candidates.ts`](lib/actions/candidates.ts)**
 
 **createCandidate(formData: FormData)**
 
@@ -989,7 +1038,7 @@ const nextConfig = {
 
 #### Interview Search
 
-[`schema.sql:search_interviews`](schema.sql:431)
+**Database Function: `search_interviews`** (defined in [`schema.sql`](schema.sql))
 
 ```sql
 SELECT * FROM search_interviews(
@@ -1005,7 +1054,7 @@ SELECT * FROM search_interviews(
 
 #### Quiz Assignment Data
 
-[`schema.sql:get_candidates_for_quiz_assignment`](schema.sql:333)
+**Database Function: `get_candidates_for_quiz_assignment`** (defined in [`schema.sql`](schema.sql))
 
 ```sql
 SELECT * FROM get_candidates_for_quiz_assignment(
@@ -1245,6 +1294,98 @@ npm run dev -- --turbo
 - **Static assets**: CDN caching
 - **API responses**: Server-side caching
 - **Database queries**: Supabase edge caching
+
+## 📖 Documentation
+
+This project includes comprehensive documentation to help developers understand and contribute to the codebase:
+
+### 📁 Documentation Files
+
+#### **Core Documentation**
+
+- **[README.md](README.md)** - Main project documentation (this file)
+- **[Architecture Overview](#🏗️-architecture)** - System architecture and data flow
+
+#### **Technical Documentation**
+
+- **[AI Integration Improvements](docs/AI_INTEGRATION_IMPROVEMENTS.md)** - Comprehensive guide to AI service enhancements, error handling, and security measures
+- **[Architecture Consolidation Plan](docs/ARCHITECTURE_CONSOLIDATION_PLAN.md)** - Strategic plan for consolidating API patterns and schema management
+- **[Cache Implementation](docs/CACHE_IMPLEMENTATION.md)** - React Cache and Next.js revalidation patterns for optimal performance
+- **[Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)** - Complete overview of implemented AI integration features and improvements
+
+#### **Design Documentation**
+
+- **[Vision Pro Style Guide](docs/VISION_PRO_STYLE_GUIDE.md)** - Comprehensive design system documentation with glass morphism and Vision Pro aesthetics
+
+### 🔗 Quick Links to Key Sections
+
+#### **Getting Started**
+
+- [🚀 Quick Start](#-quick-start) - Installation and setup instructions
+- [🔧 Technology Stack](#-technology-stack) - Technologies and frameworks used
+- [📊 Database Schema](#-database-schema) - Database structure and relationships
+
+#### **Development Guide**
+
+- [📱 Application Structure](#-application-structure) - Project organization and key components
+- [🤖 AI Integration](#-ai-integration) - AI-powered quiz generation system
+- [🔒 Authentication & Security](#-authentication--security) - Security implementation and RLS policies
+
+#### **API & Integration**
+
+- [📚 API Reference](#-api-reference) - Complete API documentation
+- [🎨 UI/UX Design System](#-uiux-design-system) - Component system and design tokens
+
+### 📋 Documentation Navigation
+
+| Topic              | File                                                                                 | Description                                         |
+| ------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| **AI Features**    | [`docs/AI_INTEGRATION_IMPROVEMENTS.md`](docs/AI_INTEGRATION_IMPROVEMENTS.md)         | Retry mechanisms, error handling, security measures |
+| **Architecture**   | [`docs/ARCHITECTURE_CONSOLIDATION_PLAN.md`](docs/ARCHITECTURE_CONSOLIDATION_PLAN.md) | API standardization and schema consolidation        |
+| **Performance**    | [`docs/CACHE_IMPLEMENTATION.md`](docs/CACHE_IMPLEMENTATION.md)                       | Caching strategies and performance optimization     |
+| **Implementation** | [`docs/IMPLEMENTATION_SUMMARY.md`](docs/IMPLEMENTATION_SUMMARY.md)                   | Feature implementation status and achievements      |
+| **Design System**  | [`docs/VISION_PRO_STYLE_GUIDE.md`](docs/VISION_PRO_STYLE_GUIDE.md)                   | UI components and design guidelines                 |
+
+### 🎯 Key Implementation Features
+
+Based on the technical documentation, this project includes:
+
+#### **✅ Enhanced AI Integration**
+
+- Exponential backoff retry mechanisms
+- Model fallback strategies
+- Input sanitization and security
+- Performance monitoring and metrics
+- Italian localization for error messages
+
+#### **✅ Advanced Error Handling**
+
+- 12 specific error codes with context
+- User-friendly Italian error messages
+- Comprehensive logging and monitoring
+- Development vs production error modes
+
+#### **✅ API Security & Performance**
+
+- Rate limiting (5 requests/minute for quiz generation)
+- Request size validation (1MB limit)
+- Comprehensive input validation with Zod
+- Proper HTTP status codes and headers
+
+#### **✅ Modern UI/UX**
+
+- Vision Pro-inspired glass morphism design
+- Comprehensive component system with Radix UI
+- Dark/Light theme support
+- Responsive design for all devices
+
+### 📚 Additional Resources
+
+- **[Database Schema](schema.sql)** - Complete SQL schema with RLS policies
+- **[Storybook Stories](stories/)** - Interactive component documentation
+- **[Component Examples](#📊-component-system)** - Usage examples and patterns
+
+For specific implementation details, troubleshooting, or advanced configuration, refer to the corresponding documentation files in the [`/docs`](docs/) directory.
 
 ## 🤝 Contributing
 
