@@ -4,7 +4,7 @@ import {
   Question,
   questionSchema,
   quizDataSchema,
-} from "../actions/quiz-schemas";
+} from "../schemas/quiz-schemas";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types
@@ -144,13 +144,14 @@ export interface GenerateQuizParams {
   specificModel?: string;
 }
 
-// Question generation parameters
+// Question generation parameters - Updated to include difficulty
 export interface GenerateQuestionParams {
   quizTitle: string;
   positionTitle: string;
   experienceLevel: string;
   skills: string[];
   type: "multiple_choice" | "open_question" | "code_snippet";
+  difficulty?: number;
   previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;
   instructions?: string;
@@ -318,6 +319,7 @@ export class AIQuizService {
       experienceLevel,
       skills,
       type,
+      difficulty = 3,
       previousQuestions = [],
       instructions,
     } = params;
@@ -337,6 +339,7 @@ export class AIQuizService {
                     Position Details:
                     - Experience Level: ${experienceLevel}
                     - Required Skills: ${skills.join(", ")}
+                    - Difficulty level: ${difficulty}/5
                     ${
                       sanitizedInstructions
                         ? `- Special instructions: ${sanitizedInstructions}`
@@ -359,6 +362,7 @@ export class AIQuizService {
                     - Must be practical and job-relevant
                     - Should test real-world application of skills
                     - Appropriate for ${experienceLevel} level
+                    - Difficulty level: ${difficulty}/5
 
                     Generate exactly 1 question following these specifications.`;
 

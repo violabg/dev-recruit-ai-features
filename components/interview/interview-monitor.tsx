@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Question } from "@/lib/actions/quiz-schemas";
+import { Question } from "@/lib/schemas/quiz-schemas";
 import { createClient } from "@/lib/supabase/client";
 import { prismLanguage } from "@/lib/utils";
 import { Highlight, themes } from "prism-react-renderer";

@@ -5,7 +5,6 @@ import { BrainCircuit, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,24 +21,9 @@ import { LLMModelSelect } from "@/components/ui/llm-model-select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { generateAndSaveQuiz } from "@/lib/actions/quizzes";
+import { QuizFormData, quizFormSchema } from "@/lib/schemas/quiz-schemas";
 import { LLM_MODELS } from "@/lib/utils";
 import { toast } from "sonner";
-
-const formSchema = z.object({
-  title: z.string().min(2, {
-    message: "Il titolo deve contenere almeno 2 caratteri.",
-  }),
-  instructions: z.string().optional(),
-  questionCount: z.number().min(3).max(20),
-  includeMultipleChoice: z.boolean(),
-  includeOpenQuestions: z.boolean(),
-  includeCodeSnippets: z.boolean(),
-  difficulty: z.number().min(1).max(5),
-  timeLimit: z.number().min(0).max(120),
-  enableTimeLimit: z.boolean(),
-  llmModel: z.string(),
-});
 
 type Position = {
   id: string;
@@ -58,8 +42,8 @@ export const QuizForm = ({ position }: QuizFormProps) => {
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<QuizFormData>({
+    resolver: zodResolver(quizFormSchema),
     defaultValues: {
       title: `Quiz per ${position.title} (${position.experience_level})`,
       instructions: "",
@@ -74,34 +58,61 @@ export const QuizForm = ({ position }: QuizFormProps) => {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: QuizFormData) {
     setGenerating(true);
     try {
-      const formData = new FormData();
-      formData.append("position_id", position.id);
-      formData.append("title", values.title);
-      formData.append("instructions", values.instructions || "");
-      formData.append("question_count", values.questionCount.toString());
-      formData.append("difficulty", values.difficulty.toString());
-      formData.append(
-        "include_multiple_choice",
-        values.includeMultipleChoice.toString()
-      );
-      formData.append(
-        "include_open_questions",
-        values.includeOpenQuestions.toString()
-      );
-      formData.append(
-        "include_code_snippets",
-        values.includeCodeSnippets.toString()
-      );
-      formData.append("enable_time_limit", values.enableTimeLimit.toString());
-      formData.append("time_limit", values.timeLimit.toString());
-      formData.append("llm_model", values.llmModel);
+      // Generate quiz using API route
+      const generateResponse = await fetch("/api/quiz-edit/generate-quiz", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          positionId: position.id,
+          quizTitle: values.title,
+          questionCount: values.questionCount,
+          difficulty: values.difficulty,
+          includeMultipleChoice: values.includeMultipleChoice,
+          includeOpenQuestions: values.includeOpenQuestions,
+          includeCodeSnippets: values.includeCodeSnippets,
+          instructions: values.instructions || "",
+          specificModel: values.llmModel,
+        }),
+      });
 
-      const quizId = await generateAndSaveQuiz(formData);
+      if (!generateResponse.ok) {
+        const errorData = await generateResponse.json();
+        throw new Error(
+          errorData.error ||
+            `HTTP ${generateResponse.status}: ${generateResponse.statusText}`
+        );
+      }
+
+      const quizData = await generateResponse.json();
+
+      // Save quiz to database using new API route
+      const saveResponse = await fetch("/api/quiz/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: values.title,
+          position_id: position.id,
+          questions: quizData.questions,
+          time_limit: values.enableTimeLimit ? values.timeLimit : null,
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json();
+        throw new Error(errorData.error || "Failed to save quiz to database");
+      }
+
+      const saveResult = await saveResponse.json();
+
       toast.success("Quiz generato con successo!");
-      router.push(`/dashboard/quizzes/${quizId}`);
+      router.push(`/dashboard/quizzes/${saveResult.id}`);
     } catch (error: unknown) {
       console.error("Error generating quiz:", error);
       toast.error("Errore", {
@@ -110,6 +121,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
             ? error.message
             : "Si è verificato un errore durante la generazione del quiz",
       });
+    } finally {
       setGenerating(false);
     }
   }

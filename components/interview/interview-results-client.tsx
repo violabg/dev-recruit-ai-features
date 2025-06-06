@@ -14,7 +14,7 @@ import {
   evaluateAnswer,
   generateOverallEvaluation,
 } from "@/lib/actions/evaluations";
-import { Question } from "@/lib/actions/quiz-schemas";
+import { Question } from "@/lib/schemas/quiz-schemas";
 import { prismLanguage } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";

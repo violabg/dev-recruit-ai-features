@@ -2,6 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import {
+  generateQuizFormDataSchema,
+  questionSchema,
+  quizDataSchema,
+} from "../schemas/quiz-schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
   errorHandler,
@@ -10,36 +15,6 @@ import {
   QuizSystemError,
 } from "../services/error-handler";
 import { createClient } from "../supabase/server";
-import { questionSchema, quizDataSchema } from "./quiz-schemas";
-
-// Enhanced validation schemas
-const generateQuizFormSchema = z.object({
-  position_id: z.string().uuid("Invalid position ID format"),
-  title: z
-    .string()
-    .min(1, "Quiz title is required")
-    .max(200, "Quiz title too long"),
-  question_count: z.coerce
-    .number()
-    .int()
-    .min(1, "At least 1 question required")
-    .max(50, "Maximum 50 questions allowed"),
-  difficulty: z.coerce
-    .number()
-    .int()
-    .min(1, "Difficulty minimum is 1")
-    .max(5, "Difficulty maximum is 5"),
-  include_multiple_choice: z.string().transform((val) => val === "true"),
-  include_open_questions: z.string().transform((val) => val === "true"),
-  include_code_snippets: z.string().transform((val) => val === "true"),
-  instructions: z.string().max(2000, "Instructions too long").optional(),
-  enable_time_limit: z
-    .string()
-    .transform((val) => val === "true")
-    .optional(),
-  time_limit: z.coerce.number().int().positive().optional(),
-  llm_model: z.string().optional(),
-});
 
 // Performance monitoring
 class PerformanceMonitor {
@@ -76,6 +51,7 @@ type GenerateNewQuizActionParams = {
   specificModel?: string;
 };
 
+// Keep for backward compatibility but deprecate
 export async function generateAndSaveQuiz(formData: FormData) {
   const monitor = new PerformanceMonitor("generateAndSaveQuiz");
 
@@ -96,9 +72,9 @@ export async function generateAndSaveQuiz(formData: FormData) {
       );
     }
 
-    // Parse and validate form data
+    // Parse and validate form data using consolidated schema
     const rawData = Object.fromEntries(formData.entries());
-    const validatedData = generateQuizFormSchema.parse(rawData);
+    const validatedData = generateQuizFormDataSchema.parse(rawData);
 
     // Validate that at least one question type is selected
     if (
@@ -299,6 +275,7 @@ type GenerateNewQuestionActionParams = {
   previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;
   instructions?: string;
+  difficulty?: number;
 };
 
 export async function generateNewQuestionAction({
@@ -310,6 +287,7 @@ export async function generateNewQuestionAction({
   previousQuestions,
   specificModel,
   instructions,
+  difficulty,
 }: GenerateNewQuestionActionParams) {
   const monitor = new PerformanceMonitor("generateNewQuestionAction");
 
@@ -321,6 +299,7 @@ export async function generateNewQuestionAction({
       experienceLevel,
       skills,
       type,
+      difficulty,
       previousQuestions,
       specificModel,
       instructions,

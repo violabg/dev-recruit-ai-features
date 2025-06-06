@@ -1,40 +1,12 @@
-import { quizDataSchema } from "@/lib/actions/quiz-schemas";
 import { generateNewQuizAction } from "@/lib/actions/quizzes";
+import {
+  GenerateQuizRequest,
+  generateQuizRequestSchema,
+  Question,
+} from "@/lib/schemas/quiz-schemas";
 import { QuizErrorCode, QuizSystemError } from "@/lib/services/error-handler";
 import { getErrorResponse } from "@/lib/utils/error-response";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-
-// Enhanced request validation schema with strict typing
-const generateQuizRequestSchema = z.object({
-  positionId: z.string().uuid("Invalid position ID format"),
-  quizTitle: z
-    .string()
-    .min(1, "Quiz title is required")
-    .max(200, "Quiz title too long"),
-  questionCount: z
-    .number()
-    .int()
-    .min(1, "At least 1 question required")
-    .max(50, "Maximum 50 questions allowed"),
-  difficulty: z
-    .number()
-    .int()
-    .min(1, "Difficulty minimum is 1")
-    .max(5, "Difficulty maximum is 5"),
-  previousQuestions: z
-    .array(
-      z.object({
-        question: z.string().min(1, "Question text required"),
-      })
-    )
-    .optional(),
-  includeMultipleChoice: z.boolean(),
-  includeOpenQuestions: z.boolean(),
-  includeCodeSnippets: z.boolean(),
-  specificModel: z.string().optional(),
-  instructions: z.string().max(2000, "Instructions too long").optional(),
-});
 
 // Rate limiting (simple in-memory implementation)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -64,8 +36,10 @@ function checkRateLimit(identifier: string): boolean {
 // Request size validation
 const MAX_REQUEST_SIZE = 1024 * 1024; // 1MB
 
-export type GenerateQuizRequest = z.infer<typeof generateQuizRequestSchema>;
-export type GenerateQuizResponse = z.infer<typeof quizDataSchema>;
+export type GenerateQuizResponse = {
+  id?: string;
+  questions: Question[];
+};
 
 export async function POST(req: NextRequest) {
   const startTime = performance.now();

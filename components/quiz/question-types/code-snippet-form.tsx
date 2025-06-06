@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Question } from "@/lib/actions/quiz-schemas";
+import { Question } from "@/lib/schemas/quiz-schemas";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 import { getLanguageCode } from ".";

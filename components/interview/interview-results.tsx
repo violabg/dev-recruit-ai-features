@@ -1,6 +1,6 @@
 "use client";
 
-import { Question } from "@/lib/actions/quiz-schemas";
+import { Question } from "@/lib/schemas/quiz-schemas";
 import { InterviewResultsClient } from "./interview-results-client";
 
 interface InterviewResultsProps {

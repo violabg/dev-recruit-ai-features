@@ -1,34 +1,12 @@
-import { questionSchema } from "@/lib/actions/quiz-schemas";
 import { generateNewQuestionAction } from "@/lib/actions/quizzes";
+import {
+  generateQuestionRequestSchema,
+  questionSchema,
+} from "@/lib/schemas/quiz-schemas";
 import { QuizErrorCode, QuizSystemError } from "@/lib/services/error-handler";
 import { getErrorResponse } from "@/lib/utils/error-response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-// Enhanced request validation schema
-const generateQuestionRequestSchema = z.object({
-  quizTitle: z
-    .string()
-    .min(1, "Quiz title is required")
-    .max(200, "Quiz title too long"),
-  positionTitle: z
-    .string()
-    .min(1, "Position title is required")
-    .max(200, "Position title too long"),
-  experienceLevel: z.string().min(1, "Experience level is required"),
-  skills: z.array(z.string()).min(1, "At least one skill is required"),
-  type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
-  previousQuestions: z
-    .array(
-      z.object({
-        question: z.string().min(1, "Question text required"),
-        type: z.string().optional(),
-      })
-    )
-    .optional(),
-  specificModel: z.string().optional(),
-  instructions: z.string().max(2000, "Instructions too long").optional(),
-});
 
 // Rate limiting for question generation
 const questionRateLimitMap = new Map<
@@ -58,9 +36,6 @@ function checkQuestionRateLimit(identifier: string): boolean {
   return true;
 }
 
-export type GenerateQuestionRequest = z.infer<
-  typeof generateQuestionRequestSchema
->;
 export type GenerateQuestionResponse = z.infer<typeof questionSchema>;
 
 export async function POST(req: NextRequest) {
