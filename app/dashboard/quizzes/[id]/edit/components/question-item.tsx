@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { CodeSnippetQuestion, flexibleQuestionSchema } from "@/lib/schemas";
-import { cn } from "@/lib/utils";
 import {
   getQuestionTypeLabel,
   getSaveButtonContent,
@@ -158,12 +157,6 @@ export const QuestionItem = ({
                 onClick={onSaveQuestion}
                 disabled={questionSaveStatus === "saving"}
                 variant={getSaveButtonVariant(questionSaveStatus)}
-                className={cn(
-                  questionSaveStatus === "success" &&
-                    "bg-green-600 hover:bg-green-700",
-                  questionSaveStatus === "error" &&
-                    "bg-red-600 hover:bg-red-700"
-                )}
               >
                 {getSaveButtonContent(questionSaveStatus)}
               </Button>
