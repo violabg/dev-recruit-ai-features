@@ -36,7 +36,6 @@ import { updateQuizAction } from "@/lib/actions/quizzes";
 import {
   CodeSnippetQuestion,
   flexibleQuestionSchema,
-  Question,
   QuizForm,
   saveQuizRequestSchema,
 } from "@/lib/schemas";
@@ -123,7 +122,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, prepend, remove, update } = useFieldArray({
     control: form.control,
     name: "questions",
   });
@@ -226,7 +225,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
         id: generateId(),
       };
 
-      append(newQuestionWithId);
+      prepend(newQuestionWithId);
 
       // Expand the new question by default
       setExpandedQuestions((prev) => new Set([...prev, newQuestionWithId.id]));
@@ -406,49 +405,11 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     setExpandedQuestions(newExpanded);
   };
 
-  const addNewQuestion = (
+  const generateNewQuestion = (
     type: "multiple_choice" | "open_question" | "code_snippet"
   ) => {
-    let newQuestion: Question;
-
-    if (type === "multiple_choice") {
-      newQuestion = {
-        id: generateId(),
-        type: "multiple_choice",
-        question: "",
-        options: ["", "", "", ""], // Start with 4 empty options
-        correctAnswer: 0,
-      };
-    } else if (type === "open_question") {
-      newQuestion = {
-        id: generateId(),
-        type: "open_question",
-        question: "",
-      };
-    } else {
-      // code_snippet
-      newQuestion = {
-        id: generateId(),
-        type: "code_snippet",
-        question: "",
-        language: "javascript",
-      };
-    }
-
-    append(newQuestion);
-
-    // Expand the new question by default
-    setExpandedQuestions((prev) => new Set([...prev, newQuestion.id]));
-
-    toast.info(
-      `Nuova domanda ${
-        type === "multiple_choice"
-          ? "a scelta multipla"
-          : type === "open_question"
-          ? "aperta"
-          : "con codice"
-      } aggiunta`
-    );
+    setAiDialogOpen(true);
+    setGeneratingQuestionType(type);
   };
 
   const getSaveButtonContent = () => {
@@ -634,7 +595,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => addNewQuestion("multiple_choice")}
+                  onClick={() => generateNewQuestion("multiple_choice")}
                 >
                   <Sparkles className="mr-2 w-4 h-4" />
                   Scelta multipla
@@ -644,7 +605,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => addNewQuestion("open_question")}
+                  onClick={() => generateNewQuestion("open_question")}
                 >
                   <Sparkles className="mr-2 w-4 h-4" />
                   Domanda aperta
@@ -654,7 +615,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => addNewQuestion("code_snippet")}
+                  onClick={() => generateNewQuestion("code_snippet")}
                 >
                   <Sparkles className="mr-2 w-4 h-4" />
                   Snippet di codice
