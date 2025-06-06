@@ -1,6 +1,5 @@
 import { EditQuizForm } from "@/app/dashboard/quizzes/[id]/edit/components/edit-quiz-form";
-import { quizSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/server";
+import { getQuizData } from "@/lib/data/quiz-data";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -12,28 +11,15 @@ export default async function EditQuizPage({
   params: Promise<{ id: string }>;
 }) {
   const awaitedParams = await params;
-  const supabase = await createClient();
-  const { data: quiz, error } = await supabase
-    .from("quizzes")
-    .select("*")
-    .eq("id", awaitedParams.id)
-    .single();
-  if (error || !quiz) return notFound();
+  const data = await getQuizData(awaitedParams.id);
 
-  const { data: position } = await supabase
-    .from("positions")
-    .select("id, title, experience_level, skills")
-    .eq("id", quiz.position_id)
-    .single();
-  if (!position) return notFound();
+  if (!data) return notFound();
 
-  // Validate quiz data
-  const parsedQuiz = quizSchema.safeParse(quiz);
-  if (!parsedQuiz.success) return notFound();
+  const { quiz, position } = data;
 
   return (
     <Suspense fallback={<div>Caricamento...</div>}>
-      <EditQuizForm quiz={parsedQuiz.data} position={position} />
+      <EditQuizForm quiz={quiz} position={position} />
     </Suspense>
   );
 }

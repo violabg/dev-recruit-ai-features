@@ -150,7 +150,7 @@ export const QuestionItem = ({
             )}
           </div>
 
-          {hasQuestionChanges && (
+          {(hasQuestionChanges || questionSaveStatus !== "idle") && (
             <CardFooter className="px-0 pt-4">
               <Button
                 type="button"

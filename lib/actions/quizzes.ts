@@ -18,6 +18,7 @@ import {
   QuizSystemError,
 } from "../services/error-handler";
 import { createClient } from "../supabase/server";
+import { revalidateQuizCache } from "../utils/cache";
 
 // Performance monitoring
 class PerformanceMonitor {
@@ -148,6 +149,9 @@ export async function generateAndSaveQuiz(formData: FormData) {
         { error: insertError?.message }
       );
     }
+
+    // Revalidate cache tags for new quiz
+    revalidateQuizCache(quiz.id);
 
     monitor.end();
     return quiz.id;
@@ -364,6 +368,9 @@ export async function deleteQuiz(formData: FormData) {
       );
     }
 
+    // Revalidate cache tags after deletion
+    revalidateQuizCache(quizId);
+
     monitor.end();
     redirect("/dashboard/quizzes");
   } catch (error) {
@@ -440,6 +447,9 @@ export async function updateQuizAction(formData: FormData) {
         { updateError: updateError.message }
       );
     }
+
+    // Revalidate cache tags to get fresh data
+    revalidateQuizCache(quizId);
 
     monitor.end();
   } catch (error) {
