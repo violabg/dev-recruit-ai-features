@@ -62,6 +62,7 @@ import * as z from "zod";
 
 // Use the consolidated schemas with form-specific validation
 const editQuizFormSchema = saveQuizRequestSchema.extend({
+  position_id: z.string().optional(), // Make position_id optional for updates
   questions: z
     .array(flexibleQuestionSchema)
     .min(1, "Almeno una domanda è obbligatoria"),
@@ -116,6 +117,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     resolver: zodResolver(editQuizFormSchema),
     defaultValues: {
       title: quiz.title,
+      position_id: position.id,
       time_limit: quiz.time_limit,
       questions: quiz.questions,
     },

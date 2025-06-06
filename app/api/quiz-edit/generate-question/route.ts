@@ -64,10 +64,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse and validate request body
-    let body: any;
+    let body: unknown;
     try {
       body = await req.json();
-    } catch (parseError) {
+    } catch {
       return NextResponse.json(
         {
           error: "Invalid JSON in request body",

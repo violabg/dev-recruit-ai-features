@@ -1,11 +1,6 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
-import {
-  convertToStrictQuestions,
-  Question,
-  flexibleQuestionSchema as questionSchema,
-  quizDataSchema,
-} from "../schemas";
+import { convertToStrictQuestions, Question, quizDataSchema } from "../schemas";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types
@@ -479,7 +474,7 @@ export class AIQuizService {
               model: groq(model),
               prompt,
               system: this.system,
-              schema: questionSchema,
+              schema: quizDataSchema, // Use quizDataSchema which expects {questions: [...]}
               temperature: 0.7,
             });
 
@@ -509,8 +504,16 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Question generation completed in ${duration.toFixed(2)}ms`);
 
-      // Convert flexible question to strict question type for type safety
-      const strictQuestions = convertToStrictQuestions([result]);
+      // Extract the first question from the questions array and convert to strict type
+      if (!result.questions || result.questions.length === 0) {
+        throw new AIGenerationError(
+          "No questions generated in response",
+          AIErrorCode.INVALID_RESPONSE,
+          { result }
+        );
+      }
+
+      const strictQuestions = convertToStrictQuestions(result.questions);
       return strictQuestions[0];
     } catch (error) {
       const duration = performance.now() - startTime;
