@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { difficultySchema, instructionsSchema } from "./base";
+import { baseSchemas } from "./base";
 
 // ====================
 // AI GENERATION SCHEMAS
 // ====================
 
 export const aiGenerationSchema = z.object({
-  instructions: instructionsSchema,
+  instructions: baseSchemas.instructions,
   llmModel: z.string(),
-  difficulty: difficultySchema.optional(),
+  difficulty: baseSchemas.difficulty.optional(),
 });
 
 // ====================

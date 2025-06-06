@@ -2,10 +2,22 @@
 // SCHEMA ENTRY POINT
 // ====================
 // This file serves as the main entry point for all schema definitions.
-// Individual schemas are organized in separate files by domain.
+// The unified schemas provide a single source of truth for validation.
 
-// Re-export all base schemas and types
+// UNIFIED SCHEMAS (CURRENT - USE THESE)
+// ====================================
+
+// Re-export unified base schemas and types
 export * from "./base";
+
+// Re-export unified question schemas and types
+export * from "./question";
+
+// Re-export unified quiz schemas and types
+export * from "./quiz";
+
+// DOMAIN-SPECIFIC SCHEMAS
+// ======================
 
 // Re-export authentication schemas and types
 export * from "./auth";
@@ -19,20 +31,22 @@ export * from "./position";
 // Re-export candidate schemas and types
 export * from "./candidate";
 
-// Re-export question schemas and types
-export * from "./question";
-
-// Re-export quiz schemas and types
-export * from "./quiz";
-
-// Re-export API schemas and types
-export * from "./api";
-
 // Re-export assignment schemas and types
 export * from "./assignment";
 
 // Re-export evaluation schemas and types
 export * from "./evaluation";
 
-// Re-export AI generation schemas and types
-export * from "./ai";
+// ====================
+// UTILITY EXPORTS
+// ====================
+// Common utilities and type helpers
+
+// Re-export any utility types or functions needed across the application
+export type {
+  CandidateStatus,
+  ContractType,
+  ExperienceLevel,
+  InterviewStatus,
+  QuestionType,
+} from "./base";

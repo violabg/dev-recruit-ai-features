@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { emailSchema, passwordSchema } from "./base";
+import { baseSchemas } from "./base";
 
 // ====================
 // AUTHENTICATION SCHEMAS
 // ====================
 
 export const loginSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
+  email: baseSchemas.email,
+  password: baseSchemas.password,
 });
 
 export const signUpSchema = z
@@ -20,9 +20,9 @@ export const signUpSchema = z
       .string()
       .min(2, { message: "Cognome deve essere almeno 2 caratteri" })
       .max(30, { message: "Cognome deve essere massimo 30 caratteri" }),
-    email: emailSchema,
-    password: passwordSchema,
-    repeatPassword: passwordSchema,
+    email: baseSchemas.email,
+    password: baseSchemas.password,
+    repeatPassword: baseSchemas.password,
   })
   .refine((data) => data.password === data.repeatPassword, {
     message: "Passwords do not match",
@@ -30,21 +30,21 @@ export const signUpSchema = z
   });
 
 export const forgotPasswordSchema = z.object({
-  email: emailSchema,
+  email: baseSchemas.email,
 });
 
 export const updatePasswordSchema = z.object({
-  password: passwordSchema,
+  password: baseSchemas.password,
 });
 
 export const changePasswordSchema = z
   .object({
-    current_password: passwordSchema,
+    current_password: baseSchemas.password,
     new_password: z
       .string()
       .min(6, { message: "Password deve essere almeno 6 caratteri" })
       .max(100, { message: "Password deve essere massimo 100 caratteri" }),
-    confirm_password: passwordSchema,
+    confirm_password: baseSchemas.password,
   })
   .refine((data) => data.new_password === data.confirm_password, {
     message: "Le password non corrispondono",

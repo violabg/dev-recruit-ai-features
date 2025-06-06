@@ -8,8 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { QuizForm } from "@/lib/schemas";
-import { QuestionType } from "@/lib/schemas/base";
+import { QuestionType, QuizForm } from "@/lib/schemas";
 import { useCallback, useState } from "react";
 import { useAIGeneration } from "../hooks/use-ai-generation";
 import { useEditQuizForm } from "../hooks/use-edit-quiz-form";

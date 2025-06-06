@@ -4,12 +4,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   convertToStrictQuestions,
-  flexibleQuestionSchema,
   generateQuizFormDataSchema,
-  questionSchema,
+  questionSchemas,
+  QuestionType,
   quizDataSchema,
 } from "../schemas";
-import { QuestionType } from "../schemas/base";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
   errorHandler,
@@ -313,7 +312,7 @@ export async function generateNewQuestionAction({
     });
 
     // Validate generated question
-    const validatedQuestion = questionSchema.parse(question);
+    const validatedQuestion = questionSchemas.strict.parse(question);
 
     monitor.end();
     return validatedQuestion;
@@ -421,7 +420,7 @@ export async function updateQuizAction(formData: FormData) {
     let questions;
     try {
       questions = JSON.parse(questionsRaw);
-      questions = z.array(flexibleQuestionSchema).parse(questions);
+      questions = z.array(questionSchemas.flexible).parse(questions);
     } catch (parseError) {
       throw new QuizSystemError(
         "Invalid questions format",

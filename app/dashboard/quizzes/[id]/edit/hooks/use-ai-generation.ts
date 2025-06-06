@@ -1,16 +1,14 @@
 "use client";
 
 import { GenerateQuizResponse } from "@/app/api/quiz-edit/generate-quiz/route";
-import { flexibleQuestionSchema } from "@/lib/schemas";
-import { QuestionType } from "@/lib/schemas/base";
+import { FlexibleQuestion, QuestionType } from "@/lib/schemas";
 import { generateId } from "ai";
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
 import { EditQuizFormData } from "./use-edit-quiz-form";
 
-type Question = z.infer<typeof flexibleQuestionSchema>;
+type Question = FlexibleQuestion;
 
 type UseAIGenerationProps = {
   form: UseFormReturn<EditQuizFormData>; // Form instance from react-hook-form

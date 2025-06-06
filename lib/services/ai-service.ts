@@ -1,7 +1,11 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { convertToStrictQuestions, Question, quizDataSchema } from "../schemas";
-import { QuestionType } from "../schemas/base";
+import {
+  convertToStrictQuestions,
+  Question,
+  QuestionType,
+  quizDataSchema,
+} from "../schemas";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types
@@ -398,6 +402,7 @@ export class AIQuizService {
 
             return response.object;
           } catch (error) {
+            console.log("🚀 ~ AIQuizService ~ withRetry ~ error:", error);
             if (error instanceof NoObjectGeneratedError) {
               throw new AIGenerationError(
                 "AI model failed to generate valid quiz structure",
@@ -489,6 +494,7 @@ export class AIQuizService {
 
             return response.object;
           } catch (error) {
+            console.log("🚀 ~ AIQuizService ~ withRetry ~ error:", error);
             if (error instanceof NoObjectGeneratedError) {
               throw new AIGenerationError(
                 "AI model failed to generate valid question structure",

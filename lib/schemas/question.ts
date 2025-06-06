@@ -1,146 +1,145 @@
 import { z } from "zod";
-import { questionTypeSchema } from "./base";
+import { baseSchemas } from "./base";
 
 // ====================
-// QUESTION SCHEMAS
+// UNIFIED QUESTION SCHEMAS
 // ====================
+// Enhanced question schema system with better type discrimination
 
-export const baseQuestionSchema = z.object({
-  id: z.string(),
-  type: questionTypeSchema,
-  question: z.string().min(1, "Question text required"),
-});
-
-export const multipleChoiceQuestionSchema = baseQuestionSchema.extend({
-  type: z.literal("multiple_choice"),
-  options: z
-    .array(z.string().min(3, "Each option must be at least 3 characters long"))
-    .min(4, "At least 4 options required"),
-  correctAnswer: z.number().min(0),
+// Base question schema with common fields
+const baseQuestionSchema = z.object({
+  id: z
+    .string()
+    .regex(/^q\d+$/, "Question ID must be in format 'q1', 'q2', etc."),
+  question: z.string().min(1, "Question text is required"),
+  keywords: z.array(z.string()).optional(),
   explanation: z.string().optional(),
 });
 
-export const openQuestionSchema = baseQuestionSchema.extend({
+// Specific question type schemas with strict validation
+const multipleChoiceQuestionSchema = baseQuestionSchema.extend({
+  type: z.literal("multiple_choice"),
+  options: z
+    .array(z.string().min(3, "Each option must be at least 3 characters long"))
+    .length(4, "Exactly 4 options required"),
+  correctAnswer: z.number().int().min(0).max(3),
+});
+
+const openQuestionSchema = baseQuestionSchema.extend({
   type: z.literal("open_question"),
-  sampleAnswer: z.string().optional(),
-  keywords: z.array(z.string()).optional(),
-});
-
-export const codeSnippetQuestionSchema = baseQuestionSchema.extend({
-  type: z.literal("code_snippet"),
-  language: z.string().min(1, "Programming language required"),
-  codeSnippet: z.string().optional(),
+  sampleAnswer: z.string().min(1, "Sample answer required"),
   sampleSolution: z.string().optional(),
+  codeSnippet: z.string().optional(),
 });
 
-// Discriminated union for type-safe question handling
-export const questionSchema = z.discriminatedUnion("type", [
-  multipleChoiceQuestionSchema,
-  openQuestionSchema,
-  codeSnippetQuestionSchema,
-]);
+const codeSnippetQuestionSchema = baseQuestionSchema.extend({
+  type: z.literal("code_snippet"),
+  codeSnippet: z.string().min(1, "Code snippet required"),
+  sampleSolution: z.string().min(1, "Sample solution required"),
+  language: z.string().min(1, "Programming language required"),
+});
 
-// Flexible question schema for existing data (backward compatibility)
-export const flexibleQuestionSchema = z
-  .object({
-    id: z.string(),
-    type: questionTypeSchema,
-    question: z.string().min(1, "Question text required"),
-    options: z.array(z.string()).optional(),
-    correctAnswer: z.number().optional(),
-    explanation: z.string().optional(),
-    sampleAnswer: z.string().optional(),
-    keywords: z.array(z.string()).optional(),
-    language: z.string().optional(),
-    codeSnippet: z.string().optional(),
-    sampleSolution: z.string().optional(),
-  })
+// Discriminated union for type safety
+export const questionSchemas = {
+  // Strict schema for runtime validation
+  strict: z.discriminatedUnion("type", [
+    multipleChoiceQuestionSchema,
+    openQuestionSchema,
+    codeSnippetQuestionSchema,
+  ]),
 
-  .superRefine((data, ctx) => {
-    // For multiple choice questions, validate options
-    if (data.type === "multiple_choice") {
-      if (!data.options || data.options.length < 4) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
-          path: ["options"],
-        });
+  // Flexible schema for parsing AI responses and existing data
+  flexible: z
+    .object({
+      id: z.string(),
+      type: baseSchemas.questionType,
+      question: z.string().min(1, "Question text required"),
+      options: z.array(z.string()).optional(),
+      correctAnswer: z.number().optional(),
+      explanation: z.string().optional(),
+      sampleAnswer: z.string().optional(),
+      keywords: z.array(z.string()).optional(),
+      language: z.string().optional(),
+      codeSnippet: z.string().optional(),
+      sampleSolution: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      // For multiple choice questions, validate options
+      if (data.type === "multiple_choice") {
+        if (!data.options || data.options.length < 4) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
+            path: ["options"],
+          });
+        }
+        if (data.options) {
+          data.options.forEach((option, index) => {
+            if (option.length < 3) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Each option must be at least 3 characters long",
+                path: ["options", index],
+              });
+            }
+          });
+        }
+        if (
+          data.correctAnswer !== undefined &&
+          data.options !== undefined &&
+          data.correctAnswer >= data.options.length
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
+            path: ["correctAnswer"],
+          });
+        }
       }
-      if (data.options) {
-        data.options.forEach((option, index) => {
-          if (option.length < 3) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Each option must be at least 3 characters long",
-              path: ["options", index],
-            });
-          }
-        });
-      }
-      if (
-        data.correctAnswer !== undefined &&
-        data.options !== undefined &&
-        data.correctAnswer >= data.options.length
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
-          path: ["correctAnswer"],
-        });
-      }
-    }
-  });
+    }),
 
-// ====================
-// TYPE EXPORTS
-// ====================
+  // Individual schemas for targeted validation
+  multipleChoice: multipleChoiceQuestionSchema,
+  openQuestion: openQuestionSchema,
+  codeSnippet: codeSnippetQuestionSchema,
 
-export type Question = z.infer<typeof questionSchema>;
-export type FlexibleQuestion = z.infer<typeof flexibleQuestionSchema>;
+  // Base schema for common fields
+  base: baseQuestionSchema,
+} as const;
+
+// Type exports
+export type Question = z.infer<typeof questionSchemas.strict>;
+export type FlexibleQuestion = z.infer<typeof questionSchemas.flexible>;
 export type MultipleChoiceQuestion = z.infer<
   typeof multipleChoiceQuestionSchema
 >;
 export type OpenQuestion = z.infer<typeof openQuestionSchema>;
 export type CodeSnippetQuestion = z.infer<typeof codeSnippetQuestionSchema>;
 
-// ====================
-// HELPER FUNCTIONS
-// ====================
+// Type guards for runtime type checking
+export const isMultipleChoiceQuestion = (
+  q: Question | FlexibleQuestion
+): q is MultipleChoiceQuestion => q.type === "multiple_choice";
 
-// Helper function to convert flexible questions to strict discriminated union questions
+export const isOpenQuestion = (
+  q: Question | FlexibleQuestion
+): q is OpenQuestion => q.type === "open_question";
+
+export const isCodeSnippetQuestion = (
+  q: Question | FlexibleQuestion
+): q is CodeSnippetQuestion => q.type === "code_snippet";
+
+// Question conversion utilities
+export const convertToStrictQuestion = (
+  flexibleQuestion: FlexibleQuestion
+): Question => {
+  return questionSchemas.strict.parse(flexibleQuestion);
+};
+
 export const convertToStrictQuestions = (
-  questions: FlexibleQuestion[]
+  flexibleQuestions: FlexibleQuestion[]
 ): Question[] => {
-  return questions.map((q): Question => {
-    if (q.type === "multiple_choice") {
-      return {
-        id: q.id,
-        type: "multiple_choice",
-        question: q.question,
-        options: q.options || [],
-        correctAnswer: q.correctAnswer || 0,
-        explanation: q.explanation,
-      };
-    } else if (q.type === "open_question") {
-      return {
-        id: q.id,
-        type: "open_question",
-        question: q.question,
-        sampleAnswer: q.sampleAnswer,
-        keywords: q.keywords,
-      };
-    } else {
-      // code_snippet
-      return {
-        id: q.id,
-        type: "code_snippet",
-        question: q.question,
-        language: q.language || "javascript",
-        codeSnippet: q.codeSnippet,
-        sampleSolution: q.sampleSolution,
-      };
-    }
-  });
+  return flexibleQuestions.map(convertToStrictQuestion);
 };
