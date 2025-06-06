@@ -28,6 +28,9 @@ export * from "./profile";
 // Re-export position schemas and types
 export * from "./position";
 
+// Re-export AI generation schemas and types
+export * from "./ai";
+
 // Re-export candidate schemas and types
 export * from "./candidate";
 
