@@ -74,6 +74,13 @@ type QuestionTypeFilter =
   | "open_question"
   | "code_snippet";
 
+// Question type filter configuration
+const questionTypes = [
+  { value: "multiple_choice", label: "Scelta multipla" },
+  { value: "open_question", label: "Domanda aperta" },
+  { value: "code_snippet", label: "Snippet di codice" },
+] as const;
+
 // Generate simple UUID-like string
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -609,52 +616,33 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti i tipi</SelectItem>
-                    <SelectItem value="multiple_choice">
-                      Scelta multipla
-                    </SelectItem>
-                    <SelectItem value="open_question">
-                      Domanda aperta
-                    </SelectItem>
-                    <SelectItem value="code_snippet">
-                      Snippet di codice
-                    </SelectItem>
+                    {[
+                      { value: "all", label: "Tutti i tipi" },
+                      ...questionTypes,
+                    ].map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateNewQuestion("multiple_choice")}
-                >
-                  <Sparkles className="mr-2 w-4 h-4" />
-                  Scelta multipla
-                  <Plus className="ml-2 w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateNewQuestion("open_question")}
-                >
-                  <Sparkles className="mr-2 w-4 h-4" />
-                  Domanda aperta
-                  <Plus className="ml-2 w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateNewQuestion("code_snippet")}
-                >
-                  <Sparkles className="mr-2 w-4 h-4" />
-                  Snippet di codice
-                  <Plus className="ml-2 w-4 h-4" />
-                </Button>
+                {questionTypes.map((item) => (
+                  <Button
+                    key={item.value}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateNewQuestion(item.value)}
+                  >
+                    <Sparkles className="mr-2 w-4 h-4" />
+                    {item.label}
+                    <Plus className="ml-2 w-4 h-4" />
+                  </Button>
+                ))}
               </div>
 
               {filteredQuestions.length === 0 ? (
