@@ -1,8 +1,8 @@
 import { generateNewQuestionAction } from "@/lib/actions/quizzes";
 import {
   generateQuestionRequestSchema,
-  questionSchema,
-} from "@/lib/schemas/quiz-schemas";
+  flexibleQuestionSchema as questionSchema,
+} from "@/lib/schemas";
 import { QuizErrorCode, QuizSystemError } from "@/lib/services/error-handler";
 import { getErrorResponse } from "@/lib/utils/error-response";
 import { NextRequest, NextResponse } from "next/server";

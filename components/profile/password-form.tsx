@@ -18,37 +18,13 @@ import {
 } from "@/components/ui/form";
 import PasswordInput from "@/components/ui/password-input";
 import { updatePassword } from "@/lib/actions/profile";
+import { ChangePasswordFormData, changePasswordSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
-
-const passwordSchema = z
-  .object({
-    current_password: z
-      .string()
-      .min(6, { message: "Password deve essere almeno 6 caratteri" }),
-    new_password: z
-      .string()
-      .min(6, { message: "Password deve essere almeno 6 caratteri" })
-      .max(100, { message: "Password deve essere massimo 100 caratteri" }),
-    confirm_password: z
-      .string()
-      .min(6, { message: "Password deve essere almeno 6 caratteri" }),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: "Le password non corrispondono",
-    path: ["confirm_password"],
-  })
-  .refine((data) => data.current_password !== data.new_password, {
-    message: "La nuova password deve essere diversa da quella attuale",
-    path: ["new_password"],
-  });
-
-type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 type PasswordFormProps = {
   className?: string;
@@ -58,8 +34,8 @@ export const PasswordForm = ({ className, ...props }: PasswordFormProps) => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const form = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordSchema),
+  const form = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
     defaultValues: {
       current_password: "",
       new_password: "",
@@ -69,7 +45,7 @@ export const PasswordForm = ({ className, ...props }: PasswordFormProps) => {
 
   const { handleSubmit, reset } = form;
 
-  const onSubmit = (values: PasswordFormValues) => {
+  const onSubmit = (values: ChangePasswordFormData) => {
     startTransition(async () => {
       try {
         const formData = new FormData();

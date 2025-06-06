@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Question } from "@/lib/schemas/quiz-schemas";
+import { Question } from "@/lib/schemas";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 import { getLanguageCode } from ".";
@@ -33,6 +33,14 @@ type CodeSnippetFormProps = {
 export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
   const { resolvedTheme } = useTheme();
 
+  // Type guard to safely access code snippet properties
+  const getLanguage = () => {
+    if (field.type === "code_snippet") {
+      return field.language || "JavaScript";
+    }
+    return "JavaScript";
+  };
+
   return (
     <div className="space-y-4">
       <FormField
@@ -42,7 +50,7 @@ export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
             <FormLabel>Linguaggio di programmazione</FormLabel>
             <FormControl>
               <Select
-                value={formField.value || field.language || "JavaScript"}
+                value={formField.value || getLanguage()}
                 onValueChange={(value) => {
                   formField.onChange(value);
                 }}
@@ -71,7 +79,7 @@ export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
             <FormControl>
               <CodeEditor
                 value={formField.value || ""}
-                language={getLanguageCode(field.language || "JavaScript")}
+                language={getLanguageCode(getLanguage())}
                 placeholder="Inserisci il codice qui..."
                 onChange={(evn) => formField.onChange(evn.target.value)}
                 padding={15}
@@ -100,7 +108,7 @@ export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
             <FormControl>
               <CodeEditor
                 value={formField.value || ""}
-                language={getLanguageCode(field.language || "JavaScript")}
+                language={getLanguageCode(getLanguage())}
                 placeholder="Inserisci la soluzione qui..."
                 onChange={(evn) => formField.onChange(evn.target.value)}
                 padding={15}

@@ -2,9 +2,9 @@ import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
 import {
   Question,
-  questionSchema,
+  flexibleQuestionSchema as questionSchema,
   quizDataSchema,
-} from "../schemas/quiz-schemas";
+} from "../schemas";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types

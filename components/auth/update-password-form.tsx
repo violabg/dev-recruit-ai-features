@@ -17,19 +17,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { UpdatePasswordFormData, updatePasswordSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import PasswordInput from "../ui/password-input";
-
-const updatePasswordSchema = z.object({
-  password: z.string().min(6, { message: "Minimo 6 caratteri" }),
-});
-type UpdatePasswordFormValues = z.infer<typeof updatePasswordSchema>;
 
 export function UpdatePasswordForm({
   className,
@@ -37,14 +32,14 @@ export function UpdatePasswordForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const form = useForm<UpdatePasswordFormValues>({
+  const form = useForm<UpdatePasswordFormData>({
     resolver: zodResolver(updatePasswordSchema),
     defaultValues: { password: "" },
     mode: "onChange",
   });
   const { handleSubmit, setError } = form;
 
-  const handleUpdatePassword = async (values: UpdatePasswordFormValues) => {
+  const handleUpdatePassword = async (values: UpdatePasswordFormData) => {
     const supabase = createClient();
     setIsLoading(true);
     try {

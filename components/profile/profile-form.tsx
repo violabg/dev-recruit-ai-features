@@ -18,30 +18,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { updateProfile, type Profile } from "@/lib/actions/profile";
+import { ProfileFormData, profileSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
-const profileSchema = z.object({
-  full_name: z
-    .string()
-    .min(2, { message: "Nome completo deve essere almeno 2 caratteri" })
-    .max(50, { message: "Nome completo deve essere massimo 50 caratteri" }),
-  user_name: z
-    .string()
-    .min(2, { message: "Nome utente deve essere almeno 2 caratteri" })
-    .max(30, { message: "Nome utente deve essere massimo 30 caratteri" })
-    .regex(/^[a-zA-Z0-9_-]+$/, {
-      message:
-        "Nome utente può contenere solo lettere, numeri, trattini e underscore",
-    }),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type ProfileFormValues = ProfileFormData;
 
 type ProfileFormProps = {
   profile: Profile | null;

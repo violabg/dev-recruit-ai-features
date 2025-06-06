@@ -21,7 +21,7 @@ import { LLMModelSelect } from "@/components/ui/llm-model-select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { QuizFormData, quizFormSchema } from "@/lib/schemas/quiz-schemas";
+import { QuizFormData, quizFormSchema } from "@/lib/schemas";
 import { LLM_MODELS } from "@/lib/utils";
 import { toast } from "sonner";
 

@@ -5,7 +5,6 @@ import { Copy, Loader2, Plus } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,14 +20,9 @@ import {
   assignCandidatesToQuiz,
   AssignCandidatesToQuizState,
 } from "@/lib/actions/interviews";
+import { CandidateSelection, candidateSelectionSchema } from "@/lib/schemas";
 
-const candidateSelectionSchema = z.object({
-  candidateIds: z.array(z.string()).min(1, {
-    message: "Please select at least one candidate.",
-  }),
-});
-
-type CandidateSelectionValues = z.infer<typeof candidateSelectionSchema>;
+type CandidateSelectionValues = CandidateSelection;
 
 interface Candidate {
   id: string;

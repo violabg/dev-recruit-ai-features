@@ -14,7 +14,7 @@ import {
   evaluateAnswer,
   generateOverallEvaluation,
 } from "@/lib/actions/evaluations";
-import { Question } from "@/lib/schemas/quiz-schemas";
+import { Question } from "@/lib/schemas";
 import { prismLanguage } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
@@ -48,11 +48,11 @@ export function InterviewResultsClient({
       // Evaluate each question
       for (const question of quizQuestions) {
         if (!answers[question.id]) continue;
-        const options = question.options || [];
 
         let answer = "";
         switch (question.type) {
           case "multiple_choice":
+            const options = question.options || [];
             const answerIndex = parseInt(answers[question.id]);
             answer = options[answerIndex];
             break;
@@ -63,7 +63,7 @@ export function InterviewResultsClient({
             answer = answers[question.id];
             break;
           default:
-            console.error("Unknown question type:", question.type);
+            console.error("Unknown question type:");
             continue;
         }
         const maxScore = 10; // Max score per question
@@ -325,15 +325,7 @@ export function InterviewResultsClient({
               {quizQuestions
                 .filter((q) => tabValue === "all" || q.type === tabValue)
                 .map((question, index) => {
-                  const {
-                    correctAnswer = 0,
-                    explanation,
-                    id,
-                    language = "javascript",
-                    question: questionText,
-                    options = [],
-                    type,
-                  } = question;
+                  const { id, question: questionText, type } = question;
                   const isAnswered = !!answers[id];
                   const evaluation = evaluations[id];
 
@@ -377,12 +369,16 @@ export function InterviewResultsClient({
                                 <div
                                   className={`rounded-md border p-3 ${
                                     Number.parseInt(answers[id]) ===
-                                    correctAnswer
+                                    question.correctAnswer
                                       ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                                       : "border-red-500 bg-red-50 dark:bg-red-950/20"
                                   }`}
                                 >
-                                  {options[Number.parseInt(answers[id])]}
+                                  {
+                                    question.options[
+                                      Number.parseInt(answers[id])
+                                    ]
+                                  }
                                 </div>
                               )}
 
@@ -397,7 +393,7 @@ export function InterviewResultsClient({
                                   theme={themes.vsDark}
                                   code={answers[id].code}
                                   language={prismLanguage(
-                                    language ?? "javascript"
+                                    question.language ?? "javascript"
                                   )}
                                 >
                                   {({
@@ -457,11 +453,11 @@ export function InterviewResultsClient({
                                   Risposta corretta:
                                 </div>
                                 <div className="bg-green-50 dark:bg-green-950/20 p-3 border border-green-500 rounded-md">
-                                  {options[correctAnswer]}
+                                  {question.options[question.correctAnswer]}
                                 </div>
-                                {explanation && (
+                                {question.explanation && (
                                   <div className="text-muted-foreground text-sm">
-                                    {explanation}
+                                    {question.explanation}
                                   </div>
                                 )}
                               </div>

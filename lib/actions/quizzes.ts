@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   generateQuizFormDataSchema,
-  questionSchema,
+  flexibleQuestionSchema as questionSchema,
   quizDataSchema,
-} from "../schemas/quiz-schemas";
+} from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
   errorHandler,

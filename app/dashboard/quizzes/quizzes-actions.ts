@@ -1,4 +1,4 @@
-import { Question } from "@/lib/schemas/quiz-schemas";
+import { Question } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 
 type Position = {

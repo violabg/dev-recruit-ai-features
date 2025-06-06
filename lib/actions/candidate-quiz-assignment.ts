@@ -1,15 +1,8 @@
 "use server";
 
+import { candidateQuizAssignmentSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "../supabase/server";
-
-const quizSelectionSchema = z.object({
-  quizIds: z.array(z.string()).min(1, {
-    message: "Please select at least one quiz.",
-  }),
-  candidateId: z.string(),
-});
 
 export type AssignQuizzesToCandidateState = {
   message: string;
@@ -34,7 +27,7 @@ export async function assignQuizzesToCandidate(
   const quizIds = formData.getAll("quizIds").map(String);
   const candidateId = formData.get("candidateId") as string;
 
-  const validatedFields = quizSelectionSchema.safeParse({
+  const validatedFields = candidateQuizAssignmentSchema.safeParse({
     quizIds: quizIds,
     candidateId: candidateId,
   });

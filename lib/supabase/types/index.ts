@@ -1,4 +1,4 @@
-import { Question } from "@/lib/schemas/quiz-schemas";
+import { Question } from "@/lib/schemas";
 
 // Type for the search_interviews RPC result
 export type SearchInterviewsRow = {

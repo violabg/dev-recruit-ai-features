@@ -33,7 +33,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateQuizAction } from "@/lib/actions/quizzes";
-import { Question, QuizForm } from "@/lib/schemas/quiz-schemas";
+import {
+  flexibleQuestionSchema,
+  Question,
+  QuizForm,
+  saveQuizRequestSchema,
+} from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -54,29 +59,10 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
-// Use a simplified schema for the edit form
-const editQuizFormSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Il titolo è obbligatorio")
-    .max(200, "Titolo troppo lungo"),
-  time_limit: z.number().nullable(),
+// Use the consolidated schemas with form-specific validation
+const editQuizFormSchema = saveQuizRequestSchema.extend({
   questions: z
-    .array(
-      z.object({
-        id: z.string(),
-        type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
-        question: z.string().min(1, "La domanda è obbligatoria"),
-        options: z.array(z.string()).optional(),
-        correctAnswer: z.number().optional(),
-        explanation: z.string().optional(),
-        sampleAnswer: z.string().optional(),
-        keywords: z.array(z.string()).optional(),
-        language: z.string().optional(),
-        codeSnippet: z.string().optional(),
-        sampleSolution: z.string().optional(),
-      })
-    )
+    .array(flexibleQuestionSchema)
     .min(1, "Almeno una domanda è obbligatoria"),
 });
 

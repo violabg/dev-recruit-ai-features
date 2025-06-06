@@ -21,19 +21,11 @@ import {
 import { LLMModelSelect } from "@/components/ui/llm-model-select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { AIGenerationFormData, aiGenerationSchema } from "@/lib/schemas";
 import { LLM_MODELS } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-
-const aiGenerationSchema = z.object({
-  instructions: z.string().optional(),
-  llmModel: z.string(),
-  difficulty: z.number().min(1).max(5).optional(),
-});
-
-type AIGenerationFormData = z.infer<typeof aiGenerationSchema>;
 
 type AIGenerationDialogProps = {
   open: boolean;
