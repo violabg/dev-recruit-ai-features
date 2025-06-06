@@ -405,6 +405,15 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     setExpandedQuestions(newExpanded);
   };
 
+  const expandAllQuestions = () => {
+    const allQuestionIds = new Set(fields.map((field) => field.id));
+    setExpandedQuestions(allQuestionIds);
+  };
+
+  const collapseAllQuestions = () => {
+    setExpandedQuestions(new Set());
+  };
+
   const generateNewQuestion = (
     type: "multiple_choice" | "open_question" | "code_snippet"
   ) => {
@@ -565,6 +574,31 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                 <CardDescription>Gestisci le domande del quiz</CardDescription>
               </div>
               <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={expandAllQuestions}
+                    disabled={fields.length === 0}
+                    title="Espandi tutte le domande"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    Espandi tutto
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={collapseAllQuestions}
+                    disabled={fields.length === 0}
+                    title="Chiudi tutte le domande"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                    Chiudi tutto
+                  </Button>
+                </div>
+                <div className="bg-border w-px h-6" />
                 <Select
                   value={questionTypeFilter}
                   onValueChange={(value: QuestionTypeFilter) =>
