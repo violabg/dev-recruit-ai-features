@@ -10,7 +10,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { QuizForm } from "@/lib/schemas";
 import { QuestionType } from "@/lib/schemas/base";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAIGeneration } from "../hooks/use-ai-generation";
 import { useEditQuizForm } from "../hooks/use-edit-quiz-form";
 import { useQuestionManagement } from "../hooks/use-question-management";
@@ -81,20 +81,29 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     setExpandedQuestions,
   });
 
-  const handleGenerateNewQuestion = (type: QuestionType) => {
-    generateNewQuestion(type);
-    setAiDialogOpen(true);
-  };
+  const handleGenerateNewQuestion = useCallback(
+    (type: QuestionType) => {
+      generateNewQuestion(type);
+      setAiDialogOpen(true);
+    },
+    [generateNewQuestion]
+  );
 
-  const handleRegenerate = (index: number) => {
-    setRegeneratingQuestionIndex(index);
-    setRegenerateDialogOpen(true);
-  };
+  const handleRegenerate = useCallback(
+    (index: number) => {
+      setRegeneratingQuestionIndex(index);
+      setRegenerateDialogOpen(true);
+    },
+    [setRegeneratingQuestionIndex]
+  );
 
   // Create a wrapper function for question saving with validation
-  const handleQuestionSaveWithValidation = (index: number) => {
-    return form.handleSubmit((data) => handleSaveQuestion(index, data))();
-  };
+  const handleQuestionSaveWithValidation = useCallback(
+    (index: number) => {
+      return form.handleSubmit((data) => handleSaveQuestion(index, data))();
+    },
+    [form, handleSaveQuestion]
+  );
 
   return (
     <div className="space-y-6">

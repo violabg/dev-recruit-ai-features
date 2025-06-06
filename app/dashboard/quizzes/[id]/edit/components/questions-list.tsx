@@ -2,6 +2,7 @@
 
 import { flexibleQuestionSchema } from "@/lib/schemas";
 import { SaveStatus } from "@/lib/utils/quiz-form-utils";
+import { useCallback } from "react";
 import { UseFormReturn } from "react-hook-form";
 import * as z from "zod";
 import { EditQuizFormData } from "../hooks/use-edit-quiz-form";
@@ -43,6 +44,12 @@ export const QuestionsList = ({
   onSaveQuestion,
   sectionSaveStatus,
 }: QuestionsListProps) => {
+  // Create stable callback for saving questions
+  const handleSaveQuestion = useCallback(
+    (index: number) => () => onSaveQuestion(index),
+    [onSaveQuestion]
+  );
+
   if (filteredQuestions.length === 0) {
     return (
       <div className="py-8 text-muted-foreground text-center">
@@ -71,7 +78,7 @@ export const QuestionsList = ({
             onRemove={onRemove}
             aiLoading={aiLoading}
             hasQuestionChanges={hasQuestionChanges(actualIndex)}
-            onSaveQuestion={() => onSaveQuestion(actualIndex)}
+            onSaveQuestion={handleSaveQuestion(actualIndex)}
             questionSaveStatus={sectionSaveStatus.questions[field.id] || "idle"}
           />
         );
