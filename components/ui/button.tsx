@@ -11,6 +11,8 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border border-primary/30 hover:border-primary/50 vision-elevated vision-primary",
+        success:
+          "bg-gradient-to-br from-green-500 to-green-500/80 text-green-500-foreground shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 active:translate-y-0 backdrop-blur-[20px] border border-green-500/30 hover:border-green-500/50 vision-elevated vision-success text-black",
         destructive:
           "bg-gradient-to-br from-destructive to-destructive/80 text-white shadow-vision hover:shadow-vision-md hover:-translate-y-0.5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 backdrop-blur-[20px] border border-destructive/30 hover:border-destructive/50 vision-elevated vision-destructive",
         outline:

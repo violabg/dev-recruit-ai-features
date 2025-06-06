@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import {
   getSaveButtonContent,
   getSaveButtonVariant,
@@ -118,10 +117,6 @@ export const QuizSettings = ({
               type="submit"
               disabled={saveStatus === "saving"}
               variant={getSaveButtonVariant(saveStatus)}
-              className={cn(
-                saveStatus === "success" && "bg-green-600 hover:bg-green-700",
-                saveStatus === "error" && "bg-red-600 hover:bg-red-700"
-              )}
             >
               {getSaveButtonContent(saveStatus)}
             </Button>

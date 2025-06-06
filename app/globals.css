@@ -537,29 +537,33 @@
   /* Default glass background and border */
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
+}
 
-  &.vision-primary {
-    background: var(--primary);
-  }
+@utility vision-primary {
+  background: var(--primary);
+}
 
-  &.vision-secondary {
-    background: var(--secondary);
-  }
+@utility vision-success {
+  background: oklch(72.3% 0.219 149.579);
+}
 
-  &.vision-destructive {
-    background: var(--destructive);
-    border-color: var(--destructive);
-  }
+@utility vision-secondary {
+  background: var(--secondary);
+}
 
-  &.vision-outline {
-    background: transparent;
-    border: 1px solid var(--glass-border);
-  }
+@utility vision-destructive {
+  background: var(--destructive);
+  border-color: var(--destructive);
+}
 
-  &.vision-outline-destructive {
-    background: transparent;
-    border: 1px solid var(--destructive);
-  }
+@utility vision-outline {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+}
+
+@utility vision-outline-destructive {
+  background: transparent;
+  border: 1px solid var(--destructive);
 }
 
 /* Vision Pro Navigation Elements */

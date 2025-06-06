@@ -43,7 +43,7 @@ export const getSaveButtonContent = (saveStatus: SaveStatus) => {
 export const getSaveButtonVariant = (saveStatus: SaveStatus) => {
   switch (saveStatus) {
     case "success":
-      return "default" as const;
+      return "success" as const;
     case "error":
       return "destructive" as const;
     default:
