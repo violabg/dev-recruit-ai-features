@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useEffect } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 
 type MultipleChoiceFormProps = {
@@ -24,29 +25,57 @@ export const MultipleChoiceForm = ({ index }: MultipleChoiceFormProps) => {
     name: `questions.${index}.options`,
   });
 
+  // Ensure minimum 4 options on mount
+  useEffect(() => {
+    if (fields.length < 4) {
+      const missingOptions = 4 - fields.length;
+      for (let i = 0; i < missingOptions; i++) {
+        append("");
+      }
+    }
+  }, [fields.length, append]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <label className="font-medium">Opzioni</label>
+        <div className="flex justify-between items-center">
+          <label className="font-medium">Opzioni</label>
+          <span className="text-muted-foreground text-sm">
+            Minimo 4 opzioni, ognuna con almeno 3 caratteri
+          </span>
+        </div>
         <div className="flex flex-col items-start gap-4">
           {fields.map((field, optIdx) => (
-            <div key={field.id} className="flex items-center gap-2 w-full">
+            <div key={field.id} className="flex items-start gap-2 w-full">
               <FormField
                 name={`questions.${index}.options.${optIdx}`}
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input placeholder={`Opzione ${optIdx + 1}`} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const errorMessage = (
+                    form.formState.errors?.questions as any[] | undefined
+                  )?.[index]?.options?.[optIdx]?.message;
+                  return (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            placeholder={`Opzione ${optIdx + 1}`}
+                            {...field}
+                            minLength={3}
+                            className={errorMessage ? "border-red-500" : ""}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
               <Button
                 type="button"
                 size="icon"
                 variant="ghost"
                 onClick={() => remove(optIdx)}
+                disabled={fields.length <= 4} // Prevent removing below minimum of 4 options
               >
                 &times;
               </Button>
@@ -58,7 +87,8 @@ export const MultipleChoiceForm = ({ index }: MultipleChoiceFormProps) => {
             variant="secondary"
             onClick={() => append("")}
           >
-            + Aggiungi opzione
+            + Aggiungi opzione{" "}
+            {fields.length < 4 && `(${4 - fields.length} ancora richieste)`}
           </Button>
         </div>
       </div>
@@ -75,8 +105,15 @@ export const MultipleChoiceForm = ({ index }: MultipleChoiceFormProps) => {
                   {...field}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   value={field.value}
+                  min={0}
+                  max={Math.max(0, fields.length - 1)}
                 />
               </FormControl>
+              <div className="text-muted-foreground text-sm">
+                Inserisci l&apos;indice dell&apos;opzione corretta (0 = prima
+                opzione, 1 = seconda, ecc.)
+                {fields.length > 0 && ` - Range valido: 0-${fields.length - 1}`}
+              </div>
               <FormMessage />
             </FormItem>
           );

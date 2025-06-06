@@ -416,7 +416,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
         id: generateId(),
         type: "multiple_choice",
         question: "",
-        options: ["", ""],
+        options: ["", "", "", ""], // Start with 4 empty options
         correctAnswer: 0,
       };
     } else if (type === "open_question") {

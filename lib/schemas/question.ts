@@ -13,7 +13,9 @@ export const baseQuestionSchema = z.object({
 
 export const multipleChoiceQuestionSchema = baseQuestionSchema.extend({
   type: z.literal("multiple_choice"),
-  options: z.array(z.string()).min(2, "At least 2 options required"),
+  options: z
+    .array(z.string().min(3, "Each option must be at least 3 characters long"))
+    .min(4, "At least 4 options required"),
   correctAnswer: z.number().min(0),
   explanation: z.string().optional(),
 });
@@ -39,19 +41,57 @@ export const questionSchema = z.discriminatedUnion("type", [
 ]);
 
 // Flexible question schema for existing data (backward compatibility)
-export const flexibleQuestionSchema = z.object({
-  id: z.string(),
-  type: questionTypeSchema,
-  question: z.string().min(1, "Question text required"),
-  options: z.array(z.string()).optional(),
-  correctAnswer: z.number().optional(),
-  explanation: z.string().optional(),
-  sampleAnswer: z.string().optional(),
-  keywords: z.array(z.string()).optional(),
-  language: z.string().optional(),
-  codeSnippet: z.string().optional(),
-  sampleSolution: z.string().optional(),
-});
+export const flexibleQuestionSchema = z
+  .object({
+    id: z.string(),
+    type: questionTypeSchema,
+    question: z.string().min(1, "Question text required"),
+    options: z.array(z.string()).optional(),
+    correctAnswer: z.number().optional(),
+    explanation: z.string().optional(),
+    sampleAnswer: z.string().optional(),
+    keywords: z.array(z.string()).optional(),
+    language: z.string().optional(),
+    codeSnippet: z.string().optional(),
+    sampleSolution: z.string().optional(),
+  })
+
+  .superRefine((data, ctx) => {
+    // For multiple choice questions, validate options
+    if (data.type === "multiple_choice") {
+      if (!data.options || data.options.length < 4) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
+          path: ["options"],
+        });
+      }
+      if (data.options) {
+        data.options.forEach((option, index) => {
+          if (option.length < 3) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Each option must be at least 3 characters long",
+              path: ["options", index],
+            });
+          }
+        });
+      }
+      if (
+        data.correctAnswer !== undefined &&
+        data.options !== undefined &&
+        data.correctAnswer >= data.options.length
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
+          path: ["correctAnswer"],
+        });
+      }
+    }
+  });
 
 // ====================
 // TYPE EXPORTS
