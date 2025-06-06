@@ -1,13 +1,67 @@
 "use server";
 
-import { groq } from "@ai-sdk/groq";
-import { generateObject, NoObjectGeneratedError } from "ai";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+import { AIGenerationError, aiQuizService } from "../services/ai-service";
+import {
+  errorHandler,
+  getUserFriendlyErrorMessage,
+  QuizErrorCode,
+  QuizSystemError,
+} from "../services/error-handler";
 import { createClient } from "../supabase/server";
-import { getOptimalModel } from "../utils";
 import { questionSchema, quizDataSchema } from "./quiz-schemas";
 
-// Quiz actions
+// Enhanced validation schemas
+const generateQuizFormSchema = z.object({
+  position_id: z.string().uuid("Invalid position ID format"),
+  title: z
+    .string()
+    .min(1, "Quiz title is required")
+    .max(200, "Quiz title too long"),
+  question_count: z.coerce
+    .number()
+    .int()
+    .min(1, "At least 1 question required")
+    .max(50, "Maximum 50 questions allowed"),
+  difficulty: z.coerce
+    .number()
+    .int()
+    .min(1, "Difficulty minimum is 1")
+    .max(5, "Difficulty maximum is 5"),
+  include_multiple_choice: z.string().transform((val) => val === "true"),
+  include_open_questions: z.string().transform((val) => val === "true"),
+  include_code_snippets: z.string().transform((val) => val === "true"),
+  instructions: z.string().max(2000, "Instructions too long").optional(),
+  enable_time_limit: z
+    .string()
+    .transform((val) => val === "true")
+    .optional(),
+  time_limit: z.coerce.number().int().positive().optional(),
+  llm_model: z.string().optional(),
+});
+
+// Performance monitoring
+class PerformanceMonitor {
+  private startTime: number;
+
+  constructor(private operationName: string) {
+    this.startTime = performance.now();
+  }
+
+  end(): void {
+    const duration = performance.now() - this.startTime;
+    console.log(`${this.operationName} completed in ${duration.toFixed(2)}ms`);
+
+    if (process.env.NODE_ENV === "production" && duration > 10000) {
+      console.warn(
+        `Slow operation detected: ${this.operationName} took ${duration.toFixed(
+          2
+        )}ms`
+      );
+    }
+  }
+}
 
 type GenerateNewQuizActionParams = {
   positionId: string;
@@ -23,72 +77,131 @@ type GenerateNewQuizActionParams = {
 };
 
 export async function generateAndSaveQuiz(formData: FormData) {
-  const supabase = await createClient();
+  const monitor = new PerformanceMonitor("generateAndSaveQuiz");
 
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("User not authenticated");
+  try {
+    const supabase = await createClient();
+
+    // Enhanced user authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new QuizSystemError(
+        "User authentication failed",
+        QuizErrorCode.UNAUTHORIZED,
+        { authError: authError?.message }
+      );
+    }
+
+    // Parse and validate form data
+    const rawData = Object.fromEntries(formData.entries());
+    const validatedData = generateQuizFormSchema.parse(rawData);
+
+    // Validate that at least one question type is selected
+    if (
+      !validatedData.include_multiple_choice &&
+      !validatedData.include_open_questions &&
+      !validatedData.include_code_snippets
+    ) {
+      throw new QuizSystemError(
+        "At least one question type must be selected",
+        QuizErrorCode.INVALID_INPUT
+      );
+    }
+
+    // Fetch position with enhanced error handling
+    const { data: position, error: positionError } = await supabase
+      .from("positions")
+      .select("id, title, experience_level, skills, description")
+      .eq("id", validatedData.position_id)
+      .eq("created_by", user.id) // Ensure user owns the position
+      .single();
+
+    if (positionError || !position) {
+      throw new QuizSystemError(
+        "Position not found or access denied",
+        QuizErrorCode.POSITION_NOT_FOUND,
+        { positionId: validatedData.position_id, error: positionError?.message }
+      );
+    }
+
+    // Generate quiz using enhanced AI service
+    const quizData = await aiQuizService.generateQuiz({
+      positionTitle: position.title,
+      experienceLevel: position.experience_level,
+      skills: position.skills,
+      description: position.description || undefined,
+      quizTitle: validatedData.title,
+      questionCount: validatedData.question_count,
+      difficulty: validatedData.difficulty,
+      includeMultipleChoice: validatedData.include_multiple_choice,
+      includeOpenQuestions: validatedData.include_open_questions,
+      includeCodeSnippets: validatedData.include_code_snippets,
+      instructions: validatedData.instructions,
+      specificModel: validatedData.llm_model,
+    });
+
+    // Validate generated quiz
+    const validatedQuiz = quizDataSchema.parse(quizData);
+
+    // Save quiz to database
+    const { data: quiz, error: insertError } = await supabase
+      .from("quizzes")
+      .insert({
+        title: validatedData.title,
+        position_id: validatedData.position_id,
+        questions: validatedQuiz.questions,
+        time_limit: validatedData.enable_time_limit
+          ? validatedData.time_limit
+          : null,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (insertError || !quiz) {
+      throw new QuizSystemError(
+        "Failed to save quiz to database",
+        QuizErrorCode.DATABASE_ERROR,
+        { error: insertError?.message }
+      );
+    }
+
+    monitor.end();
+    return quiz.id;
+  } catch (error) {
+    monitor.end();
+
+    // Use enhanced error handler
+    if (
+      error instanceof QuizSystemError ||
+      error instanceof AIGenerationError
+    ) {
+      const message =
+        error instanceof QuizSystemError
+          ? getUserFriendlyErrorMessage(error)
+          : "AI generation failed. Please try again.";
+      throw new Error(message);
+    }
+
+    // For other errors, use the error handler but still throw a user-friendly message
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      await errorHandler.handleError(error, {
+        operation: "generateAndSaveQuiz",
+        userId: user?.id,
+      });
+    } catch (handlerError) {
+      // If error handler fails, still throw the original error
+      throw new Error("Si è verificato un errore interno. Riprova più tardi.");
+    }
   }
-
-  const positionId = formData.get("position_id") as string;
-  const title = formData.get("title") as string;
-  const instructions = formData.get("instructions") as string;
-  const questionCount = Number.parseInt(
-    formData.get("question_count") as string
-  );
-  const difficulty = Number.parseInt(formData.get("difficulty") as string);
-  const includeMultipleChoice =
-    formData.get("include_multiple_choice") === "true";
-  const includeOpenQuestions =
-    formData.get("include_open_questions") === "true";
-  const includeCodeSnippets = formData.get("include_code_snippets") === "true";
-  const enableTimeLimit = formData.get("enable_time_limit") === "true";
-  const timeLimit = enableTimeLimit
-    ? Number.parseInt(formData.get("time_limit") as string)
-    : null;
-  const llmModel = formData.get("llm_model") as string;
-
-  // Generate quiz using the refactored action
-  const quizData = await generateNewQuizAction({
-    positionId,
-    quizTitle: title,
-    questionCount,
-    difficulty,
-    includeMultipleChoice,
-    includeOpenQuestions,
-    includeCodeSnippets,
-    instructions,
-    specificModel: llmModel,
-  });
-
-  // Save the quiz to the database
-  const { data: quiz, error } = await supabase
-    .from("quizzes")
-    .insert({
-      title,
-      position_id: positionId,
-      questions: quizData.questions,
-      time_limit: timeLimit,
-      created_by: user.id,
-    })
-    .select();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return quiz[0].id;
-
-  // revalidatePath(`/dashboard/positions/${positionId}`);
-
-  // if (quiz && quiz[0]) {
-  //   redirect(`/dashboard/quizzes/${quiz[0].id}`);
-  // } else {
-  //   redirect(`/dashboard/positions/${positionId}`);
-  // }
 }
 
 export async function generateNewQuizAction({
@@ -103,159 +216,78 @@ export async function generateNewQuizAction({
   previousQuestions,
   specificModel,
 }: GenerateNewQuizActionParams) {
-  const supabase = await createClient();
-  // Get position details
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("id", positionId)
-    .single();
+  const monitor = new PerformanceMonitor("generateNewQuizAction");
 
-  if (positionError || !position) {
-    throw new Error("Position not found");
-  }
-
-  let previousContext = "";
-  if (previousQuestions && previousQuestions.length > 0) {
-    previousContext = `\n\nDomande già presenti nel quiz precedente (da evitare o riformulare significativamente):\n${previousQuestions
-      .map((q, i) => `#${i + 1}: ${q.question}`)
-      .join("\n")}`;
-  }
-
-  // Prepare the prompt for the AI
-  const prompt = `
-                  Genera un quiz tecnico per una posizione di "${
-                    position.title
-                  }" con livello "${position.experience_level}".
-
-                  Competenze richieste: ${position.skills.join(", ")}
-                  ${
-                    position.description
-                      ? `Descrizione della posizione: ${position.description}`
-                      : ""
-                  }
-
-                  Parametri del quiz:
-                  - Titolo del Quiz: ${quizTitle}
-                  - Numero di domande: ${questionCount}
-                  - Difficoltà (1-5): ${difficulty}
-                  - Tipi di domande da includere:
-                    ${
-                      includeMultipleChoice
-                        ? "- Domande a risposta multipla"
-                        : ""
-                    }
-                    ${includeOpenQuestions ? "- Domande aperte" : ""}
-                    ${
-                      includeCodeSnippets
-                        ? "- Snippet di codice e sfide di programmazione"
-                        : ""
-                    }
-
-                  ${
-                    instructions
-                      ? `Istruzioni aggiuntive: ${instructions}`
-                      : "Istruzioni aggiuntive: Nessuna"
-                  }
-                  ${previousContext}
-                  
-                  Genera un quiz con domande pertinenti alle competenze richieste e al livello di esperienza.
-                  Se previousQuestions è fornito, assicurati che le nuove domande siano significativamente diverse.
-                  IMPORTANTE: Per le domande di tipo 'multiple_choice', il campo 'correctAnswer' DEVE essere l'indice numerico (basato su zero) della risposta corretta nell'array 'options'.
-                  `;
-
-  let quizData;
   try {
-    const result = await generateObject({
-      model: groq(getOptimalModel("quiz_generation", specificModel)),
-      prompt,
-      system: `
-      You are a technical recruitment expert specializing in creating assessment quizzes. Generate valid JSON that adheres to the following specifications:
+    const supabase = await createClient();
 
-      Schema Requirements:
+    // Validate user authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      1. Output must be parseable JSON
-      2. Questions array must contain individual question objects
-      3. All property names must be explicit and in English
-      4. String values must use proper escape sequences
-      5. No trailing commas allowed
-
-      Question Types and Required Fields:
-
-      1. Multiple Choice Questions (\`type: "multiple_choice"\`)
-        - id: Format "q1" through "q10"
-        - question: Italian text
-        - options: Array of exactly 4 Italian strings
-        - correctAnswer: Zero-based index number of the correct option
-        - keywords: Array of relevant strings (optional)
-        - explanation: Italian text (optional)
-
-      2. Open Questions (\`type: "open_question"\`)
-
-        - id: Format "q1" through "q10"
-        - question: Italian text        
-        - keywords: Array of relevant strings (optional)
-        - sampleAnswer: Italian text
-        - sampleSolution: if the question is about writing code, provide a valid code string as a sample solution
-        - codeSnippet: if the question is about writing code, provide a valid code string as a code snippet
-        - explanation: Italian text (optional)
-
-
-      3. Code Questions (\`type: "code_snippet"\`)
-        - id: Format "q1" through "q10"
-        - question: Italian text, must be code related and ask to fix bugs, don't include code in the question text do it in the codeSnippet field
-        - codeSnippet: Valid code string, must be relevant to the question and contain a bug if the question is about fixing bugs,
-        - sampleSolution: Valid code string, must be the corrected version of the code snippet
-        - language: Programming language of the code snippet (e.g., "javascript", "python", "java") MUST be always included
-
-      Content Rules:
-
-      - All questions and answers must be in Italian
-      - JSON structure and field names must be in English
-      - Question text must not contain unescaped newlines
-      - Omit optional fields if not applicable
-      - The "options" field must never be written as "options>" or any variant
-
-      Example Structure:
-
-      \`\`\`json
-      {
-        "questions": [
-          {
-            "id": "q1",
-            "type": "multiple_choice",
-            "question": "Italian question text",
-            "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-            "correctAnswer": 0
-          }
-        ]
-      }
-      \`\`\`
-
-      Notes:
-
-      - Validate JSON before submission
-      - Ensure proper comma placement
-      - Use double quotes for all strings
-      - Maintain consistent formatting
-
-      Reference: https://json.org/
-    `,
-      schema: quizDataSchema,
-    });
-    quizData = result.object;
-  } catch (error: unknown) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.log("NoObjectGeneratedError");
-      console.log("Cause:", error.cause);
-      console.log("Text:", error.text);
-      console.log("Response:", error.response);
-      console.log("Usage:", error.usage);
-      console.log("Finish Reason:", error.finishReason);
+    if (!user) {
+      throw new QuizSystemError(
+        "User not authenticated",
+        QuizErrorCode.UNAUTHORIZED
+      );
     }
-    throw error;
+
+    // Get position details with ownership check
+    const { data: position, error: positionError } = await supabase
+      .from("positions")
+      .select("id, title, experience_level, skills, description")
+      .eq("id", positionId)
+      .eq("created_by", user.id)
+      .single();
+
+    if (positionError || !position) {
+      throw new QuizSystemError(
+        "Position not found or access denied",
+        QuizErrorCode.POSITION_NOT_FOUND,
+        { positionId }
+      );
+    }
+
+    // Generate quiz using AI service
+    const quizData = await aiQuizService.generateQuiz({
+      positionTitle: position.title,
+      experienceLevel: position.experience_level,
+      skills: position.skills,
+      description: position.description || undefined,
+      quizTitle,
+      questionCount,
+      difficulty,
+      includeMultipleChoice,
+      includeOpenQuestions,
+      includeCodeSnippets,
+      instructions,
+      previousQuestions,
+      specificModel,
+    });
+
+    monitor.end();
+    return quizData;
+  } catch (error) {
+    monitor.end();
+
+    // Enhanced error handling
+    if (
+      error instanceof QuizSystemError ||
+      error instanceof AIGenerationError
+    ) {
+      throw error;
+    }
+
+    try {
+      await errorHandler.handleError(error, {
+        operation: "generateNewQuizAction",
+        positionId,
+      });
+    } catch (handlerError) {
+      throw new Error("AI generation failed. Please try again.");
+    }
   }
-  return quizData;
 }
 
 type GenerateNewQuestionActionParams = {
@@ -264,10 +296,9 @@ type GenerateNewQuestionActionParams = {
   experienceLevel: string;
   skills: string[];
   type: "multiple_choice" | "open_question" | "code_snippet";
-  previousQuestions?: { question: string; type?: string }[]; // Adjusted to be more specific
+  previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;
   instructions?: string;
-  // currentIndex is removed as it was unused and not relevant to AI generation logic
 };
 
 export async function generateNewQuestionAction({
@@ -280,63 +311,168 @@ export async function generateNewQuestionAction({
   specificModel,
   instructions,
 }: GenerateNewQuestionActionParams) {
-  let previousContext = "";
-  if (previousQuestions && previousQuestions.length > 0) {
-    previousContext = `\nDomande già presenti nel quiz (da evitare):\n${previousQuestions
-      .map((q, i) => `#${i + 1}: ${q.question}`)
-      .join("\n")}`;
+  const monitor = new PerformanceMonitor("generateNewQuestionAction");
+
+  try {
+    // Generate question using AI service
+    const question = await aiQuizService.generateQuestion({
+      quizTitle,
+      positionTitle,
+      experienceLevel,
+      skills,
+      type,
+      previousQuestions,
+      specificModel,
+      instructions,
+    });
+
+    // Validate generated question
+    const validatedQuestion = questionSchema.parse(question);
+
+    monitor.end();
+    return validatedQuestion;
+  } catch (error) {
+    monitor.end();
+
+    // Enhanced error handling
+    if (
+      error instanceof QuizSystemError ||
+      error instanceof AIGenerationError
+    ) {
+      throw error;
+    }
+
+    try {
+      await errorHandler.handleError(error, {
+        operation: "generateNewQuestionAction",
+        questionType: type,
+      });
+    } catch (handlerError) {
+      throw new Error("Question generation failed. Please try again.");
+    }
   }
-  const prompt = `Genera una domanda di tipo ${type} per un quiz intitolato "${quizTitle}" per la posizione "${positionTitle}" (${experienceLevel}). Competenze richieste: ${skills.join(
-    ", "
-  )}.${previousContext}\nLa nuova domanda deve essere diversa da quelle già presenti.${
-    instructions ? `\n\nIstruzioni aggiuntive: ${instructions}` : ""
-  }`;
-  const { object: question } = await generateObject({
-    model: groq(getOptimalModel("question_generation", specificModel)),
-    prompt,
-    system:
-      "Sei un esperto di reclutamento tecnico che crea quiz per valutare le competenze dei candidati. Genera una domanda pertinente, sfidante ma equa, con risposta corretta.",
-    schema: questionSchema,
-  });
-  return question;
 }
 
 export async function deleteQuiz(formData: FormData) {
-  const id = formData.get("quiz_id");
-  if (!id || typeof id !== "string") return;
-  const supabase = await createClient();
+  const monitor = new PerformanceMonitor("deleteQuiz");
 
-  const { error: fetchError } = await supabase
-    .from("quizzes")
-    .delete()
-    .eq("id", id);
+  try {
+    const quizId = formData.get("quiz_id") as string;
 
-  if (fetchError) {
-    throw new Error(fetchError.message);
+    if (!quizId) {
+      throw new QuizSystemError(
+        "Quiz ID is required",
+        QuizErrorCode.INVALID_INPUT
+      );
+    }
+
+    const supabase = await createClient();
+
+    // Delete quiz
+    const { error: deleteError } = await supabase
+      .from("quizzes")
+      .delete()
+      .eq("id", quizId);
+
+    if (deleteError) {
+      throw new QuizSystemError(
+        "Failed to delete quiz",
+        QuizErrorCode.DATABASE_ERROR,
+        { deleteError: deleteError.message }
+      );
+    }
+
+    monitor.end();
+    redirect("/dashboard/quizzes");
+  } catch (error) {
+    monitor.end();
+
+    // Check if this is a redirect (Next.js throws special errors for redirects)
+    if (error && typeof error === "object" && "digest" in error) {
+      throw error; // Re-throw redirect responses
+    }
+
+    if (error instanceof QuizSystemError) {
+      throw new Error(getUserFriendlyErrorMessage(error));
+    }
+
+    try {
+      await errorHandler.handleError(error, {
+        operation: "deleteQuiz",
+      });
+    } catch (handlerError) {
+      throw new Error("Quiz deletion failed. Please try again.");
+    }
   }
-
-  redirect("/dashboard/quizzes");
 }
 
 export async function updateQuizAction(formData: FormData) {
-  const supabase = await createClient();
-  const quizId = formData.get("quiz_id") as string;
-  const title = formData.get("title") as string;
-  const timeLimit = formData.get("time_limit")
-    ? Number(formData.get("time_limit"))
-    : null;
-  const questions = JSON.parse(formData.get("questions") as string);
+  const monitor = new PerformanceMonitor("updateQuizAction");
 
-  const { error } = await supabase
-    .from("quizzes")
-    .update({
-      title,
-      time_limit: timeLimit,
-      questions,
-    })
-    .eq("id", quizId);
+  try {
+    const supabase = await createClient();
 
-  if (error) throw new Error(error.message);
-  // revalidatePath(`/dashboard/quizzes/${quizId}`);
-  // redirect(`/dashboard/quizzes/${quizId}`);
+    // Parse form data
+    const quizId = formData.get("quiz_id") as string;
+    const title = formData.get("title") as string;
+    const timeLimit = formData.get("time_limit")
+      ? Number(formData.get("time_limit"))
+      : null;
+    const questionsRaw = formData.get("questions") as string;
+
+    // Validate inputs
+    if (!quizId || !title) {
+      throw new QuizSystemError(
+        "Quiz ID and title are required",
+        QuizErrorCode.INVALID_INPUT
+      );
+    }
+
+    // Parse and validate questions
+    let questions;
+    try {
+      questions = JSON.parse(questionsRaw);
+      questions = z.array(questionSchema).parse(questions);
+    } catch (parseError) {
+      throw new QuizSystemError(
+        "Invalid questions format",
+        QuizErrorCode.INVALID_INPUT,
+        { parseError }
+      );
+    }
+
+    // Update quiz
+    const { error: updateError } = await supabase
+      .from("quizzes")
+      .update({
+        title,
+        time_limit: timeLimit,
+        questions,
+      })
+      .eq("id", quizId);
+
+    if (updateError) {
+      throw new QuizSystemError(
+        "Failed to update quiz",
+        QuizErrorCode.DATABASE_ERROR,
+        { updateError: updateError.message }
+      );
+    }
+
+    monitor.end();
+  } catch (error) {
+    monitor.end();
+
+    if (error instanceof QuizSystemError) {
+      throw new Error(getUserFriendlyErrorMessage(error));
+    }
+
+    try {
+      await errorHandler.handleError(error, {
+        operation: "updateQuizAction",
+      });
+    } catch (handlerError) {
+      throw new Error("Quiz update failed. Please try again.");
+    }
+  }
 }

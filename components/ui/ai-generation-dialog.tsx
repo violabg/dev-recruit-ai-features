@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { LLMModelSelect } from "@/components/ui/llm-model-select";
+import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { LLM_MODELS } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ import * as z from "zod";
 const aiGenerationSchema = z.object({
   instructions: z.string().optional(),
   llmModel: z.string(),
+  difficulty: z.number().min(1).max(5).optional(),
 });
 
 type AIGenerationFormData = z.infer<typeof aiGenerationSchema>;
@@ -40,6 +42,8 @@ type AIGenerationDialogProps = {
   description: string;
   onGenerate: (data: AIGenerationFormData) => Promise<void>;
   loading?: boolean;
+  showDifficulty?: boolean;
+  defaultDifficulty?: number;
 };
 
 export const AIGenerationDialog = ({
@@ -49,12 +53,15 @@ export const AIGenerationDialog = ({
   description,
   onGenerate,
   loading = false,
+  showDifficulty = false,
+  defaultDifficulty = 3,
 }: AIGenerationDialogProps) => {
   const form = useForm<AIGenerationFormData>({
     resolver: zodResolver(aiGenerationSchema),
     defaultValues: {
       instructions: "",
       llmModel: LLM_MODELS.VERSATILE,
+      difficulty: showDifficulty ? defaultDifficulty : undefined,
     },
   });
 
@@ -62,11 +69,26 @@ export const AIGenerationDialog = ({
     try {
       await onGenerate(data);
       onOpenChange(false);
-      form.reset();
+      form.reset({
+        instructions: "",
+        llmModel: LLM_MODELS.VERSATILE,
+        difficulty: showDifficulty ? defaultDifficulty : undefined,
+      });
     } catch (error) {
       // Error handling is done by the parent component
       console.error("Generation error:", error);
     }
+  };
+
+  const getDifficultyLabel = (value: number) => {
+    const labels = {
+      1: "Molto Facile",
+      2: "Facile",
+      3: "Medio",
+      4: "Difficile",
+      5: "Molto Difficile",
+    };
+    return labels[value as keyof typeof labels] || "Medio";
   };
 
   return (
@@ -81,6 +103,43 @@ export const AIGenerationDialog = ({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4"
           >
+            {showDifficulty && (
+              <FormField
+                control={form.control}
+                name="difficulty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Livello di Difficoltà:{" "}
+                      {field.value ? getDifficultyLabel(field.value) : "Medio"}
+                    </FormLabel>
+                    <FormControl>
+                      <div className="px-3">
+                        <Slider
+                          min={1}
+                          max={5}
+                          step={1}
+                          value={[field.value || defaultDifficulty]}
+                          onValueChange={(values) => field.onChange(values[0])}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between mt-1 text-muted-foreground text-xs">
+                          <span>Molto Facile</span>
+                          <span>Facile</span>
+                          <span>Medio</span>
+                          <span>Difficile</span>
+                          <span>Molto Difficile</span>
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Seleziona il livello di difficoltà per la generazione
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="instructions"

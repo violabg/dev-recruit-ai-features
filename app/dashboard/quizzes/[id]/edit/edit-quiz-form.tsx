@@ -1,492 +1,863 @@
 "use client";
-
-import {
-  GenerateQuizRequest,
-  GenerateQuizResponse,
-} from "@/app/api/quiz-edit/generate-quiz/route";
+import { GenerateQuizResponse } from "@/app/api/quiz-edit/generate-quiz/route";
 import {
   CodeSnippetForm,
   MultipleChoiceForm,
   OpenQuestionForm,
 } from "@/components/quiz/question-types";
 import { AIGenerationDialog } from "@/components/ui/ai-generation-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
-import { Textarea } from "@/components/ui/textarea";
-import { QuizForm, quizSchema } from "@/lib/actions/quiz-schemas";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Question, QuizForm } from "@/lib/actions/quiz-schemas";
+import { updateQuizAction } from "@/lib/actions/quizzes";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, RefreshCw, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import * as z from "zod";
 
-const quizQuestionTypes = [
-  { value: "all", label: "Tutte" },
-  { value: "multiple_choice", label: "Risposta multipla" },
-  { value: "open_question", label: "Domanda aperta" },
-  { value: "code_snippet", label: "Snippet di codice" },
-];
-
-type Position = {
-  id: string;
-  title: string;
-  experience_level: string;
-  skills: string[];
+// Generate simple UUID-like string
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
+
+const quizFormSchema = z.object({
+  title: z
+    .string()
+    .min(1, "Il titolo è obbligatorio")
+    .max(200, "Titolo troppo lungo"),
+  time_limit: z.number().nullable(),
+  questions: z
+    .array(
+      z
+        .object({
+          id: z.string(),
+          type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
+          question: z.string().min(1, "La domanda è obbligatoria"),
+          options: z
+            .array(
+              z
+                .string()
+                .min(3, "Ogni opzione deve contenere almeno 3 caratteri")
+            )
+            .min(
+              4,
+              "Le domande a scelta multipla devono avere almeno 4 opzioni"
+            )
+            .optional(),
+          correctAnswer: z.number().optional(),
+          explanation: z.string().optional(),
+          sampleAnswer: z.string().optional(),
+          keywords: z.array(z.string()).optional(),
+          language: z.string().optional(),
+          codeSnippet: z.string().optional(),
+          sampleSolution: z.string().optional(),
+        })
+        .refine(
+          (question) => {
+            if (question.type === "multiple_choice") {
+              return (
+                question.options &&
+                question.options.length >= 4 &&
+                question.options.every((option) => option.length >= 3)
+              );
+            }
+            return true;
+          },
+          {
+            message:
+              "Le domande a scelta multipla devono avere almeno 4 opzioni con almeno 3 caratteri ciascuna",
+            path: ["options"],
+          }
+        )
+    )
+    .min(1, "Almeno una domanda è obbligatoria"),
+});
+
+type QuizFormData = z.infer<typeof quizFormSchema>;
+
+type QuestionTypeFilter =
+  | "all"
+  | "multiple_choice"
+  | "open_question"
+  | "code_snippet";
 
 type EditQuizFormProps = {
   quiz: QuizForm;
-  position: Position;
+  position: {
+    id: string;
+    title: string;
+    experience_level: string;
+    skills: string[];
+  };
 };
 
-const EditQuizForm = ({ quiz, position }: EditQuizFormProps) => {
+export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
   const router = useRouter();
-  const [aiLoading, setAiLoading] = useState<string | null>(null);
-  const [aiQuizLoading, setAiQuizLoading] = useState(false);
-  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
-  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
-  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<
+  const [questionTypeFilter, setQuestionTypeFilter] =
+    useState<QuestionTypeFilter>("all");
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(
+    new Set()
+  );
+
+  // AI Generation States
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [fullQuizDialogOpen, setFullQuizDialogOpen] = useState(false);
+  const [generatingQuestionType, setGeneratingQuestionType] = useState<
+    "multiple_choice" | "open_question" | "code_snippet" | null
+  >(null);
+  const [regeneratingQuestionIndex, setRegeneratingQuestionIndex] = useState<
     number | null
   >(null);
-  const [questionTypeFilter, setQuestionTypeFilter] = useState<string>("all");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
 
-  const form = useForm<QuizForm>({
-    resolver: zodResolver(quizSchema),
+  const form = useForm<QuizFormData>({
+    resolver: zodResolver(quizFormSchema),
     defaultValues: {
-      ...quiz,
-      difficulty: quiz.difficulty || 3, // Default to medium difficulty if not set
+      title: quiz.title,
+      time_limit: quiz.time_limit,
+      questions: quiz.questions,
     },
-    mode: "onChange",
   });
 
-  const { fields, remove, update } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control: form.control,
     name: "questions",
   });
 
-  // Filter questions based on selected type
-  const filteredQuestions = fields.filter((field) => {
-    if (questionTypeFilter === "all") return true;
-    return field.type === questionTypeFilter;
-  });
+  // Set all questions as expanded by default
+  useEffect(() => {
+    const allQuestionIds = new Set(fields.map((field) => field.id));
+    setExpandedQuestions(allQuestionIds);
+  }, [fields]);
 
-  // Get filtered indices for correct mapping
-  const getOriginalIndex = (filteredIndex: number) => {
-    const filteredField = filteredQuestions[filteredIndex];
-    return fields.findIndex((field) => field.id === filteredField.id);
-  };
+  // Memoize filtered questions for better performance
+  const filteredQuestions = useMemo(() => {
+    return fields.filter((field) => {
+      if (questionTypeFilter === "all") return true;
+      return field.type === questionTypeFilter;
+    });
+  }, [fields, questionTypeFilter]);
 
-  const onSubmit = async (data: QuizForm) => {
+  const handleSave = async (data: QuizFormData) => {
+    setSaveStatus("saving");
+
     try {
       const formData = new FormData();
-      formData.append("quiz_id", data.id);
+      formData.append("quiz_id", quiz.id);
       formData.append("title", data.title);
-      formData.append("time_limit", data.time_limit?.toString() || "");
-      formData.append("difficulty", data.difficulty?.toString() || "3");
+      if (data.time_limit !== null) {
+        formData.append("time_limit", data.time_limit.toString());
+      }
       formData.append("questions", JSON.stringify(data.questions));
-      const res = await fetch("/api/quiz-edit/update", {
-        method: "POST",
-        body: formData,
+
+      await updateQuizAction(formData);
+
+      setSaveStatus("success");
+      toast.success("Quiz salvato con successo", {
+        icon: <CheckCircle className="w-4 h-4" />,
       });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success("Quiz aggiornato");
-      router.push(`/dashboard/quizzes/${quiz.id}`);
-    } catch (e) {
-      const error = e as Error;
-      toast.error("Errore salvataggio", { description: error.message });
+
+      // Reset status after 2 seconds
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (error) {
+      setSaveStatus("error");
+      console.error("Errore salvataggio:", error);
+
+      let errorMessage = "Errore durante il salvataggio del quiz";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error("Errore salvataggio", {
+        description: errorMessage,
+        icon: <AlertCircle className="w-4 h-4" />,
+      });
+
+      // Reset status after 3 seconds
+      setTimeout(() => setSaveStatus("idle"), 3000);
     }
   };
 
-  const handleRegenerateQuestion = async (
-    index: number,
-    instructions?: string,
-    llmModel?: string
-  ) => {
-    setAiLoading(`q${index}`);
+  const handleGenerateQuestion = async (data: {
+    instructions?: string;
+    llmModel: string;
+    difficulty?: number;
+  }) => {
+    if (!generatingQuestionType) return;
+
+    setAiLoading(true);
+
     try {
-      const current = form.getValues(`questions.${index}`);
-      const res = await fetch("/api/quiz-edit/generate-question", {
+      const response = await fetch("/api/quiz-edit/generate-question", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          quizTitle: quiz.title,
+          quizTitle: form.getValues("title"),
           positionTitle: position.title,
           experienceLevel: position.experience_level,
           skills: position.skills,
-          type: current.type,
-          previousQuestions: form.getValues("questions"),
-          instructions,
-          specificModel: llmModel,
+          type: generatingQuestionType,
+          difficulty: data.difficulty,
+          previousQuestions: fields.map((field) => ({
+            question: field.question,
+            type: field.type,
+          })),
+          specificModel: data.llmModel,
+          instructions: data.instructions || "",
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      const aiQuestion = await res.json();
-      update(index, aiQuestion);
-      toast.success("Domanda rigenerata dall'AI");
-    } catch (e) {
-      const error = e as Error;
-      toast.error("Errore AI", { description: error.message });
-    } finally {
-      setAiLoading(null);
-    }
-  };
 
-  const handleRegenerateQuiz = async (
-    instructions?: string,
-    llmModel?: string
-  ) => {
-    setAiQuizLoading(true);
-    try {
-      const currentQuestions = form.getValues("questions");
-      const includeMultipleChoice = currentQuestions.some(
-        (q) => q.type === "multiple_choice"
-      );
-      const includeOpenQuestions = currentQuestions.some(
-        (q) => q.type === "open_question"
-      );
-      const includeCodeSnippets = currentQuestions.some(
-        (q) => q.type === "code_snippet"
-      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
 
-      const body = {
-        positionId: position.id,
-        quizTitle: quiz.title,
-        // experienceLevel and skills are fetched by the server action
-        questionCount: fields.length,
-        difficulty: form.getValues("difficulty") || 3,
-        previousQuestions: currentQuestions,
-        includeMultipleChoice,
-        includeOpenQuestions,
-        includeCodeSnippets,
-        instructions,
-        specificModel: llmModel,
-      } as GenerateQuizRequest;
+      const newQuestion = await response.json();
+      const newQuestionWithId = {
+        ...newQuestion,
+        id: generateId(),
+      };
 
-      const res = await fetch("/api/quiz-edit/generate-quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      append(newQuestionWithId);
+
+      // Expand the new question by default
+      setExpandedQuestions((prev) => new Set([...prev, newQuestionWithId.id]));
+
+      toast.success("Domanda generata con successo!", {
+        icon: <Sparkles className="w-4 h-4" />,
       });
-      if (!res.ok) throw new Error(await res.text());
-      const aiQuiz = (await res.json()) as GenerateQuizResponse;
-      form.setValue("questions", aiQuiz.questions);
-      toast.success("Quiz rigenerato dall'AI");
-    } catch (e) {
-      const error = e as Error;
-      toast.error("Errore AI", { description: error.message });
+
+      setGeneratingQuestionType(null);
+    } catch (error) {
+      console.error("Errore generazione domanda:", error);
+
+      let errorMessage = "Errore durante la generazione della domanda";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error("Errore generazione", {
+        description: errorMessage,
+        icon: <AlertCircle className="w-4 h-4" />,
+      });
     } finally {
-      setAiQuizLoading(false);
+      setAiLoading(false);
     }
   };
 
-  // Dialog handlers
-  const handleQuizDialogGenerate = async (data: {
+  const handleRegenerateQuestion = async (data: {
     instructions?: string;
     llmModel: string;
+    difficulty?: number;
   }) => {
-    await handleRegenerateQuiz(data.instructions, data.llmModel);
+    if (regeneratingQuestionIndex === null) return;
+
+    setAiLoading(true);
+
+    try {
+      const currentQuestion = fields[regeneratingQuestionIndex];
+
+      const response = await fetch("/api/quiz-edit/generate-question", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          quizTitle: form.getValues("title"),
+          positionTitle: position.title,
+          experienceLevel: position.experience_level,
+          skills: position.skills,
+          type: currentQuestion.type,
+          difficulty: data.difficulty,
+          previousQuestions: fields
+            .filter((_, index) => index !== regeneratingQuestionIndex)
+            .map((field) => ({
+              question: field.question,
+              type: field.type,
+            })),
+          specificModel: data.llmModel,
+          instructions: data.instructions || "",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const newQuestion = await response.json();
+
+      // Update the question at the specific index
+      update(regeneratingQuestionIndex, {
+        ...newQuestion,
+        id: currentQuestion.id, // Keep the same ID
+      });
+
+      toast.success("Domanda rigenerata con successo!", {
+        icon: <RefreshCw className="w-4 h-4" />,
+      });
+
+      setRegeneratingQuestionIndex(null);
+    } catch (error) {
+      console.error("Errore rigenerazione domanda:", error);
+
+      let errorMessage = "Errore durante la rigenerazione della domanda";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error("Errore rigenerazione", {
+        description: errorMessage,
+        icon: <AlertCircle className="w-4 h-4" />,
+      });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
-  const handleQuestionDialogGenerate = async (data: {
+  const handleGenerateFullQuiz = async (data: {
     instructions?: string;
     llmModel: string;
+    difficulty?: number;
   }) => {
-    if (selectedQuestionIndex !== null) {
-      await handleRegenerateQuestion(
-        selectedQuestionIndex,
-        data.instructions,
-        data.llmModel
+    setAiLoading(true);
+
+    try {
+      const response = await fetch("/api/quiz-edit/generate-quiz", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          positionId: position.id,
+          quizTitle: form.getValues("title"),
+          questionCount: fields.length || 5, // Use current question count or default to 5
+          difficulty: data.difficulty || 3,
+          includeMultipleChoice: true,
+          includeOpenQuestions: true,
+          includeCodeSnippets: true,
+          specificModel: data.llmModel,
+          instructions: data.instructions || "",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const newQuiz = (await response.json()) as GenerateQuizResponse;
+
+      // Replace all questions with new ones
+      const newQuestions = newQuiz.questions.map((q) => ({
+        ...q,
+        id: generateId(),
+      }));
+
+      // Clear current questions and add new ones
+      fields.forEach((_) => remove(0));
+      newQuestions.forEach((question) => append(question));
+
+      // Set all new questions as expanded
+      const newQuestionIds = new Set<string>(
+        newQuestions.map((q) => q.id as string)
       );
+      setExpandedQuestions(newQuestionIds);
+
+      toast.success("Quiz rigenerato completamente con successo!", {
+        icon: <Sparkles className="w-4 h-4" />,
+      });
+    } catch (error) {
+      console.error("Errore rigenerazione quiz:", error);
+
+      let errorMessage = "Errore durante la rigenerazione del quiz";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error("Errore rigenerazione quiz", {
+        description: errorMessage,
+        icon: <AlertCircle className="w-4 h-4" />,
+      });
+    } finally {
+      setAiLoading(false);
     }
   };
 
-  const openQuizDialog = () => {
-    setQuizDialogOpen(true);
+  const toggleQuestionExpansion = (questionId: string) => {
+    const newExpanded = new Set(expandedQuestions);
+    if (newExpanded.has(questionId)) {
+      newExpanded.delete(questionId);
+    } else {
+      newExpanded.add(questionId);
+    }
+    setExpandedQuestions(newExpanded);
   };
 
-  const openQuestionDialog = (index: number) => {
-    setSelectedQuestionIndex(index);
-    setQuestionDialogOpen(true);
+  const addNewQuestion = (
+    type: "multiple_choice" | "open_question" | "code_snippet"
+  ) => {
+    const newQuestion: Question = {
+      id: generateId(),
+      type,
+      question: "",
+    };
+
+    append(newQuestion);
+
+    // Expand the new question by default
+    setExpandedQuestions((prev) => new Set([...prev, newQuestion.id]));
+
+    toast.info(
+      `Nuova domanda ${
+        type === "multiple_choice"
+          ? "a scelta multipla"
+          : type === "open_question"
+          ? "aperta"
+          : "con codice"
+      } aggiunta`
+    );
+  };
+
+  const getSaveButtonContent = () => {
+    switch (saveStatus) {
+      case "saving":
+        return (
+          <>
+            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+            Salvataggio...
+          </>
+        );
+      case "success":
+        return (
+          <>
+            <CheckCircle className="mr-2 w-4 h-4" />
+            Salvato!
+          </>
+        );
+      case "error":
+        return (
+          <>
+            <AlertCircle className="mr-2 w-4 h-4" />
+            Errore
+          </>
+        );
+      default:
+        return (
+          <>
+            <Save className="mr-2 w-4 h-4" />
+            Salva Quiz
+          </>
+        );
+    }
+  };
+
+  const getSaveButtonVariant = () => {
+    switch (saveStatus) {
+      case "success":
+        return "default" as const;
+      case "error":
+        return "destructive" as const;
+      default:
+        return "default" as const;
+    }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Modifica quiz: {quiz.title}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="gap-4 grid xl:grid-cols-3">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Modifica Quiz</CardTitle>
+          <CardDescription>
+            Aggiorna le domande e le impostazioni del quiz per la posizione{" "}
+            <strong>{position.title}</strong>
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Impostazioni Quiz</CardTitle>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFullQuizDialogOpen(true)}
+                  disabled={aiLoading}
+                >
+                  <Sparkles className="mr-2 w-4 h-4" />
+                  Genera nuovo quiz con AI
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <FormField
+                control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Titolo</FormLabel>
+                    <FormLabel>Titolo del Quiz</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input
+                        placeholder="Inserisci il titolo del quiz"
+                        {...field}
+                        maxLength={200}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
+                control={form.control}
                 name="time_limit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Limite di tempo (minuti)</FormLabel>
+                    <FormLabel>Limite di Tempo (minuti)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
+                        placeholder="Lascia vuoto per nessun limite"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
                         value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="difficulty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Difficoltà:{" "}
-                      {
-                        [
-                          "Molto facile",
-                          "Facile",
-                          "Media",
-                          "Difficile",
-                          "Molto difficile",
-                        ][(field.value || 3) - 1]
-                      }
-                    </FormLabel>
-                    <FormControl>
-                      <Slider
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? Number(e.target.value) : null
+                          )
+                        }
                         min={1}
-                        max={5}
-                        step={1}
-                        defaultValue={[field.value || 3]}
-                        onValueChange={(value) => field.onChange(value[0])}
+                        max={180}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Seleziona il livello di difficoltà (1-5)
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{position.title}</Badge>
-              <Badge variant="outline">{position.experience_level}</Badge>
-              {position.skills.map((s) => (
-                <Badge key={s} variant="secondary">
-                  {s}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <div className="flex items-center gap-4">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={openQuizDialog}
-            disabled={aiQuizLoading}
-          >
-            {aiQuizLoading ? (
-              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 w-4 h-4" />
-            )}
-            Genera nuovo quiz con AI
-          </Button>
-          <Button
-            type="submit"
-            variant="default"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? (
-              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-            ) : null}
-            Salva modifiche
-          </Button>
-        </div>
-        <div className="space-y-4">
-          {/* Question Type Filter */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold text-xl">Domande</h3>
-                  <Badge variant="secondary" className="ml-2">
-                    {questionTypeFilter === "all"
-                      ? `${fields.length} domande totali`
-                      : `${filteredQuestions.length} di ${fields.length} domande`}
-                  </Badge>
+              <CardFooter className="px-0 pt-2">
+                <div className="flex space-x-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    disabled={saveStatus === "saving"}
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={saveStatus === "saving"}
+                    variant={getSaveButtonVariant()}
+                    className={cn(
+                      saveStatus === "success" &&
+                        "bg-green-600 hover:bg-green-700",
+                      saveStatus === "error" && "bg-red-600 hover:bg-red-700"
+                    )}
+                  >
+                    {getSaveButtonContent()}
+                  </Button>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <fieldset className="space-y-3">
-                <fieldset className="font-medium text-foreground text-sm leading-none">
-                  Filtra per tipo di domanda
-                </fieldset>
-                <RadioGroup
-                  value={questionTypeFilter}
-                  onValueChange={setQuestionTypeFilter}
-                  className="flex flex-row space-x-6"
-                >
-                  {quizQuestionTypes.map((item) => (
-                    <label
-                      key={`${item.value}`}
-                      className="relative flex flex-col items-center gap-3 has-data-disabled:opacity-50 shadow-xs px-2 py-3 border border-input has-data-[state=checked]:border-primary/50 has-focus-visible:border-ring rounded-md outline-none has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50 text-center transition-[color,box-shadow] cursor-pointer has-data-disabled:cursor-not-allowed"
-                    >
-                      <RadioGroupItem
-                        id={`${item.value}`}
-                        value={item.value}
-                        className="sr-only after:absolute after:inset-0"
-                      />
-                      <p className="font-medium text-foreground text-sm leading-none">
-                        {item.label}
-                      </p>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </fieldset>
+              </CardFooter>
             </CardContent>
           </Card>
 
-          {filteredQuestions.map((field, filteredIndex) => {
-            const originalIndex = getOriginalIndex(filteredIndex);
-            return (
-              <Card key={field.id} className="relative">
-                <CardHeader className="flex flex-row justify-between items-center">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Badge
-                      variant="outline"
-                      className="flex justify-center items-center p-0 rounded-full w-6 h-6"
-                    >
-                      {originalIndex + 1}
-                    </Badge>
-                    <span>
-                      {field.type === "multiple_choice"
-                        ? "Risposta multipla"
-                        : field.type === "open_question"
-                        ? "Domanda aperta"
-                        : "Snippet di codice"}
-                    </span>
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => openQuestionDialog(originalIndex)}
-                      disabled={
-                        aiLoading === `q${originalIndex}` || aiQuizLoading
-                      }
-                    >
-                      {aiLoading === `q${originalIndex}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="w-4 h-4" />
-                      )}
-                      Rigenera con AI
-                    </Button>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="destructive"
-                      onClick={() => remove(originalIndex)}
-                    >
-                      &times;
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    name={`questions.${originalIndex}.question`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Domanda</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Inserisci la domanda..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {field.type === "multiple_choice" && (
-                    <MultipleChoiceForm index={originalIndex} />
-                  )}
-                  {field.type === "open_question" && (
-                    <OpenQuestionForm index={originalIndex} />
-                  )}
-                  {field.type === "code_snippet" && (
-                    <CodeSnippetForm index={originalIndex} field={field} />
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-        <Button
-          type="submit"
-          variant="default"
-          disabled={form.formState.isSubmitting}
-        >
-          {form.formState.isSubmitting ? (
-            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-          ) : null}
-          Salva modifiche
-        </Button>
-      </form>
+          <Card>
+            <CardHeader className="flex flex-row justify-between items-center space-y-0 pb-2">
+              <div>
+                <CardTitle>Domande ({fields.length})</CardTitle>
+                <CardDescription>Gestisci le domande del quiz</CardDescription>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Select
+                  value={questionTypeFilter}
+                  onValueChange={(value: QuestionTypeFilter) =>
+                    setQuestionTypeFilter(value)
+                  }
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i tipi</SelectItem>
+                    <SelectItem value="multiple_choice">
+                      Scelta multipla
+                    </SelectItem>
+                    <SelectItem value="open_question">
+                      Domanda aperta
+                    </SelectItem>
+                    <SelectItem value="code_snippet">
+                      Snippet di codice
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addNewQuestion("multiple_choice")}
+                >
+                  <Sparkles className="mr-2 w-4 h-4" />
+                  Scelta multipla
+                  <Plus className="ml-2 w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addNewQuestion("open_question")}
+                >
+                  <Sparkles className="mr-2 w-4 h-4" />
+                  Domanda aperta
+                  <Plus className="ml-2 w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addNewQuestion("code_snippet")}
+                >
+                  <Sparkles className="mr-2 w-4 h-4" />
+                  Snippet di codice
+                  <Plus className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
 
-      {/* AI Generation Dialogs */}
+              {filteredQuestions.length === 0 ? (
+                <div className="py-8 text-muted-foreground text-center">
+                  {questionTypeFilter === "all"
+                    ? "Nessuna domanda presente. Aggiungi la prima domanda usando i pulsanti sopra."
+                    : `Nessuna domanda di tipo "${questionTypeFilter}" trovata.`}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredQuestions.map((field) => {
+                    const actualIndex = fields.findIndex(
+                      (f) => f.id === field.id
+                    );
+                    const isExpanded = expandedQuestions.has(field.id);
+
+                    return (
+                      <Card key={field.id} className="relative">
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-muted-foreground text-sm">
+                                Domanda {actualIndex + 1}
+                              </span>
+                              <span className="inline-flex items-center bg-muted px-2.5 py-0.5 rounded-full font-medium text-xs">
+                                {field.type === "multiple_choice" &&
+                                  "Scelta multipla"}
+                                {field.type === "open_question" && "Aperta"}
+                                {field.type === "code_snippet" && "Codice"}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  toggleQuestionExpansion(field.id)
+                                }
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setRegeneratingQuestionIndex(actualIndex);
+                                  setRegenerateDialogOpen(true);
+                                }}
+                                disabled={aiLoading}
+                                title="Rigenera domanda con AI"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => remove(actualIndex)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          {!isExpanded && field.question && (
+                            <p className="text-muted-foreground text-sm line-clamp-2">
+                              {field.question}
+                            </p>
+                          )}
+                        </CardHeader>
+
+                        {isExpanded && (
+                          <CardContent className="pt-0">
+                            <div className="space-y-4">
+                              <FormField
+                                control={form.control}
+                                name={`questions.${actualIndex}.question`}
+                                render={({ field: questionField }) => (
+                                  <FormItem>
+                                    <FormLabel>Testo della domanda</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Inserisci il testo della domanda"
+                                        {...questionField}
+                                        maxLength={500}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              {field.type === "multiple_choice" && (
+                                <MultipleChoiceForm index={actualIndex} />
+                              )}
+                              {field.type === "open_question" && (
+                                <OpenQuestionForm index={actualIndex} />
+                              )}
+                              {field.type === "code_snippet" && (
+                                <CodeSnippetForm
+                                  index={actualIndex}
+                                  field={field}
+                                />
+                              )}
+                            </div>
+                          </CardContent>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={saveStatus === "saving"}
+            >
+              Annulla
+            </Button>
+            <Button
+              type="submit"
+              disabled={saveStatus === "saving"}
+              variant={getSaveButtonVariant()}
+              className={cn(
+                saveStatus === "success" && "bg-green-600 hover:bg-green-700",
+                saveStatus === "error" && "bg-red-600 hover:bg-red-700"
+              )}
+            >
+              {getSaveButtonContent()}
+            </Button>
+          </div>
+        </form>
+      </Form>
+
+      {/* New Question Generation Dialog */}
       <AIGenerationDialog
-        open={quizDialogOpen}
-        onOpenChange={setQuizDialogOpen}
-        title="Rigenera Quiz con AI"
-        description="Configura le opzioni per rigenerare l'intero quiz utilizzando l'intelligenza artificiale."
-        onGenerate={handleQuizDialogGenerate}
-        loading={aiQuizLoading}
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        title="Genera Domanda con AI"
+        description="Specifica le istruzioni per generare una nuova domanda"
+        onGenerate={handleGenerateQuestion}
+        loading={aiLoading}
+        showDifficulty={true}
+        defaultDifficulty={quiz.difficulty || 3}
       />
 
+      {/* Question Regeneration Dialog */}
       <AIGenerationDialog
-        open={questionDialogOpen}
-        onOpenChange={setQuestionDialogOpen}
+        open={regenerateDialogOpen}
+        onOpenChange={setRegenerateDialogOpen}
         title="Rigenera Domanda con AI"
-        description="Configura le opzioni per rigenerare questa domanda utilizzando l'intelligenza artificiale."
-        onGenerate={handleQuestionDialogGenerate}
-        loading={
-          selectedQuestionIndex !== null
-            ? aiLoading === `q${selectedQuestionIndex}`
-            : false
-        }
+        description="Sostituisci la domanda esistente con una nuova generata dall'AI"
+        onGenerate={handleRegenerateQuestion}
+        loading={aiLoading}
+        showDifficulty={true}
+        defaultDifficulty={3}
       />
-    </Form>
-  );
-};
 
-export default EditQuizForm;
+      {/* Full Quiz Regeneration Dialog */}
+      <AIGenerationDialog
+        open={fullQuizDialogOpen}
+        onOpenChange={setFullQuizDialogOpen}
+        title="Genera Nuovo Quiz con AI"
+        description="Sostituisci completamente tutte le domande del quiz con nuove generate dall'AI"
+        onGenerate={handleGenerateFullQuiz}
+        loading={aiLoading}
+        showDifficulty={true}
+        defaultDifficulty={3}
+      />
+    </div>
+  );
+}

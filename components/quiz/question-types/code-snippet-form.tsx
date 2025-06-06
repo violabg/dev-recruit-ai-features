@@ -52,7 +52,7 @@ export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   {programmingLanguages.map((lang) => (
-                    <SelectItem key={lang} value={lang.toLowerCase()}>
+                    <SelectItem key={lang} value={lang}>
                       {lang}
                     </SelectItem>
                   ))}
