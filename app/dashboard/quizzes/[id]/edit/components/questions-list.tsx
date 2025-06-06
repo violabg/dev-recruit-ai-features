@@ -1,10 +1,11 @@
 "use client";
 
-import { EditQuizFormData } from "@/hooks/use-edit-quiz-form";
-import { QuestionTypeFilter } from "@/hooks/use-question-management";
 import { flexibleQuestionSchema } from "@/lib/schemas";
+import { SaveStatus } from "@/lib/utils/quiz-form-utils";
 import { UseFormReturn } from "react-hook-form";
 import * as z from "zod";
+import { EditQuizFormData } from "../hooks/use-edit-quiz-form";
+import { QuestionTypeFilter } from "../hooks/use-question-management";
 import { QuestionItem } from "./question-item";
 
 type Question = z.infer<typeof flexibleQuestionSchema>;
@@ -19,6 +20,13 @@ type QuestionsListProps = {
   onRegenerate: (index: number) => void;
   onRemove: (index: number) => void;
   aiLoading: boolean;
+  // Section-specific save props
+  hasQuestionChanges: (index: number) => boolean;
+  onSaveQuestion: (index: number) => void;
+  sectionSaveStatus: {
+    settings: SaveStatus;
+    questions: Record<string, SaveStatus>;
+  };
 };
 
 export const QuestionsList = ({
@@ -31,6 +39,9 @@ export const QuestionsList = ({
   onRegenerate,
   onRemove,
   aiLoading,
+  hasQuestionChanges,
+  onSaveQuestion,
+  sectionSaveStatus,
 }: QuestionsListProps) => {
   if (filteredQuestions.length === 0) {
     return (
@@ -59,6 +70,9 @@ export const QuestionsList = ({
             onRegenerate={onRegenerate}
             onRemove={onRemove}
             aiLoading={aiLoading}
+            hasQuestionChanges={hasQuestionChanges(actualIndex)}
+            onSaveQuestion={() => onSaveQuestion(actualIndex)}
+            questionSaveStatus={sectionSaveStatus.questions[field.id] || "idle"}
           />
         );
       })}

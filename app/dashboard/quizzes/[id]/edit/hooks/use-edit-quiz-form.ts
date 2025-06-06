@@ -62,16 +62,13 @@ export const useEditQuizForm = ({ quiz, position }: UseEditQuizFormProps) => {
     name: "questions",
   });
 
-  const save = async (data: EditQuizFormData) => {
-    const formData = new FormData();
-    formData.append("quiz_id", quiz.id);
-    formData.append("title", data.title);
-    if (data.time_limit !== null) {
-      formData.append("time_limit", data.time_limit.toString());
-    }
-    formData.append("questions", JSON.stringify(data.questions));
-
-    await updateQuizAction(formData);
+  // Check if settings section has changes
+  const hasSettingsChanges = () => {
+    const currentValues = form.getValues();
+    return (
+      currentValues.title !== quiz.title ||
+      currentValues.time_limit !== quiz.time_limit
+    );
   };
 
   // Check if a specific question has changes
@@ -93,7 +90,16 @@ export const useEditQuizForm = ({ quiz, position }: UseEditQuizFormProps) => {
     }));
 
     try {
-      await save(data);
+      const currentValues = data;
+      const formData = new FormData();
+      formData.append("quiz_id", quiz.id);
+      formData.append("title", quiz.title); // Keep original title
+      if (quiz.time_limit !== null) {
+        formData.append("time_limit", quiz.time_limit.toString());
+      }
+      formData.append("questions", JSON.stringify(currentValues.questions));
+
+      await updateQuizAction(formData);
 
       setSectionSaveStatus((prev) => ({
         ...prev,
@@ -141,7 +147,15 @@ export const useEditQuizForm = ({ quiz, position }: UseEditQuizFormProps) => {
     setSaveStatus("saving");
 
     try {
-      await save(data);
+      const formData = new FormData();
+      formData.append("quiz_id", quiz.id);
+      formData.append("title", data.title);
+      if (data.time_limit !== null) {
+        formData.append("time_limit", data.time_limit.toString());
+      }
+      formData.append("questions", JSON.stringify(data.questions));
+
+      await updateQuizAction(formData);
 
       setSaveStatus("success");
       toast.success("Quiz salvato con successo");
@@ -177,6 +191,7 @@ export const useEditQuizForm = ({ quiz, position }: UseEditQuizFormProps) => {
     saveStatus,
     generateId,
     handleSaveQuestion,
+    hasSettingsChanges,
     hasQuestionChanges,
     sectionSaveStatus,
   };

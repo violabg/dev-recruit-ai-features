@@ -35,6 +35,9 @@ export const questionTypeSchema = z.enum([
   "code_snippet",
 ]);
 
+// Type exports
+export type QuestionType = z.infer<typeof questionTypeSchema>;
+
 export const experienceLevelSchema = z.enum([
   "junior",
   "mid",

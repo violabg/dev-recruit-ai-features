@@ -9,6 +9,7 @@ import {
   questionSchema,
   quizDataSchema,
 } from "../schemas";
+import { QuestionType } from "../schemas/base";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
   errorHandler,
@@ -273,7 +274,7 @@ type GenerateNewQuestionActionParams = {
   positionTitle: string;
   experienceLevel: string;
   skills: string[];
-  type: "multiple_choice" | "open_question" | "code_snippet";
+  type: QuestionType;
   previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;
   instructions?: string;

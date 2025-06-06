@@ -6,7 +6,12 @@ import {
   OpenQuestionForm,
 } from "@/components/quiz/question-types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import {
   FormControl,
   FormField,
@@ -15,12 +20,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { EditQuizFormData } from "@/hooks/use-edit-quiz-form";
 import { CodeSnippetQuestion, flexibleQuestionSchema } from "@/lib/schemas";
-import { getQuestionTypeLabel } from "@/lib/utils/quiz-form-utils";
+import { cn } from "@/lib/utils";
+import {
+  getQuestionTypeLabel,
+  getSaveButtonContent,
+  getSaveButtonVariant,
+  SaveStatus,
+} from "@/lib/utils/quiz-form-utils";
 import { ChevronDown, ChevronUp, RefreshCw, Trash2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import * as z from "zod";
+import { EditQuizFormData } from "../hooks/use-edit-quiz-form";
 
 type Question = z.infer<typeof flexibleQuestionSchema>;
 
@@ -33,6 +44,10 @@ type QuestionItemProps = {
   onRegenerate: (index: number) => void;
   onRemove: (index: number) => void;
   aiLoading: boolean;
+  // Section-specific save props
+  hasQuestionChanges: boolean;
+  onSaveQuestion: () => void;
+  questionSaveStatus: SaveStatus;
 };
 
 export const QuestionItem = ({
@@ -44,6 +59,9 @@ export const QuestionItem = ({
   onRegenerate,
   onRemove,
   aiLoading,
+  hasQuestionChanges,
+  onSaveQuestion,
+  questionSaveStatus,
 }: QuestionItemProps) => {
   return (
     <Card key={field.id} className="relative">
@@ -132,6 +150,25 @@ export const QuestionItem = ({
               />
             )}
           </div>
+
+          {hasQuestionChanges && (
+            <CardFooter className="px-0 pt-4">
+              <Button
+                type="button"
+                onClick={onSaveQuestion}
+                disabled={questionSaveStatus === "saving"}
+                variant={getSaveButtonVariant(questionSaveStatus)}
+                className={cn(
+                  questionSaveStatus === "success" &&
+                    "bg-green-600 hover:bg-green-700",
+                  questionSaveStatus === "error" &&
+                    "bg-red-600 hover:bg-red-700"
+                )}
+              >
+                {getSaveButtonContent(questionSaveStatus)}
+              </Button>
+            </CardFooter>
+          )}
         </CardContent>
       )}
     </Card>

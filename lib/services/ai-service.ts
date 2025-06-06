@@ -1,6 +1,7 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
 import { convertToStrictQuestions, Question, quizDataSchema } from "../schemas";
+import { QuestionType } from "../schemas/base";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types
@@ -146,7 +147,7 @@ export interface GenerateQuestionParams {
   positionTitle: string;
   experienceLevel: string;
   skills: string[];
-  type: "multiple_choice" | "open_question" | "code_snippet";
+  type: QuestionType;
   difficulty?: number;
   previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;

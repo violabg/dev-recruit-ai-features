@@ -2,6 +2,7 @@
 
 import { GenerateQuizResponse } from "@/app/api/quiz-edit/generate-quiz/route";
 import { flexibleQuestionSchema } from "@/lib/schemas";
+import { QuestionType } from "@/lib/schemas/base";
 import { generateId } from "ai";
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
@@ -40,9 +41,8 @@ export const useAIGeneration = ({
   setExpandedQuestions,
 }: UseAIGenerationProps) => {
   const [aiLoading, setAiLoading] = useState(false);
-  const [generatingQuestionType, setGeneratingQuestionType] = useState<
-    "multiple_choice" | "open_question" | "code_snippet" | null
-  >(null);
+  const [generatingQuestionType, setGeneratingQuestionType] =
+    useState<QuestionType | null>(null);
   const [regeneratingQuestionIndex, setRegeneratingQuestionIndex] = useState<
     number | null
   >(null);
@@ -252,9 +252,7 @@ export const useAIGeneration = ({
     }
   };
 
-  const generateNewQuestion = (
-    type: "multiple_choice" | "open_question" | "code_snippet"
-  ) => {
+  const generateNewQuestion = (type: QuestionType) => {
     setGeneratingQuestionType(type);
   };
 

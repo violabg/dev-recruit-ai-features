@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { EditQuizFormData } from "@/hooks/use-edit-quiz-form";
 import { cn } from "@/lib/utils";
 import {
   getSaveButtonContent,
@@ -26,6 +25,7 @@ import {
 import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UseFormReturn } from "react-hook-form";
+import { EditQuizFormData } from "../hooks/use-edit-quiz-form";
 
 type QuizSettingsProps = {
   form: UseFormReturn<EditQuizFormData>;

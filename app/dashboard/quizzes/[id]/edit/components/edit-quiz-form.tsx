@@ -1,10 +1,5 @@
 "use client";
 
-import { AIDialogs } from "@/components/quiz/ai-dialogs";
-import { QuestionsHeader } from "@/components/quiz/questions-header";
-import { QuestionsList } from "@/components/quiz/questions-list";
-import { QuizSettings } from "@/components/quiz/quiz-settings";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,17 +8,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { useAIGeneration } from "@/hooks/use-ai-generation";
-import { useEditQuizForm } from "@/hooks/use-edit-quiz-form";
-import { useQuestionManagement } from "@/hooks/use-question-management";
 import { QuizForm } from "@/lib/schemas";
-import { cn } from "@/lib/utils";
-import {
-  getSaveButtonContent,
-  getSaveButtonVariant,
-} from "@/lib/utils/quiz-form-utils";
-import { useRouter } from "next/navigation";
+import { QuestionType } from "@/lib/schemas/base";
 import { useState } from "react";
+import { useAIGeneration } from "../hooks/use-ai-generation";
+import { useEditQuizForm } from "../hooks/use-edit-quiz-form";
+import { useQuestionManagement } from "../hooks/use-question-management";
+import { AIDialogs } from "./ai-dialogs";
+import { QuestionsHeader } from "./questions-header";
+import { QuestionsList } from "./questions-list";
+import { QuizSettings } from "./quiz-settings";
 
 type EditQuizFormProps = {
   quiz: QuizForm;
@@ -36,8 +30,6 @@ type EditQuizFormProps = {
 };
 
 export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
-  const router = useRouter();
-
   // Form management
   const {
     form,
@@ -48,6 +40,9 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     update,
     handleSave,
     saveStatus,
+    handleSaveQuestion,
+    hasQuestionChanges,
+    sectionSaveStatus,
   } = useEditQuizForm({ quiz, position });
 
   // Question management
@@ -86,9 +81,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     setExpandedQuestions,
   });
 
-  const handleGenerateNewQuestion = (
-    type: "multiple_choice" | "open_question" | "code_snippet"
-  ) => {
+  const handleGenerateNewQuestion = (type: QuestionType) => {
     generateNewQuestion(type);
     setAiDialogOpen(true);
   };
@@ -96,6 +89,11 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
   const handleRegenerate = (index: number) => {
     setRegeneratingQuestionIndex(index);
     setRegenerateDialogOpen(true);
+  };
+
+  // Create a wrapper function for question saving with validation
+  const handleQuestionSaveWithValidation = (index: number) => {
+    return form.handleSubmit((data) => handleSaveQuestion(index, data))();
   };
 
   return (
@@ -143,32 +141,12 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                 onRegenerate={handleRegenerate}
                 onRemove={remove}
                 aiLoading={aiLoading}
+                hasQuestionChanges={hasQuestionChanges}
+                onSaveQuestion={handleQuestionSaveWithValidation}
+                sectionSaveStatus={sectionSaveStatus}
               />
             </CardContent>
           </Card>
-
-          {/* Footer Actions */}
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              disabled={saveStatus === "saving"}
-            >
-              Annulla
-            </Button>
-            <Button
-              type="submit"
-              disabled={saveStatus === "saving"}
-              variant={getSaveButtonVariant(saveStatus)}
-              className={cn(
-                saveStatus === "success" && "bg-green-600 hover:bg-green-700",
-                saveStatus === "error" && "bg-red-600 hover:bg-red-700"
-              )}
-            >
-              {getSaveButtonContent(saveStatus)}
-            </Button>
-          </div>
         </form>
       </Form>
 
