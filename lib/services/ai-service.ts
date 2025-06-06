@@ -1,6 +1,7 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
 import {
+  convertToStrictQuestions,
   Question,
   flexibleQuestionSchema as questionSchema,
   quizDataSchema,
@@ -12,7 +13,7 @@ export class AIGenerationError extends Error {
   constructor(
     message: string,
     public code: AIErrorCode,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "AIGenerationError";
@@ -417,7 +418,9 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Quiz generation completed in ${duration.toFixed(2)}ms`);
 
-      return result;
+      return {
+        questions: convertToStrictQuestions(result.questions),
+      };
     } catch (error) {
       const duration = performance.now() - startTime;
       console.error(
@@ -439,7 +442,7 @@ export class AIQuizService {
                 ...params,
                 specificModel: fallbackModel,
               });
-            } catch (fallbackError) {
+            } catch {
               console.log(`Fallback model ${fallbackModel} also failed`);
               continue;
             }
@@ -457,7 +460,7 @@ export class AIQuizService {
     }
   }
 
-  async generateQuestion(params: GenerateQuestionParams): Promise<any> {
+  async generateQuestion(params: GenerateQuestionParams): Promise<Question> {
     const startTime = performance.now();
 
     try {
@@ -506,7 +509,9 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Question generation completed in ${duration.toFixed(2)}ms`);
 
-      return result;
+      // Convert flexible question to strict question type for type safety
+      const strictQuestions = convertToStrictQuestions([result]);
+      return strictQuestions[0];
     } catch (error) {
       const duration = performance.now() - startTime;
       console.error(
@@ -528,7 +533,7 @@ export class AIQuizService {
                 ...params,
                 specificModel: fallbackModel,
               });
-            } catch (fallbackError) {
+            } catch {
               console.log(`Fallback model ${fallbackModel} also failed`);
               continue;
             }

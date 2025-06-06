@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
+  convertToStrictQuestions,
+  flexibleQuestionSchema,
   generateQuizFormDataSchema,
-  flexibleQuestionSchema as questionSchema,
+  questionSchema,
   quizDataSchema,
 } from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
@@ -129,7 +131,7 @@ export async function generateAndSaveQuiz(formData: FormData) {
       .insert({
         title: validatedData.title,
         position_id: validatedData.position_id,
-        questions: validatedQuiz.questions,
+        questions: convertToStrictQuestions(validatedQuiz.questions),
         time_limit: validatedData.enable_time_limit
           ? validatedData.time_limit
           : null,
@@ -173,7 +175,7 @@ export async function generateAndSaveQuiz(formData: FormData) {
         operation: "generateAndSaveQuiz",
         userId: user?.id,
       });
-    } catch (handlerError) {
+    } catch {
       // If error handler fails, still throw the original error
       throw new Error("Si è verificato un errore interno. Riprova più tardi.");
     }
@@ -260,7 +262,7 @@ export async function generateNewQuizAction({
         operation: "generateNewQuizAction",
         positionId,
       });
-    } catch (handlerError) {
+    } catch {
       throw new Error("AI generation failed. Please try again.");
     }
   }
@@ -326,7 +328,7 @@ export async function generateNewQuestionAction({
         operation: "generateNewQuestionAction",
         questionType: type,
       });
-    } catch (handlerError) {
+    } catch {
       throw new Error("Question generation failed. Please try again.");
     }
   }
@@ -379,7 +381,7 @@ export async function deleteQuiz(formData: FormData) {
       await errorHandler.handleError(error, {
         operation: "deleteQuiz",
       });
-    } catch (handlerError) {
+    } catch {
       throw new Error("Quiz deletion failed. Please try again.");
     }
   }
@@ -411,7 +413,7 @@ export async function updateQuizAction(formData: FormData) {
     let questions;
     try {
       questions = JSON.parse(questionsRaw);
-      questions = z.array(questionSchema).parse(questions);
+      questions = z.array(flexibleQuestionSchema).parse(questions);
     } catch (parseError) {
       throw new QuizSystemError(
         "Invalid questions format",
@@ -426,7 +428,7 @@ export async function updateQuizAction(formData: FormData) {
       .update({
         title,
         time_limit: timeLimit,
-        questions,
+        questions: convertToStrictQuestions(questions),
       })
       .eq("id", quizId);
 
@@ -450,7 +452,7 @@ export async function updateQuizAction(formData: FormData) {
       await errorHandler.handleError(error, {
         operation: "updateQuizAction",
       });
-    } catch (handlerError) {
+    } catch {
       throw new Error("Quiz update failed. Please try again.");
     }
   }

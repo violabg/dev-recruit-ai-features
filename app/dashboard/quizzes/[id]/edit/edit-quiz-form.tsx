@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { updateQuizAction } from "@/lib/actions/quizzes";
 import {
+  CodeSnippetQuestion,
   flexibleQuestionSchema,
   Question,
   QuizForm,
@@ -364,7 +365,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
       }));
 
       // Clear current questions and add new ones
-      fields.forEach((_) => remove(0));
+      fields.forEach(() => remove(0));
       newQuestions.forEach((question) => append(question));
 
       // Set all new questions as expanded
@@ -406,11 +407,31 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
   const addNewQuestion = (
     type: "multiple_choice" | "open_question" | "code_snippet"
   ) => {
-    const newQuestion: Question = {
-      id: generateId(),
-      type,
-      question: "",
-    };
+    let newQuestion: Question;
+
+    if (type === "multiple_choice") {
+      newQuestion = {
+        id: generateId(),
+        type: "multiple_choice",
+        question: "",
+        options: ["", ""],
+        correctAnswer: 0,
+      };
+    } else if (type === "open_question") {
+      newQuestion = {
+        id: generateId(),
+        type: "open_question",
+        question: "",
+      };
+    } else {
+      // code_snippet
+      newQuestion = {
+        id: generateId(),
+        type: "code_snippet",
+        question: "",
+        language: "javascript",
+      };
+    }
 
     append(newQuestion);
 
@@ -744,7 +765,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                               {field.type === "code_snippet" && (
                                 <CodeSnippetForm
                                   index={actualIndex}
-                                  field={field}
+                                  field={field as CodeSnippetQuestion}
                                 />
                               )}
                             </div>

@@ -1,4 +1,4 @@
-import { saveQuizRequestSchema } from "@/lib/schemas";
+import { convertToStrictQuestions, saveQuizRequestSchema } from "@/lib/schemas";
 import { QuizErrorCode } from "@/lib/services/error-handler";
 import { createClient } from "@/lib/supabase/server";
 import { getErrorResponse } from "@/lib/utils/error-response";
@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse and validate request body
-    let body: any;
+    let body: unknown;
     try {
       body = await req.json();
-    } catch (parseError) {
+    } catch {
       return NextResponse.json(
         {
           error: "Invalid JSON in request body",
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       .insert({
         title: validatedData.title,
         position_id: validatedData.position_id,
-        questions: validatedData.questions,
+        questions: convertToStrictQuestions(validatedData.questions),
         time_limit: validatedData.time_limit,
         created_by: user.id,
       })

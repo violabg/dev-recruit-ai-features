@@ -445,3 +445,39 @@ export type OverallEvaluation = z.infer<typeof overallEvaluationSchema>;
 
 // AI types
 export type AIGenerationFormData = z.infer<typeof aiGenerationSchema>;
+
+// Helper function to convert flexible questions to strict discriminated union questions
+export const convertToStrictQuestions = (
+  questions: FlexibleQuestion[]
+): Question[] => {
+  return questions.map((q): Question => {
+    if (q.type === "multiple_choice") {
+      return {
+        id: q.id,
+        type: "multiple_choice",
+        question: q.question,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer || 0,
+        explanation: q.explanation,
+      };
+    } else if (q.type === "open_question") {
+      return {
+        id: q.id,
+        type: "open_question",
+        question: q.question,
+        sampleAnswer: q.sampleAnswer,
+        keywords: q.keywords,
+      };
+    } else {
+      // code_snippet
+      return {
+        id: q.id,
+        type: "code_snippet",
+        question: q.question,
+        language: q.language || "javascript",
+        codeSnippet: q.codeSnippet,
+        sampleSolution: q.sampleSolution,
+      };
+    }
+  });
+};
