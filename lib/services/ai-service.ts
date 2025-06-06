@@ -3,6 +3,7 @@ import { generateObject, NoObjectGeneratedError } from "ai";
 import {
   convertToStrictQuestions,
   Question,
+  questionSchemas,
   QuestionType,
   quizDataSchema,
 } from "../schemas";
@@ -238,6 +239,72 @@ export class AIQuizService {
         Reference: https://json.org/
       `;
 
+  private singleQuestionSystem = `
+        You are a technical recruitment expert specializing in creating assessment questions. Generate a valid JSON object for a single question that adheres to the following specifications:
+  
+        Schema Requirements:
+  
+        1. Output must be parseable JSON for a single question object (NOT an array)
+        2. All property names must be explicit and in English
+        3. String values must use proper escape sequences
+        4. No trailing commas allowed
+  
+        Question Types and Required Fields:
+  
+        1. Multiple Choice Questions (\`type: "multiple_choice"\`)
+          - id: Format "q1" (always use "q1" for single questions)
+          - question: Italian text
+          - options: Array of exactly 4 Italian strings
+          - correctAnswer: Zero-based index number of the correct option
+          - keywords: Array of relevant strings (optional)
+          - explanation: Italian text (optional)
+  
+        2. Open Questions (\`type: "open_question"\`)
+          - id: Format "q1" (always use "q1" for single questions)
+          - question: Italian text
+          - keywords: Array of relevant strings (optional)
+          - sampleAnswer: Italian text
+          - sampleSolution: if the question is about writing code, provide a valid code string as a sample solution
+          - codeSnippet: if the question is about writing code, provide a valid code string as a code snippet
+          - explanation: Italian text (optional)
+  
+        3. Code Questions (\`type: "code_snippet"\`)
+          - id: Format "q1" (always use "q1" for single questions)
+          - question: Italian text, must be code related and ask to fix bugs, don't include code in the question text do it in the codeSnippet field
+          - codeSnippet: Valid code string, must be relevant to the question and contain a bug if the question is about fixing bugs,
+          - sampleSolution: Valid code string, must be the corrected version of the code snippet
+          - language: Programming language of the code snippet (e.g., "javascript", "python", "java") MUST be always included
+  
+        Content Rules:
+  
+        - All questions and answers must be in Italian
+        - JSON structure and field names must be in English
+        - Question text must not contain unescaped newlines
+        - Omit optional fields if not applicable
+        - The "options" field must never be written as "options>" or any variant
+  
+        Example Single Question Structure:
+  
+        \`\`\`json
+        {
+          "id": "q1",
+          "type": "multiple_choice",
+          "question": "Cosa rappresenta il DOM in JavaScript?",
+          "options": [
+            "Document Object Model",
+            "Data Object Management",
+            "Dynamic Object Mapping",
+            "Distributed Object Method"
+          ],
+          "correctAnswer": 0,
+          "keywords": ["DOM", "JavaScript", "web"],
+          "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
+        }
+        \`\`\`
+  
+        Ensure your output is a single question object matching this exact format.
+      `;
+
   private buildQuizPrompt(params: GenerateQuizParams): string {
     const {
       positionTitle,
@@ -402,7 +469,6 @@ export class AIQuizService {
 
             return response.object;
           } catch (error) {
-            console.log("🚀 ~ AIQuizService ~ withRetry ~ error:", error);
             if (error instanceof NoObjectGeneratedError) {
               throw new AIGenerationError(
                 "AI model failed to generate valid quiz structure",
@@ -479,8 +545,8 @@ export class AIQuizService {
             const response = await generateObject({
               model: groq(model),
               prompt,
-              system: this.system,
-              schema: quizDataSchema, // Use quizDataSchema which expects {questions: [...]}
+              system: this.singleQuestionSystem, // Use singleQuestionSystem for single question
+              schema: questionSchemas.flexible, // Use questionSchemas.flexible for single question
               temperature: 0.7,
             });
 
@@ -511,16 +577,16 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Question generation completed in ${duration.toFixed(2)}ms`);
 
-      // Extract the first question from the questions array and convert to strict type
-      if (!result.questions || result.questions.length === 0) {
+      // Convert the single question result to strict type
+      if (!result || !result.question) {
         throw new AIGenerationError(
-          "No questions generated in response",
+          "No question generated in response",
           AIErrorCode.INVALID_RESPONSE,
           { result }
         );
       }
 
-      const strictQuestions = convertToStrictQuestions(result.questions);
+      const strictQuestions = convertToStrictQuestions([result]);
       return strictQuestions[0];
     } catch (error) {
       const duration = performance.now() - startTime;
