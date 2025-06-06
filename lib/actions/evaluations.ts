@@ -1,65 +1,14 @@
 "use server";
 
+import {
+  EvaluationResult,
+  evaluationResultSchema,
+  OverallEvaluation,
+  overallEvaluationSchema,
+} from "@/lib/schemas";
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
-import { z } from "zod";
 import { getOptimalModel } from "../utils";
-
-// Evaluation types
-type EvaluationResult = {
-  evaluation: string;
-  score: number;
-  strengths: string[];
-  weaknesses: string[];
-};
-
-type OverallEvaluation = {
-  evaluation: string;
-  strengths: string[];
-  weaknesses: string[];
-  recommendation: string;
-  fitScore: number;
-};
-
-// Zod Schemas
-const EvaluationResultSchema = z.object({
-  evaluation: z
-    .string()
-    .describe("Una valutazione dettagliata della risposta del candidato"),
-  score: z
-    .number()
-    .min(0)
-    .max(10)
-    .describe("Un punteggio da 0 a 10, dove 10 è una risposta perfetta"),
-  strengths: z
-    .array(z.string())
-    .describe("I punti di forza della risposta del candidato"),
-  weaknesses: z
-    .array(z.string())
-    .describe("Le aree di miglioramento nella risposta del candidato"),
-});
-
-const OverallEvaluationSchema = z.object({
-  evaluation: z
-    .string()
-    .describe("Una valutazione complessiva dettagliata del candidato"),
-  strengths: z
-    .array(z.string())
-    .describe("I principali punti di forza del candidato"),
-  weaknesses: z
-    .array(z.string())
-    .describe("Le principali aree di miglioramento del candidato"),
-  recommendation: z
-    .string()
-    .describe("Una raccomandazione su come procedere con questo candidato"),
-  fitScore: z
-    .number()
-    .min(1)
-    .max(10)
-    .describe(
-      "Un punteggio da 1 a 10 che indica quanto il candidato è adatto per la posizione"
-    ),
-});
 
 // Evaluation actions
 export async function evaluateAnswer(
@@ -140,7 +89,7 @@ export async function evaluateAnswer(
     prompt,
     system:
       "Sei un esperto valutatore tecnico che analizza le risposte dei candidati durante i colloqui di lavoro. Fornisci valutazioni oggettive, dettagliate e costruttive.",
-    schema: EvaluationResultSchema,
+    schema: evaluationResultSchema,
   });
 
   return {
@@ -191,7 +140,7 @@ export async function generateOverallEvaluation(
     prompt,
     system:
       "Sei un esperto di reclutamento tecnico che fornisce valutazioni oggettive e costruttive dei candidati. Basa la tua valutazione esclusivamente sulle informazioni fornite.",
-    schema: OverallEvaluationSchema,
+    schema: overallEvaluationSchema,
   });
 
   return result;

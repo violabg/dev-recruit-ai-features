@@ -1,7 +1,7 @@
 "use server";
 
+import { candidateQuizSelectionSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createClient } from "../supabase/server";
 import { Json } from "../supabase/types";
 
@@ -217,13 +217,6 @@ export async function deleteInterview(id: string) {
   return { success: true };
 }
 
-const candidateSelectionSchema = z.object({
-  candidateIds: z.array(z.string()).min(1, {
-    message: "Please select at least one candidate.",
-  }),
-  quizId: z.string(),
-});
-
 export type AssignCandidatesToQuizState = {
   message: string;
   errors?: {
@@ -248,7 +241,7 @@ export async function assignCandidatesToQuiz(
   const candidateIds = formData.getAll("candidateIds").map(String);
   const quizId = formData.get("quizId") as string;
 
-  const validatedFields = candidateSelectionSchema.safeParse({
+  const validatedFields = candidateQuizSelectionSchema.safeParse({
     candidateIds: candidateIds,
     quizId: quizId,
   });

@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { LoginFormData, loginSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +18,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { GithubIcon } from "../icons/github";
 import {
   Card,
@@ -29,19 +29,13 @@ import {
 import PasswordInput from "../ui/password-input";
 import { Separator } from "../ui/separator";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Email non valida" }),
-  password: z.string().min(6, { message: "Minimo 6 caratteri" }),
-});
-type LoginFormValues = z.infer<typeof loginSchema>;
-
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const form = useForm<LoginFormValues>({
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
     mode: "onChange",
@@ -49,7 +43,7 @@ export function LoginForm({
   const supabase = createClient();
   const { handleSubmit, setError } = form;
 
-  const handleLogin = async (values: LoginFormValues) => {
+  const handleLogin = async (values: LoginFormData) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({

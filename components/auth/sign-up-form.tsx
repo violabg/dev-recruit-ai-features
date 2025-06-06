@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { SignUpFormData, signUpSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,28 +26,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import PasswordInput from "../ui/password-input";
-
-const signUpSchema = z
-  .object({
-    first_name: z
-      .string()
-      .min(2, { message: "Nome deve essere almeno 2 caratteri" })
-      .max(30, { message: "Nome deve essere massimo 30 caratteri" }),
-    last_name: z
-      .string()
-      .min(2, { message: "Cognome deve essere almeno 2 caratteri" })
-      .max(30, { message: "Cognome deve essere massimo 30 caratteri" }),
-    email: z.string().email({ message: "Email non valida" }),
-    password: z.string().min(6, { message: "Minimo 6 caratteri" }),
-    repeatPassword: z.string().min(6, { message: "Minimo 6 caratteri" }),
-  })
-  .refine((data) => data.password === data.repeatPassword, {
-    message: "Passwords do not match",
-    path: ["repeatPassword"],
-  });
-type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm({
   className,
@@ -54,7 +34,7 @@ export function SignUpForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const form = useForm<SignUpFormValues>({
+  const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       first_name: "",
@@ -67,7 +47,7 @@ export function SignUpForm({
   });
   const { handleSubmit, setError } = form;
 
-  const handleSignUp = async (values: SignUpFormValues) => {
+  const handleSignUp = async (values: SignUpFormData) => {
     const supabase = createClient();
     setIsLoading(true);
     try {

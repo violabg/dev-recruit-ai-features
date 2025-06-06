@@ -1,8 +1,8 @@
 import { generateNewQuestionAction } from "@/lib/actions/quizzes";
 import {
   generateQuestionRequestSchema,
-  questionSchema,
-} from "@/lib/schemas/quiz-schemas";
+  flexibleQuestionSchema as questionSchema,
+} from "@/lib/schemas";
 import { QuizErrorCode, QuizSystemError } from "@/lib/services/error-handler";
 import { getErrorResponse } from "@/lib/utils/error-response";
 import { NextRequest, NextResponse } from "next/server";
@@ -64,10 +64,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse and validate request body
-    let body: any;
+    let body: unknown;
     try {
       body = await req.json();
-    } catch (parseError) {
+    } catch {
       return NextResponse.json(
         {
           error: "Invalid JSON in request body",

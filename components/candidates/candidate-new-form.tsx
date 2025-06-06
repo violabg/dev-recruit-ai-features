@@ -18,22 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createCandidate } from "@/lib/actions/candidates";
+import { CandidateFormData, candidateFormSchema } from "@/lib/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-
-const formSchema = z.object({
-  name: z
-    .string()
-    .min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
-  email: z.string().email({ message: "Inserisci un'email valida." }),
-  position_id: z.string().min(1, { message: "Seleziona una posizione." }),
-});
-
-type CandidateFormValues = z.infer<typeof formSchema>;
 
 type CandidateNewFormProps = {
   positions: { id: string; title: string }[];
@@ -48,8 +38,8 @@ export const CandidateNewForm = ({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const form = useForm<CandidateFormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<CandidateFormData>({
+    resolver: zodResolver(candidateFormSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -57,7 +47,7 @@ export const CandidateNewForm = ({
     },
   });
 
-  const onSubmit = async (values: CandidateFormValues) => {
+  const onSubmit = async (values: CandidateFormData) => {
     setError(null);
     const formData = new FormData();
     formData.append("name", values.name);

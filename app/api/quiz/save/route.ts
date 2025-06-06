@@ -1,15 +1,8 @@
+import { convertToStrictQuestions, saveQuizRequestSchema } from "@/lib/schemas";
 import { QuizErrorCode } from "@/lib/services/error-handler";
 import { createClient } from "@/lib/supabase/server";
 import { getErrorResponse } from "@/lib/utils/error-response";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-
-const saveQuizRequestSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  position_id: z.string().uuid("Invalid position ID"),
-  questions: z.array(z.any()).min(1, "At least one question required"),
-  time_limit: z.number().nullable(),
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,10 +25,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse and validate request body
-    let body: any;
+    let body: unknown;
     try {
       body = await req.json();
-    } catch (parseError) {
+    } catch {
       return NextResponse.json(
         {
           error: "Invalid JSON in request body",
@@ -84,7 +77,7 @@ export async function POST(req: NextRequest) {
       .insert({
         title: validatedData.title,
         position_id: validatedData.position_id,
-        questions: validatedData.questions,
+        questions: convertToStrictQuestions(validatedData.questions),
         time_limit: validatedData.time_limit,
         created_by: user.id,
       })

@@ -5,7 +5,6 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createPosition } from "@/lib/actions/positions";
+import { PositionFormData, positionFormSchema } from "@/lib/schemas";
 import {
   contractTypes,
   databases,
@@ -38,27 +38,12 @@ import {
   tools,
 } from "./data";
 
-const formSchema = z.object({
-  title: z.string().min(2, {
-    message: "Il titolo deve contenere almeno 2 caratteri.",
-  }),
-  description: z.string().optional(),
-  experience_level: z.string({
-    required_error: "Seleziona un livello di esperienza.",
-  }),
-  skills: z.array(z.string()).min(1, {
-    message: "Seleziona almeno una competenza.",
-  }),
-  soft_skills: z.array(z.string()).optional(),
-  contract_type: z.string().optional(),
-});
-
 export function NewPositionForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<PositionFormData>({
+    resolver: zodResolver(positionFormSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -69,7 +54,7 @@ export function NewPositionForm() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: PositionFormData) {
     setIsSubmitting(true);
 
     try {

@@ -1,10 +1,6 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
-import {
-  Question,
-  questionSchema,
-  quizDataSchema,
-} from "../schemas/quiz-schemas";
+import { convertToStrictQuestions, Question, quizDataSchema } from "../schemas";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types
@@ -12,7 +8,7 @@ export class AIGenerationError extends Error {
   constructor(
     message: string,
     public code: AIErrorCode,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "AIGenerationError";
@@ -417,7 +413,9 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Quiz generation completed in ${duration.toFixed(2)}ms`);
 
-      return result;
+      return {
+        questions: convertToStrictQuestions(result.questions),
+      };
     } catch (error) {
       const duration = performance.now() - startTime;
       console.error(
@@ -439,7 +437,7 @@ export class AIQuizService {
                 ...params,
                 specificModel: fallbackModel,
               });
-            } catch (fallbackError) {
+            } catch {
               console.log(`Fallback model ${fallbackModel} also failed`);
               continue;
             }
@@ -457,7 +455,7 @@ export class AIQuizService {
     }
   }
 
-  async generateQuestion(params: GenerateQuestionParams): Promise<any> {
+  async generateQuestion(params: GenerateQuestionParams): Promise<Question> {
     const startTime = performance.now();
 
     try {
@@ -476,7 +474,7 @@ export class AIQuizService {
               model: groq(model),
               prompt,
               system: this.system,
-              schema: questionSchema,
+              schema: quizDataSchema, // Use quizDataSchema which expects {questions: [...]}
               temperature: 0.7,
             });
 
@@ -506,7 +504,17 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Question generation completed in ${duration.toFixed(2)}ms`);
 
-      return result;
+      // Extract the first question from the questions array and convert to strict type
+      if (!result.questions || result.questions.length === 0) {
+        throw new AIGenerationError(
+          "No questions generated in response",
+          AIErrorCode.INVALID_RESPONSE,
+          { result }
+        );
+      }
+
+      const strictQuestions = convertToStrictQuestions(result.questions);
+      return strictQuestions[0];
     } catch (error) {
       const duration = performance.now() - startTime;
       console.error(
@@ -528,7 +536,7 @@ export class AIQuizService {
                 ...params,
                 specificModel: fallbackModel,
               });
-            } catch (fallbackError) {
+            } catch {
               console.log(`Fallback model ${fallbackModel} also failed`);
               continue;
             }

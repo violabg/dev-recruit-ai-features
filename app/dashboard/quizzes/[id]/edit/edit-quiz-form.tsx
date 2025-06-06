@@ -33,7 +33,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateQuizAction } from "@/lib/actions/quizzes";
-import { Question, QuizForm } from "@/lib/schemas/quiz-schemas";
+import {
+  CodeSnippetQuestion,
+  flexibleQuestionSchema,
+  QuizForm,
+  saveQuizRequestSchema,
+} from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -54,29 +59,11 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
-// Use a simplified schema for the edit form
-const editQuizFormSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Il titolo è obbligatorio")
-    .max(200, "Titolo troppo lungo"),
-  time_limit: z.number().nullable(),
+// Use the consolidated schemas with form-specific validation
+const editQuizFormSchema = saveQuizRequestSchema.extend({
+  position_id: z.string().optional(), // Make position_id optional for updates
   questions: z
-    .array(
-      z.object({
-        id: z.string(),
-        type: z.enum(["multiple_choice", "open_question", "code_snippet"]),
-        question: z.string().min(1, "La domanda è obbligatoria"),
-        options: z.array(z.string()).optional(),
-        correctAnswer: z.number().optional(),
-        explanation: z.string().optional(),
-        sampleAnswer: z.string().optional(),
-        keywords: z.array(z.string()).optional(),
-        language: z.string().optional(),
-        codeSnippet: z.string().optional(),
-        sampleSolution: z.string().optional(),
-      })
-    )
+    .array(flexibleQuestionSchema)
     .min(1, "Almeno una domanda è obbligatoria"),
 });
 
@@ -86,6 +73,13 @@ type QuestionTypeFilter =
   | "multiple_choice"
   | "open_question"
   | "code_snippet";
+
+// Question type filter configuration
+const questionTypes = [
+  { value: "multiple_choice", label: "Scelta multipla" },
+  { value: "open_question", label: "Domanda aperta" },
+  { value: "code_snippet", label: "Snippet di codice" },
+] as const;
 
 // Generate simple UUID-like string
 const generateId = () => {
@@ -129,12 +123,13 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     resolver: zodResolver(editQuizFormSchema),
     defaultValues: {
       title: quiz.title,
+      position_id: position.id,
       time_limit: quiz.time_limit,
       questions: quiz.questions,
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, prepend, remove, update } = useFieldArray({
     control: form.control,
     name: "questions",
   });
@@ -237,7 +232,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
         id: generateId(),
       };
 
-      append(newQuestionWithId);
+      prepend(newQuestionWithId);
 
       // Expand the new question by default
       setExpandedQuestions((prev) => new Set([...prev, newQuestionWithId.id]));
@@ -378,7 +373,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
       }));
 
       // Clear current questions and add new ones
-      fields.forEach((_) => remove(0));
+      fields.forEach(() => remove(0));
       newQuestions.forEach((question) => append(question));
 
       // Set all new questions as expanded
@@ -417,29 +412,20 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     setExpandedQuestions(newExpanded);
   };
 
-  const addNewQuestion = (
+  const expandAllQuestions = () => {
+    const allQuestionIds = new Set(fields.map((field) => field.id));
+    setExpandedQuestions(allQuestionIds);
+  };
+
+  const collapseAllQuestions = () => {
+    setExpandedQuestions(new Set());
+  };
+
+  const generateNewQuestion = (
     type: "multiple_choice" | "open_question" | "code_snippet"
   ) => {
-    const newQuestion: Question = {
-      id: generateId(),
-      type,
-      question: "",
-    };
-
-    append(newQuestion);
-
-    // Expand the new question by default
-    setExpandedQuestions((prev) => new Set([...prev, newQuestion.id]));
-
-    toast.info(
-      `Nuova domanda ${
-        type === "multiple_choice"
-          ? "a scelta multipla"
-          : type === "open_question"
-          ? "aperta"
-          : "con codice"
-      } aggiunta`
-    );
+    setAiDialogOpen(true);
+    setGeneratingQuestionType(type);
   };
 
   const getSaveButtonContent = () => {
@@ -595,6 +581,31 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                 <CardDescription>Gestisci le domande del quiz</CardDescription>
               </div>
               <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={expandAllQuestions}
+                    disabled={fields.length === 0}
+                    title="Espandi tutte le domande"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    Espandi tutto
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={collapseAllQuestions}
+                    disabled={fields.length === 0}
+                    title="Chiudi tutte le domande"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                    Chiudi tutto
+                  </Button>
+                </div>
+                <div className="bg-border w-px h-6" />
                 <Select
                   value={questionTypeFilter}
                   onValueChange={(value: QuestionTypeFilter) =>
@@ -605,52 +616,33 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti i tipi</SelectItem>
-                    <SelectItem value="multiple_choice">
-                      Scelta multipla
-                    </SelectItem>
-                    <SelectItem value="open_question">
-                      Domanda aperta
-                    </SelectItem>
-                    <SelectItem value="code_snippet">
-                      Snippet di codice
-                    </SelectItem>
+                    {[
+                      { value: "all", label: "Tutti i tipi" },
+                      ...questionTypes,
+                    ].map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNewQuestion("multiple_choice")}
-                >
-                  <Sparkles className="mr-2 w-4 h-4" />
-                  Scelta multipla
-                  <Plus className="ml-2 w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNewQuestion("open_question")}
-                >
-                  <Sparkles className="mr-2 w-4 h-4" />
-                  Domanda aperta
-                  <Plus className="ml-2 w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNewQuestion("code_snippet")}
-                >
-                  <Sparkles className="mr-2 w-4 h-4" />
-                  Snippet di codice
-                  <Plus className="ml-2 w-4 h-4" />
-                </Button>
+                {questionTypes.map((item) => (
+                  <Button
+                    key={item.value}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateNewQuestion(item.value)}
+                  >
+                    <Sparkles className="mr-2 w-4 h-4" />
+                    {item.label}
+                    <Plus className="ml-2 w-4 h-4" />
+                  </Button>
+                ))}
               </div>
 
               {filteredQuestions.length === 0 ? (
@@ -758,7 +750,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
                               {field.type === "code_snippet" && (
                                 <CodeSnippetForm
                                   index={actualIndex}
-                                  field={field}
+                                  field={field as CodeSnippetQuestion}
                                 />
                               )}
                             </div>

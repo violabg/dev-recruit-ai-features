@@ -18,18 +18,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { ForgotPasswordFormData, forgotPasswordSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "Email non valida" }),
-});
-type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordForm({
   className,
@@ -37,14 +32,14 @@ export function ForgotPasswordForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const form = useForm<ForgotPasswordFormValues>({
+  const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
     mode: "onChange",
   });
   const { handleSubmit, setError } = form;
 
-  const handleForgotPassword = async (values: ForgotPasswordFormValues) => {
+  const handleForgotPassword = async (values: ForgotPasswordFormData) => {
     const supabase = createClient();
     setIsLoading(true);
     try {

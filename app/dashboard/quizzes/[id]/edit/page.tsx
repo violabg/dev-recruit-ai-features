@@ -1,5 +1,5 @@
 import { EditQuizForm } from "@/app/dashboard/quizzes/[id]/edit/edit-quiz-form";
-import { quizSchema } from "@/lib/schemas/quiz-schemas";
+import { quizSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
