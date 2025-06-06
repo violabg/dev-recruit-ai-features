@@ -73,6 +73,7 @@ export const useAIGeneration = ({
           })),
           specificModel: data.llmModel,
           instructions: data.instructions || "",
+          questionIndex: fields.length, // Append to the end
         }),
       });
 
@@ -145,6 +146,7 @@ export const useAIGeneration = ({
             })),
           specificModel: data.llmModel,
           instructions: data.instructions || "",
+          questionIndex: regeneratingQuestionIndex, // Update at the specific index
         }),
       });
 

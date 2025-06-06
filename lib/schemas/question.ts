@@ -21,7 +21,7 @@ const multipleChoiceQuestionSchema = baseQuestionSchema.extend({
   type: z.literal("multiple_choice"),
   options: z
     .array(z.string().min(3, "Each option must be at least 3 characters long"))
-    .length(4, "Exactly 4 options required"),
+    .min(4, "Must be at least 4 options"),
   correctAnswer: z.number().int().min(0).max(3),
 });
 
@@ -135,7 +135,31 @@ export const isCodeSnippetQuestion = (
 export const convertToStrictQuestion = (
   flexibleQuestion: FlexibleQuestion
 ): Question => {
-  return questionSchemas.strict.parse(flexibleQuestion);
+  // Ensure required fields are present for strict validation
+  const normalizedQuestion = { ...flexibleQuestion };
+
+  // For open questions, ensure sampleAnswer is present
+  if (
+    normalizedQuestion.type === "open_question" &&
+    !normalizedQuestion.sampleAnswer
+  ) {
+    normalizedQuestion.sampleAnswer = "Sample answer to be provided";
+  }
+
+  // For code snippet questions, ensure required fields are present
+  if (normalizedQuestion.type === "code_snippet") {
+    if (!normalizedQuestion.sampleSolution) {
+      normalizedQuestion.sampleSolution = "// Sample solution to be provided";
+    }
+    if (!normalizedQuestion.codeSnippet) {
+      normalizedQuestion.codeSnippet = "// Code snippet to be provided";
+    }
+    if (!normalizedQuestion.language) {
+      normalizedQuestion.language = "javascript";
+    }
+  }
+
+  return questionSchemas.strict.parse(normalizedQuestion);
 };
 
 export const convertToStrictQuestions = (

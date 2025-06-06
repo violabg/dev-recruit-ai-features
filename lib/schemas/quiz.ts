@@ -90,6 +90,10 @@ export const quizApiSchemas = {
       .optional(),
     specificModel: z.string().optional(),
     instructions: baseSchemas.instructions,
+    questionIndex: z
+      .number()
+      .int()
+      .min(0, "Question index must be a non-negative integer"),
   }),
 } as const;
 

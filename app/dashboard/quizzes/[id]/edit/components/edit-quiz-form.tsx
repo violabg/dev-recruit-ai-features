@@ -29,6 +29,7 @@ type EditQuizFormProps = {
 };
 
 export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
+  console.log("🚀 ~ EditQuizForm ~ quiz:", quiz);
   // Form management
   const {
     form,

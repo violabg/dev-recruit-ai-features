@@ -36,6 +36,7 @@ const generateQuestionHandler = withValidation(
         previousQuestions: validatedData.previousQuestions,
         specificModel: validatedData.specificModel,
         instructions: validatedData.instructions,
+        questionIndex: validatedData.questionIndex,
       });
 
       // Log performance metrics
