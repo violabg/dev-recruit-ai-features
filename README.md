@@ -370,10 +370,8 @@ dev-recruit-ai/
 │   ├── quiz/                    # Quiz management components
 │   └── ui/                      # Base UI components
 ├── docs/                        # Project documentation
-│   ├── AI_INTEGRATION_IMPROVEMENTS.md
-│   ├── ARCHITECTURE_CONSOLIDATION_PLAN.md
+│   ├── QUIZ_AI_GENERATION_SYSTEM.md
 │   ├── CACHE_IMPLEMENTATION.md
-│   ├── IMPLEMENTATION_SUMMARY.md
 │   └── VISION_PRO_STYLE_GUIDE.md
 ├── lib/                         # Utility libraries
 │   ├── actions/                 # Server actions
@@ -1308,10 +1306,8 @@ This project includes comprehensive documentation to help developers understand 
 
 #### **Technical Documentation**
 
-- **[AI Integration Improvements](docs/AI_INTEGRATION_IMPROVEMENTS.md)** - Comprehensive guide to AI service enhancements, error handling, and security measures
-- **[Architecture Consolidation Plan](docs/ARCHITECTURE_CONSOLIDATION_PLAN.md)** - Strategic plan for consolidating API patterns and schema management
+- **[Quiz AI Generation System](docs/QUIZ_AI_GENERATION_SYSTEM.md)** - Comprehensive guide to the AI-powered quiz generation system with visual flows, API documentation, and architecture details
 - **[Cache Implementation](docs/CACHE_IMPLEMENTATION.md)** - React Cache and Next.js revalidation patterns for optimal performance
-- **[Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)** - Complete overview of implemented AI integration features and improvements
 
 #### **Design Documentation**
 
@@ -1338,13 +1334,11 @@ This project includes comprehensive documentation to help developers understand 
 
 ### 📋 Documentation Navigation
 
-| Topic              | File                                                                                 | Description                                         |
-| ------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| **AI Features**    | [`docs/AI_INTEGRATION_IMPROVEMENTS.md`](docs/AI_INTEGRATION_IMPROVEMENTS.md)         | Retry mechanisms, error handling, security measures |
-| **Architecture**   | [`docs/ARCHITECTURE_CONSOLIDATION_PLAN.md`](docs/ARCHITECTURE_CONSOLIDATION_PLAN.md) | API standardization and schema consolidation        |
-| **Performance**    | [`docs/CACHE_IMPLEMENTATION.md`](docs/CACHE_IMPLEMENTATION.md)                       | Caching strategies and performance optimization     |
-| **Implementation** | [`docs/IMPLEMENTATION_SUMMARY.md`](docs/IMPLEMENTATION_SUMMARY.md)                   | Feature implementation status and achievements      |
-| **Design System**  | [`docs/VISION_PRO_STYLE_GUIDE.md`](docs/VISION_PRO_STYLE_GUIDE.md)                   | UI components and design guidelines                 |
+| Topic             | File                                                                     | Description                                                                      |
+| ----------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **AI System**     | [`docs/QUIZ_AI_GENERATION_SYSTEM.md`](docs/QUIZ_AI_GENERATION_SYSTEM.md) | Complete AI quiz generation system with visual flows, API docs, and architecture |
+| **Performance**   | [`docs/CACHE_IMPLEMENTATION.md`](docs/CACHE_IMPLEMENTATION.md)           | Caching strategies and performance optimization                                  |
+| **Design System** | [`docs/VISION_PRO_STYLE_GUIDE.md`](docs/VISION_PRO_STYLE_GUIDE.md)       | UI components and design guidelines                                              |
 
 ### 🎯 Key Implementation Features
 
