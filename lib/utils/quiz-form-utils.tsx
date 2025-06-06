@@ -1,5 +1,10 @@
 import { AlertCircle, CheckCircle, Loader2, Save } from "lucide-react";
 
+// Generate simple UUID-like string
+export const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
 export type SaveStatus = "idle" | "saving" | "success" | "error";
 
 export const getSaveButtonContent = (saveStatus: SaveStatus) => {

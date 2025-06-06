@@ -6,6 +6,7 @@ import {
   QuizForm,
   saveQuizRequestSchema,
 } from "@/lib/schemas";
+import { generateId } from "@/lib/utils/quiz-form-utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -21,11 +22,6 @@ const editQuizFormSchema = saveQuizRequestSchema.extend({
 });
 
 export type EditQuizFormData = z.infer<typeof editQuizFormSchema>;
-
-// Generate simple UUID-like string
-const generateId = () => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-};
 
 type UseEditQuizFormProps = {
   quiz: QuizForm;
