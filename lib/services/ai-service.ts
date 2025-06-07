@@ -464,7 +464,6 @@ export class AIQuizService {
 
             return response.object;
           } catch (error) {
-            console.log("🚀 ~ AIQuizService ~ withRetry ~ error:", error);
             if (error instanceof NoObjectGeneratedError) {
               throw new AIGenerationError(
                 "AI model failed to generate valid quiz structure",
@@ -556,7 +555,6 @@ export class AIQuizService {
 
             return response.object;
           } catch (error) {
-            console.log("🚀 ~ AIQuizService ~ withRetry ~ error:", error);
             if (error instanceof NoObjectGeneratedError) {
               throw new AIGenerationError(
                 "AI model failed to generate valid question structure",

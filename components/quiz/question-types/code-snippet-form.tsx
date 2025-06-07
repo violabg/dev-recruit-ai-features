@@ -46,7 +46,6 @@ export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
       <FormField
         name={`questions.${index}.language`}
         render={({ field: formField }) => {
-          console.log("🚀 ~ CodeSnippetForm ~ formField:", formField);
           return (
             <FormItem>
               <FormLabel>Linguaggio di programmazione</FormLabel>
