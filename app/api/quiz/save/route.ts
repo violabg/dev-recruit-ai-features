@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const saveQuizHandler = withValidation(
   { body: saveQuizRequestSchema },
-  { auth: { required: true } },
+  {}, // Remove auth requirement from middleware since we handle it manually
   async (req, validated) => {
     try {
       const supabase = await createClient();

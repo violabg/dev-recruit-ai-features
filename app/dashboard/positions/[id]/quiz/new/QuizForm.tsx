@@ -21,9 +21,10 @@ import { LLMModelSelect } from "@/components/ui/llm-model-select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { QuizFormData, quizFormSchema } from "@/lib/schemas";
+import { quizGenerationConfigSchema } from "@/lib/schemas";
 import { LLM_MODELS } from "@/lib/utils";
 import { toast } from "sonner";
+import { z } from "zod";
 
 type Position = {
   id: string;
@@ -42,10 +43,18 @@ export const QuizForm = ({ position }: QuizFormProps) => {
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
 
-  const form = useForm<QuizFormData>({
-    resolver: zodResolver(quizFormSchema),
+  // Create form schema with additional frontend fields
+  const formSchema = quizGenerationConfigSchema.extend({
+    enableTimeLimit: z.boolean(),
+    timeLimit: z.number().min(5).max(120),
+  });
+
+  type FormData = z.infer<typeof formSchema>;
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      title: `Quiz per ${position.title} (${position.experience_level})`,
+      quizTitle: `Quiz per ${position.title} (${position.experience_level})`,
       instructions: "",
       questionCount: 10,
       includeMultipleChoice: true,
@@ -54,11 +63,11 @@ export const QuizForm = ({ position }: QuizFormProps) => {
       difficulty: 3,
       timeLimit: 30,
       enableTimeLimit: true,
-      llmModel: LLM_MODELS.VERSATILE,
+      specificModel: LLM_MODELS.VERSATILE,
     },
   });
 
-  async function onSubmit(values: QuizFormData) {
+  async function onSubmit(values: FormData) {
     setGenerating(true);
     try {
       // Generate quiz using API route
@@ -67,16 +76,17 @@ export const QuizForm = ({ position }: QuizFormProps) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           positionId: position.id,
-          quizTitle: values.title,
+          quizTitle: values.quizTitle,
           questionCount: values.questionCount,
           difficulty: values.difficulty,
           includeMultipleChoice: values.includeMultipleChoice,
           includeOpenQuestions: values.includeOpenQuestions,
           includeCodeSnippets: values.includeCodeSnippets,
           instructions: values.instructions || "",
-          specificModel: values.llmModel,
+          specificModel: values.specificModel,
         }),
       });
 
@@ -96,8 +106,9 @@ export const QuizForm = ({ position }: QuizFormProps) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
-          title: values.title,
+          title: values.quizTitle,
           position_id: position.id,
           questions: quizData.questions,
           time_limit: values.enableTimeLimit ? values.timeLimit : null,
@@ -131,7 +142,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="title"
+          name="quizTitle"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Titolo del quiz</FormLabel>
@@ -340,13 +351,13 @@ export const QuizForm = ({ position }: QuizFormProps) => {
 
         <FormField
           control={form.control}
-          name="llmModel"
+          name="specificModel"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Modello LLM</FormLabel>
               <FormControl>
                 <LLMModelSelect
-                  value={field.value}
+                  value={field.value || LLM_MODELS.VERSATILE}
                   onValueChange={field.onChange}
                 />
               </FormControl>
