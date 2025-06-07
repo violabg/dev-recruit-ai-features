@@ -7,6 +7,16 @@ import { questionSchemas } from "./question";
 // ====================
 // Consolidated quiz schemas eliminating duplication and providing single source of truth
 
+// AI Generation schema - only includes fields that the AI should generate
+// This schema excludes backend-managed fields like UUIDs, timestamps, etc.
+export const aiQuizGenerationSchema = z.object({
+  title: baseSchemas.title,
+  questions: z.array(questionSchemas.flexible),
+  time_limit: z.number().nullable().optional(),
+  difficulty: baseSchemas.difficulty.optional(),
+  instructions: baseSchemas.instructions.optional(),
+});
+
 // Core quiz data schema - the single source of truth
 export const quizDataSchema = z.object({
   id: baseSchemas.uuid.optional(), // Optional for creation
@@ -174,6 +184,7 @@ export type QuizFormDataRaw = z.infer<typeof quizFormSchemas.formData>;
 export type QuizBasicForm = z.infer<typeof quizFormSchemas.basic>;
 export type Quiz = z.infer<typeof quizEntitySchemas.complete>;
 export type QuizSummary = z.infer<typeof quizEntitySchemas.summary>;
+export type AIQuizGeneration = z.infer<typeof aiQuizGenerationSchema>;
 
 // API request types
 export type GenerateQuizRequest = z.infer<typeof quizApiSchemas.generateQuiz>;

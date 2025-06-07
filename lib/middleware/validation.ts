@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { ZodSchema } from "zod";
 import {
   ApiResponse,
   ValidatedRequestData,
@@ -325,21 +326,37 @@ export function createApiError(
 
 // Additional helper for simple JSON validation
 export function validateJson<T>(
-  schema: {
-    safeParse: (data: unknown) => {
-      success: boolean;
-      data?: T;
-      error?: unknown;
-    };
-  },
+  schema: ZodSchema<T>,
   data: unknown
 ): { success: true; data: T } | { success: false; error: unknown } {
   try {
     const result = schema.safeParse(data);
     return result.success
-      ? { success: true, data: result.data as T }
+      ? { success: true, data: result.data }
       : { success: false, error: result.error };
   } catch (error) {
     return { success: false, error };
+  }
+}
+
+// Alternative: More specific error typing for better error messages
+export function validateJsonWithErrors<T>(
+  schema: ZodSchema<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; error: string } {
+  try {
+    const result = schema.safeParse(data);
+    return result.success
+      ? { success: true, data: result.data }
+      : {
+          success: false,
+          error: result.error.errors.map((e) => e.message).join(", "),
+        };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown validation error",
+    };
   }
 }

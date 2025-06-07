@@ -1,11 +1,11 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
 import {
+  aiQuizGenerationSchema,
   convertToStrictQuestions,
   Question,
   questionSchemas,
   QuestionType,
-  quizDataSchema,
 } from "../schemas";
 import { getOptimalModel } from "../utils";
 
@@ -189,12 +189,7 @@ export class AIQuizService {
 
     const exampleId = isSingleQuestion ? `q${questionIndex || 1}` : "q1";
 
-    const exampleStructure = isSingleQuestion
-      ? `Example Single Question Structure:
-
-        \`\`\`json
-        {
-          "id": "${exampleId}",
+    const commonExample = `
           "type": "multiple_choice",
           "question": "Cosa rappresenta il DOM in JavaScript?",
           "options": [
@@ -206,6 +201,15 @@ export class AIQuizService {
           "correctAnswer": 0,
           "keywords": ["DOM", "JavaScript", "web"],
           "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
+    `;
+
+    const exampleStructure = isSingleQuestion
+      ? `Example Single Question Structure:
+
+        \`\`\`json
+        {
+          "id": "${exampleId}",
+          ${commonExample}
         }
         \`\`\`
 
@@ -214,22 +218,16 @@ export class AIQuizService {
 
         \`\`\`json
         {
+          "title": "Quiz per Sviluppatore Frontend Senior",
           "questions": [
             {
               "id": "q1",
-              "type": "multiple_choice",
-              "question": "Cosa rappresenta il DOM in JavaScript?",
-              "options": [
-                "Document Object Model",
-                "Data Object Management",
-                "Dynamic Object Mapping",
-                "Distributed Object Method"
-              ],
-              "correctAnswer": 0,
-              "keywords": ["DOM", "JavaScript", "web"],
-              "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
+              ${commonExample}
             }
-          ]
+          ],
+          "time_limit": 60,
+          "difficulty": 3,
+          "instructions": "Rispondi alle domande nel tempo limite specificato"
         }
         \`\`\`
 
@@ -448,11 +446,15 @@ export class AIQuizService {
               model: groq(model),
               prompt,
               system: this.system(),
-              schema: quizDataSchema,
+              schema: aiQuizGenerationSchema,
               temperature: 0.7,
             });
 
-            if (!response.object || !response.object.questions) {
+            if (
+              !response.object ||
+              !response.object.questions ||
+              !response.object.title
+            ) {
               throw new AIGenerationError(
                 "Invalid response structure from AI model",
                 AIErrorCode.INVALID_RESPONSE,
@@ -462,6 +464,7 @@ export class AIQuizService {
 
             return response.object;
           } catch (error) {
+            console.log("🚀 ~ AIQuizService ~ withRetry ~ error:", error);
             if (error instanceof NoObjectGeneratedError) {
               throw new AIGenerationError(
                 "AI model failed to generate valid quiz structure",

@@ -36,40 +36,43 @@ export const CodeSnippetForm = ({ index, field }: CodeSnippetFormProps) => {
   // Type guard to safely access code snippet properties
   const getLanguage = () => {
     if (field.type === "code_snippet") {
-      return field.language || "JavaScript";
+      return field.language.toLowerCase() || "javascript";
     }
-    return "JavaScript";
+    return "javascript";
   };
 
   return (
     <div className="space-y-4">
       <FormField
         name={`questions.${index}.language`}
-        render={({ field: formField }) => (
-          <FormItem>
-            <FormLabel>Linguaggio di programmazione</FormLabel>
-            <FormControl>
-              <Select
-                value={formField.value || getLanguage()}
-                onValueChange={(value) => {
-                  formField.onChange(value);
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Seleziona linguaggio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {programmingLanguages.map((lang) => (
-                    <SelectItem key={lang} value={lang}>
-                      {lang}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field: formField }) => {
+          console.log("🚀 ~ CodeSnippetForm ~ formField:", formField);
+          return (
+            <FormItem>
+              <FormLabel>Linguaggio di programmazione</FormLabel>
+              <FormControl>
+                <Select
+                  value={formField.value?.toLowerCase() || getLanguage()}
+                  onValueChange={(value) => {
+                    formField.onChange(value);
+                  }}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Seleziona linguaggio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {programmingLanguages.map((lang) => (
+                      <SelectItem key={lang} value={lang.toLowerCase()}>
+                        {lang}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
       <FormField
         name={`questions.${index}.codeSnippet`}
