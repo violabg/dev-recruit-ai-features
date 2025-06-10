@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { QuestionType } from "@/lib/schemas/base";
+import { QuestionType } from "@/lib/schemas";
 import {
   getQuestionTypeLabel,
   questionTypes,

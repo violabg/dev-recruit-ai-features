@@ -1,13 +1,11 @@
 "use client";
 
-import { flexibleQuestionSchema } from "@/lib/schemas";
-import { QuestionType } from "@/lib/schemas/base";
+import { FlexibleQuestion, QuestionType } from "@/lib/schemas";
 import { useEffect, useMemo, useState } from "react";
-import * as z from "zod";
 
 export type QuestionTypeFilter = "all" | QuestionType;
 
-type Question = z.infer<typeof flexibleQuestionSchema>;
+type Question = FlexibleQuestion;
 
 type UseQuestionManagementProps = {
   fields: Array<Question & { id: string }>;

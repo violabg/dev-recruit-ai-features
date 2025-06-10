@@ -2,7 +2,7 @@
 
 import { updateQuizAction } from "@/lib/actions/quizzes";
 import {
-  flexibleQuestionSchema,
+  questionSchemas,
   QuizForm,
   saveQuizRequestSchema,
 } from "@/lib/schemas";
@@ -17,7 +17,7 @@ import * as z from "zod";
 const editQuizFormSchema = saveQuizRequestSchema.extend({
   position_id: z.string().optional(), // Make position_id optional for updates
   questions: z
-    .array(flexibleQuestionSchema)
+    .array(questionSchemas.flexible)
     .min(1, "Almeno una domanda è obbligatoria"),
 });
 

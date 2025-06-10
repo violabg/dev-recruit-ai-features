@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { scoreSchema } from "./base";
+import { baseSchemas } from "./base";
 
 // ====================
 // EVALUATION SCHEMAS
@@ -9,7 +9,7 @@ export const evaluationResultSchema = z.object({
   evaluation: z
     .string()
     .describe("Una valutazione dettagliata della risposta del candidato"),
-  score: scoreSchema.describe(
+  score: baseSchemas.score.describe(
     "Un punteggio da 0 a 10, dove 10 è una risposta perfetta"
   ),
   strengths: z

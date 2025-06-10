@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { CodeSnippetQuestion, flexibleQuestionSchema } from "@/lib/schemas";
+import { CodeSnippetQuestion, questionSchemas } from "@/lib/schemas";
 import {
   getQuestionTypeLabel,
   getSaveButtonContent,
@@ -32,7 +32,7 @@ import { UseFormReturn } from "react-hook-form";
 import * as z from "zod";
 import { EditQuizFormData } from "../hooks/use-edit-quiz-form";
 
-type Question = z.infer<typeof flexibleQuestionSchema>;
+type Question = z.infer<typeof questionSchemas.flexible>;
 
 type QuestionItemProps = {
   field: Question & { id: string };

@@ -1,7 +1,12 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { convertToStrictQuestions, Question, quizDataSchema } from "../schemas";
-import { QuestionType } from "../schemas/base";
+import {
+  aiQuizGenerationSchema,
+  convertToStrictQuestions,
+  Question,
+  questionSchemas,
+  QuestionType,
+} from "../schemas";
 import { getOptimalModel } from "../utils";
 
 // AI-specific error types
@@ -141,7 +146,7 @@ export interface GenerateQuizParams {
   specificModel?: string;
 }
 
-// Question generation parameters - Updated to include difficulty
+// Question generation parameters - Updated to include difficulty and question index
 export interface GenerateQuestionParams {
   quizTitle: string;
   positionTitle: string;
@@ -152,6 +157,7 @@ export interface GenerateQuestionParams {
   previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;
   instructions?: string;
+  questionIndex: number; // Add question index for proper ID generation
 }
 
 export class AIQuizService {
@@ -161,21 +167,97 @@ export class AIQuizService {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  private system = `
-        You are a technical recruitment expert specializing in creating assessment quizzes. Generate valid JSON that adheres to the following specifications:
+  /**
+   * Builds the appropriate system prompt for quiz or question generation
+   * @param isSingleQuestion Whether to generate a single question or full quiz
+   * @param questionIndex The index of the question (for single question generation)
+   * @returns The system prompt string
+   */
+  private buildQuizSystem(
+    isSingleQuestion: boolean = false,
+    questionIndex?: number
+  ): string {
+    const questionStructure = isSingleQuestion
+      ? "Generate a valid JSON object for a single question (NOT an array)"
+      : "Generate valid JSON that contains a questions array with individual question objects";
+
+    const idFormat = isSingleQuestion
+      ? `Format "q${questionIndex || 1}" (use "q${
+          questionIndex || 1
+        }" for this specific question)`
+      : 'Format "q1" through "q10"';
+
+    const exampleId = isSingleQuestion ? `q${questionIndex || 1}` : "q1";
+
+    const commonExample = `
+          "type": "multiple_choice",
+          "question": "Cosa rappresenta il DOM in JavaScript?",
+          "options": [
+            "Document Object Model",
+            "Data Object Management",
+            "Dynamic Object Mapping",
+            "Distributed Object Method"
+          ],
+          "correctAnswer": 0,
+          "keywords": ["DOM", "JavaScript", "web"],
+          "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
+    `;
+
+    const exampleStructure = isSingleQuestion
+      ? `Example Single Question Structure:
+
+        \`\`\`json
+        {
+          "id": "${exampleId}",
+          ${commonExample}
+        }
+        \`\`\`
+
+        Ensure your output is a single question object matching this exact format.`
+      : `Example Structure:
+
+        \`\`\`json
+        {
+          "title": "Quiz per Sviluppatore Frontend Senior",
+          "questions": [
+            {
+              "id": "q1",
+              ${commonExample}
+            }
+          ],
+          "time_limit": 60,
+          "difficulty": 3,
+          "instructions": "Rispondi alle domande nel tempo limite specificato"
+        }
+        \`\`\`
+
+        Ensure your output matches this exact format for seamless integration.`;
+
+    return `
+        You are a technical recruitment expert specializing in creating assessment ${
+          isSingleQuestion ? "questions" : "quizzes"
+        }. ${questionStructure} that adheres to the following specifications:
   
         Schema Requirements:
   
         1. Output must be parseable JSON
-        2. Questions array must contain individual question objects
-        3. All property names must be explicit and in English
-        4. String values must use proper escape sequences
-        5. No trailing commas allowed
+        ${
+          !isSingleQuestion
+            ? "2. Questions array must contain individual question objects"
+            : ""
+        }
+        ${
+          isSingleQuestion ? "2" : "3"
+        }. All property names must be explicit and in English
+        ${
+          isSingleQuestion ? "3" : "4"
+        }. String values must use proper escape sequences
+        ${isSingleQuestion ? "4" : "5"}. No trailing commas allowed
   
         Question Types and Required Fields:
   
         1. Multiple Choice Questions (\`type: "multiple_choice"\`)
-          - id: Format "q1" through "q10"
+          - id: ${idFormat}
           - question: Italian text
           - options: Array of exactly 4 Italian strings
           - correctAnswer: Zero-based index number of the correct option
@@ -183,8 +265,7 @@ export class AIQuizService {
           - explanation: Italian text (optional)
   
         2. Open Questions (\`type: "open_question"\`)
-  
-          - id: Format "q1" through "q10"
+          - id: ${idFormat}
           - question: Italian text
           - keywords: Array of relevant strings (optional)
           - sampleAnswer: Italian text
@@ -192,9 +273,8 @@ export class AIQuizService {
           - codeSnippet: if the question is about writing code, provide a valid code string as a code snippet
           - explanation: Italian text (optional)
   
-  
         3. Code Questions (\`type: "code_snippet"\`)
-          - id: Format "q1" through "q10"
+          - id: ${idFormat}
           - question: Italian text, must be code related and ask to fix bugs, don't include code in the question text do it in the codeSnippet field
           - codeSnippet: Valid code string, must be relevant to the question and contain a bug if the question is about fixing bugs,
           - sampleSolution: Valid code string, must be the corrected version of the code snippet
@@ -208,31 +288,13 @@ export class AIQuizService {
         - Omit optional fields if not applicable
         - The "options" field must never be written as "options>" or any variant
   
-        Example Structure:
-  
-        \`\`\`json
-        {
-          "questions": [
-            {
-              "id": "q1",
-              "type": "multiple_choice",
-              "question": "Italian question text",
-              "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-              "correctAnswer": 0
-            }
-          ]
-        }
-        \`\`\`
-  
-        Notes:
-  
-        - Validate JSON before submission
-        - Ensure proper comma placement
-        - Use double quotes for all strings
-        - Maintain consistent formatting
-  
-        Reference: https://json.org/
+        ${exampleStructure}
       `;
+  }
+  private system = () => this.buildQuizSystem(false);
+
+  private singleQuestionSystem = (questionIndex?: number) =>
+    this.buildQuizSystem(true, questionIndex);
 
   private buildQuizPrompt(params: GenerateQuizParams): string {
     const {
@@ -383,12 +445,16 @@ export class AIQuizService {
             const response = await generateObject({
               model: groq(model),
               prompt,
-              system: this.system,
-              schema: quizDataSchema,
+              system: this.system(),
+              schema: aiQuizGenerationSchema,
               temperature: 0.7,
             });
 
-            if (!response.object || !response.object.questions) {
+            if (
+              !response.object ||
+              !response.object.questions ||
+              !response.object.title
+            ) {
               throw new AIGenerationError(
                 "Invalid response structure from AI model",
                 AIErrorCode.INVALID_RESPONSE,
@@ -474,8 +540,8 @@ export class AIQuizService {
             const response = await generateObject({
               model: groq(model),
               prompt,
-              system: this.system,
-              schema: quizDataSchema, // Use quizDataSchema which expects {questions: [...]}
+              system: this.singleQuestionSystem(params.questionIndex), // Use questionIndex for proper ID generation
+              schema: questionSchemas.flexible, // Use questionSchemas.flexible for single question
               temperature: 0.7,
             });
 
@@ -505,16 +571,16 @@ export class AIQuizService {
       const duration = performance.now() - startTime;
       console.log(`Question generation completed in ${duration.toFixed(2)}ms`);
 
-      // Extract the first question from the questions array and convert to strict type
-      if (!result.questions || result.questions.length === 0) {
+      // Convert the single question result to strict type
+      if (!result || !result.question) {
         throw new AIGenerationError(
-          "No questions generated in response",
+          "No question generated in response",
           AIErrorCode.INVALID_RESPONSE,
           { result }
         );
       }
 
-      const strictQuestions = convertToStrictQuestions(result.questions);
+      const strictQuestions = convertToStrictQuestions([result]);
       return strictQuestions[0];
     } catch (error) {
       const duration = performance.now() - startTime;

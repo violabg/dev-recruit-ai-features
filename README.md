@@ -371,6 +371,8 @@ dev-recruit-ai/
 │   └── ui/                      # Base UI components
 ├── docs/                        # Project documentation
 │   ├── QUIZ_AI_GENERATION_SYSTEM.md
+│   ├── SCHEMA_TYPE_SAFETY_IMPROVEMENTS.md
+│   ├── MAINTAINABILITY_PERFORMANCE_ANALYSIS.md
 │   ├── CACHE_IMPLEMENTATION.md
 │   └── VISION_PRO_STYLE_GUIDE.md
 ├── lib/                         # Utility libraries
@@ -1307,6 +1309,8 @@ This project includes comprehensive documentation to help developers understand 
 #### **Technical Documentation**
 
 - **[Quiz AI Generation System](docs/QUIZ_AI_GENERATION_SYSTEM.md)** - Comprehensive guide to the AI-powered quiz generation system with visual flows, API documentation, and architecture details
+- **[Schema and Type Safety Improvements](docs/SCHEMA_TYPE_SAFETY_IMPROVEMENTS.md)** - Detailed plan for schema consolidation, type safety enhancements, and maintainability improvements
+- **[Maintainability and Performance Analysis](docs/MAINTAINABILITY_PERFORMANCE_ANALYSIS.md)** - Complete analysis of improvement opportunities with prioritized roadmap for enhanced maintainability and performance
 - **[Cache Implementation](docs/CACHE_IMPLEMENTATION.md)** - React Cache and Next.js revalidation patterns for optimal performance
 
 #### **Design Documentation**
@@ -1334,11 +1338,12 @@ This project includes comprehensive documentation to help developers understand 
 
 ### 📋 Documentation Navigation
 
-| Topic             | File                                                                     | Description                                                                      |
-| ----------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| **AI System**     | [`docs/QUIZ_AI_GENERATION_SYSTEM.md`](docs/QUIZ_AI_GENERATION_SYSTEM.md) | Complete AI quiz generation system with visual flows, API docs, and architecture |
-| **Performance**   | [`docs/CACHE_IMPLEMENTATION.md`](docs/CACHE_IMPLEMENTATION.md)           | Caching strategies and performance optimization                                  |
-| **Design System** | [`docs/VISION_PRO_STYLE_GUIDE.md`](docs/VISION_PRO_STYLE_GUIDE.md)       | UI components and design guidelines                                              |
+| Topic              | File                                                                                 | Description                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **AI System**      | [`docs/QUIZ_AI_GENERATION_SYSTEM.md`](docs/QUIZ_AI_GENERATION_SYSTEM.md)             | Complete AI quiz generation system with visual flows, API docs, and architecture |
+| **Schema & Types** | [`docs/SCHEMA_TYPE_SAFETY_IMPROVEMENTS.md`](docs/SCHEMA_TYPE_SAFETY_IMPROVEMENTS.md) | Schema consolidation, type safety enhancements, and maintainability improvements |
+| **Performance**    | [`docs/CACHE_IMPLEMENTATION.md`](docs/CACHE_IMPLEMENTATION.md)                       | Caching strategies and performance optimization                                  |
+| **Design System**  | [`docs/VISION_PRO_STYLE_GUIDE.md`](docs/VISION_PRO_STYLE_GUIDE.md)                   | UI components and design guidelines                                              |
 
 ### 🎯 Key Implementation Features
 

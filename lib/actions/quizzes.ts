@@ -4,12 +4,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   convertToStrictQuestions,
-  flexibleQuestionSchema,
   generateQuizFormDataSchema,
-  questionSchema,
+  questionSchemas,
+  QuestionType,
   quizDataSchema,
 } from "../schemas";
-import { QuestionType } from "../schemas/base";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
   errorHandler,
@@ -283,6 +282,7 @@ type GenerateNewQuestionActionParams = {
   specificModel?: string;
   instructions?: string;
   difficulty?: number;
+  questionIndex: number;
 };
 
 export async function generateNewQuestionAction({
@@ -295,6 +295,7 @@ export async function generateNewQuestionAction({
   specificModel,
   instructions,
   difficulty,
+  questionIndex,
 }: GenerateNewQuestionActionParams) {
   const monitor = new PerformanceMonitor("generateNewQuestionAction");
 
@@ -310,10 +311,11 @@ export async function generateNewQuestionAction({
       previousQuestions,
       specificModel,
       instructions,
+      questionIndex,
     });
 
     // Validate generated question
-    const validatedQuestion = questionSchema.parse(question);
+    const validatedQuestion = questionSchemas.strict.parse(question);
 
     monitor.end();
     return validatedQuestion;
@@ -421,12 +423,31 @@ export async function updateQuizAction(formData: FormData) {
     let questions;
     try {
       questions = JSON.parse(questionsRaw);
-      questions = z.array(flexibleQuestionSchema).parse(questions);
+      // Ensure question IDs are in the format 'q1', 'q2', etc.
+      const formattedQuestions = questions.map(
+        (q: Record<string, unknown>, index: number) => ({
+          ...q,
+          id: `q${index + 1}`,
+        })
+      );
+      questions = z.array(questionSchemas.flexible).parse(formattedQuestions);
     } catch (parseError) {
       throw new QuizSystemError(
         "Invalid questions format",
         QuizErrorCode.INVALID_INPUT,
         { parseError }
+      );
+    }
+
+    // Convert questions to strict format
+    let strictQuestions;
+    try {
+      strictQuestions = convertToStrictQuestions(questions);
+    } catch (conversionError) {
+      throw new QuizSystemError(
+        "Failed to validate question format",
+        QuizErrorCode.INVALID_INPUT,
+        { conversionError }
       );
     }
 
@@ -436,7 +457,7 @@ export async function updateQuizAction(formData: FormData) {
       .update({
         title,
         time_limit: timeLimit,
-        questions: convertToStrictQuestions(questions),
+        questions: strictQuestions,
       })
       .eq("id", quizId);
 
