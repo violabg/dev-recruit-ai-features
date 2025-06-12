@@ -28,7 +28,7 @@ export function ThemeToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="shadow-vision-lg backdrop-blur-vision border-glass-border min-w-[180px] glass-card"
+        className="shadow-vision-lg border-glass-border min-w-[180px] glass-card"
       >
         <DropdownMenuItem
           className="group justify-between hover:bg-primary/10 focus:bg-primary/10 rounded-lg hover:text-primary focus:text-primary transition-all duration-300 cursor-pointer"

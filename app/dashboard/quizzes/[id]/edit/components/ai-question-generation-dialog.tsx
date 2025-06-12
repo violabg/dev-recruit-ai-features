@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { QuestionType } from "@/lib/schemas";
@@ -242,7 +243,7 @@ export const AIQuestionGenerationDialog = ({
                           onValueChange={(values) => field.onChange(values[0])}
                           className="w-full"
                         />
-                        <div className="flex justify-between mt-1 text-muted-foreground text-xs">
+                        <div className="flex justify-between mt-2 text-muted-foreground text-xs">
                           <span>Molto Facile</span>
                           <span>Facile</span>
                           <span>Medio</span>
@@ -282,8 +283,8 @@ export const AIQuestionGenerationDialog = ({
                 <h3 className="font-medium text-sm">
                   Impostazioni Scelta Multipla
                 </h3>
-
-                <div className="space-y-2">
+                <Separator className="my-4" />
+                <div className="space-y-4">
                   <Label>Aree di Focus</Label>
                   <div className="flex gap-2">
                     <Input
@@ -313,11 +314,14 @@ export const AIQuestionGenerationDialog = ({
                         className="flex items-center gap-1"
                       >
                         {area}
-                        <X
-                          size={12}
-                          className="hover:text-destructive cursor-pointer"
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-4 hover:text-destructive"
                           onClick={() => removeFocusArea(index)}
-                        />
+                        >
+                          <X size={12} />
+                        </Button>
                       </Badge>
                     ))}
                   </div>
@@ -360,7 +364,7 @@ export const AIQuestionGenerationDialog = ({
                 <h3 className="font-medium text-sm">
                   Impostazioni Domanda Aperta
                 </h3>
-
+                <Separator className="my-4" />
                 <FormField
                   control={form.control}
                   name="requireCodeExample"
@@ -414,7 +418,7 @@ export const AIQuestionGenerationDialog = ({
                   )}
                 />
 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label>Criteri di Valutazione</Label>
                   <div className="flex gap-2">
                     <Input
@@ -447,11 +451,14 @@ export const AIQuestionGenerationDialog = ({
                           className="flex items-center gap-1"
                         >
                           {criteria}
-                          <X
-                            size={12}
-                            className="hover:text-destructive cursor-pointer"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-4 hover:text-destructive"
                             onClick={() => removeEvaluationCriteria(index)}
-                          />
+                          >
+                            <X size={12} />
+                          </Button>
                         </Badge>
                       )
                     )}
@@ -465,7 +472,7 @@ export const AIQuestionGenerationDialog = ({
                 <h3 className="font-medium text-sm">
                   Impostazioni Snippet di Codice
                 </h3>
-
+                <Separator className="my-4" />
                 <FormField
                   control={form.control}
                   name="language"

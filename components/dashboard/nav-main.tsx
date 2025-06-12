@@ -47,12 +47,12 @@ export function NavMain({
                   size="default"
                   className={cn(
                     "relative overflow-hidden transition-all duration-300 ease-vision group",
-                    "hover:bg-sidebar-accent/60 hover:backdrop-blur-vision hover:shadow-vision-sm",
+                    "hover:bg-sidebar-accent/60 hover: hover:shadow-vision-sm",
                     "rounded-xl border border-transparent hover:border-sidebar-border/30",
                     isActive && [
                       "bg-gradient-to-r from-primary/50 to-gradient-secondary/30",
                       "border-primary/30 shadow-vision text-primary-foreground",
-                      "backdrop-blur-vision",
+                      "",
                     ]
                   )}
                 >

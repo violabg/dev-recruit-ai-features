@@ -8,7 +8,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto glass-card backdrop-blur-vision border border-glass-border rounded-xl shadow-vision vision-elevated"
+      className="relative shadow-vision border border-glass-border rounded-xl w-full overflow-x-auto glass-card vision-elevated"
     >
       <table
         data-slot="table"
@@ -24,7 +24,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
     <thead
       data-slot="table-header"
       className={cn(
-        "bg-glass-bg/50 backdrop-blur-vision [&_tr]:border-b [&_tr]:border-glass-border",
+        "bg-glass-bg/50  [&_tr]:border-b [&_tr]:border-glass-border",
         className
       )}
       {...props}
@@ -50,7 +50,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "bg-glass-bg/30 backdrop-blur-vision border-t border-glass-border font-medium [&>tr]:last:border-b-0",
+        "bg-glass-bg/30  border-t border-glass-border font-medium [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -63,7 +63,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-glass-bg/30 hover:backdrop-blur-vision data-[state=selected]:bg-primary/10 data-[state=selected]:backdrop-blur-vision border-b border-glass-border/50 transition-all duration-300 ease-vision vision-interactive",
+        "hover:bg-glass-bg/30 hover: data-[state=selected]:bg-primary/10 data-[state=selected]: border-b border-glass-border/50 transition-all duration-300 ease-vision vision-interactive",
         className
       )}
       {...props}

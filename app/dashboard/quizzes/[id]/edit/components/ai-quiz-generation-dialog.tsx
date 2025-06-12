@@ -115,7 +115,7 @@ export const AIQuizGenerationDialog = ({
                           onValueChange={(values) => field.onChange(values[0])}
                           className="w-full"
                         />
-                        <div className="flex justify-between mt-1 text-muted-foreground text-xs">
+                        <div className="flex justify-between mt-2 text-muted-foreground text-xs">
                           <span>Molto Facile</span>
                           <span>Facile</span>
                           <span>Medio</span>

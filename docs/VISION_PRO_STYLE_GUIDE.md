@@ -9,7 +9,7 @@ Your application now has a comprehensive and consistent Vision Pro-inspired desi
 ### 1. **Glass Morphism**
 
 - All surfaces use translucent backgrounds with backdrop blur
-- Consistent `backdrop-blur-vision` (20px) throughout
+- Consistent `` (20px) throughout
 - Glass border system with subtle transparency
 
 ### 2. **OKLCH Color System**
@@ -88,6 +88,8 @@ Your application now has a comprehensive and consistent Vision Pro-inspired desi
 ```css
 .glass-card          /* Primary card styling */
 /* Primary card styling */
+/* Primary card styling */
+/* Primary card styling */
 .glass-surface       /* Secondary surface styling */
 .vision-elevated     /* Elevated glass elements */
 .vision-modal; /* Modal/dialog specific styling */
@@ -98,6 +100,8 @@ Your application now has a comprehensive and consistent Vision Pro-inspired desi
 ```css
 .vision-interactive  /* Hover and active state animations */
 /* Hover and active state animations */
+/* Hover and active state animations */
+/* Hover and active state animations */
 .vision-focus        /* Focus state styling */
 .vision-loading; /* Loading state with shimmer */
 ```
@@ -107,6 +111,8 @@ Your application now has a comprehensive and consistent Vision Pro-inspired desi
 ```css
 .vision-text-primary   /* Gradient text effect */
 /* Gradient text effect */
+/* Gradient text effect */
+/* Gradient text effect */
 .vision-text-secondary; /* Muted text styling */
 ```
 
@@ -114,6 +120,8 @@ Your application now has a comprehensive and consistent Vision Pro-inspired desi
 
 ```css
 .depth-surface     /* Surface level elements */
+/* Surface level elements */
+/* Surface level elements */
 /* Surface level elements */
 .depth-elevated    /* Slightly elevated */
 .depth-floating    /* Floating elements */
@@ -124,6 +132,8 @@ Your application now has a comprehensive and consistent Vision Pro-inspired desi
 
 ```css
 .vision-nav-item   /* Navigation item styling */
+/* Navigation item styling */
+/* Navigation item styling */
 /* Navigation item styling */
 .vision-input      /* Form input styling */
 .vision-indicator; /* Status indicators */

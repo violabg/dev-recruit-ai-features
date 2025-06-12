@@ -7,7 +7,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const toggleVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium hover:bg-glass-bg hover:text-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-gradient-to-br data-[state=on]:from-primary/20 data-[state=on]:to-primary/10 data-[state=on]:text-primary data-[state=on]:border-primary/30 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none transition-all duration-300 ease-vision aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap backdrop-blur-vision vision-interactive data-[state=on]:shadow-vision-sm hover:border-glass-border/60",
+  "inline-flex justify-center items-center gap-2 hover:bg-glass-bg data-[state=on]:bg-gradient-to-br data-[state=on]:from-primary/20 data-[state=on]:to-primary/10 disabled:opacity-50 data-[state=on]:shadow-vision-sm data-[state=on]:border-primary/30 aria-invalid:border-destructive hover:border-glass-border/60 focus-visible:border-ring rounded-lg outline-none aria-invalid:ring-destructive/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 font-medium data-[state=on]:text-primary hover:text-foreground text-sm whitespace-nowrap transition-all duration-300 ease-vision [&_svg]:pointer-events-none disabled:pointer-events-none [&_svg]:shrink-0 vision-interactive",
   {
     variants: {
       variant: {
