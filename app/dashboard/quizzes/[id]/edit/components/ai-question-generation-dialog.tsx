@@ -50,8 +50,8 @@ const getDifficultyLabel = (value: number) => {
   return labels[value as keyof typeof labels] || "Medio";
 };
 
-// Enhanced generation form schema
-const enhancedGenerationSchema = z.object({
+// generation form schema
+const generationSchema = z.object({
   instructions: z.string().optional(),
   llmModel: z.string().min(1, "Please select a model"),
   difficulty: z.number().min(1).max(5).optional(),
@@ -72,23 +72,20 @@ const enhancedGenerationSchema = z.object({
   includeComments: z.boolean().optional(),
 });
 
-type EnhancedGenerationFormData = z.infer<typeof enhancedGenerationSchema>;
+type GenerationFormData = z.infer<typeof generationSchema>;
 
-type EnhancedAIGenerationDialogProps = {
+type AIGenerationDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
   questionType: QuestionType | null;
-  onGenerate: (
-    type: QuestionType,
-    data: EnhancedGenerationFormData
-  ) => Promise<void>;
+  onGenerate: (type: QuestionType, data: GenerationFormData) => Promise<void>;
   loading: boolean;
   defaultDifficulty?: number;
 };
 
-export const EnhancedAIGenerationDialog = ({
+export const AIQuestionGenerationDialog = ({
   open,
   onOpenChange,
   title,
@@ -97,12 +94,12 @@ export const EnhancedAIGenerationDialog = ({
   onGenerate,
   loading,
   defaultDifficulty = 3,
-}: EnhancedAIGenerationDialogProps) => {
+}: AIGenerationDialogProps) => {
   const [focusAreaInput, setFocusAreaInput] = useState("");
   const [evaluationCriteriaInput, setEvaluationCriteriaInput] = useState("");
 
-  const form = useForm<EnhancedGenerationFormData>({
-    resolver: zodResolver(enhancedGenerationSchema),
+  const form = useForm<GenerationFormData>({
+    resolver: zodResolver(generationSchema),
     defaultValues: {
       llmModel: "llama-3.3-70b-versatile",
       difficulty: defaultDifficulty,
@@ -133,7 +130,7 @@ export const EnhancedAIGenerationDialog = ({
     }
   }, [open, questionType, defaultDifficulty, form]);
 
-  const handleSubmit = async (data: EnhancedGenerationFormData) => {
+  const handleSubmit = async (data: GenerationFormData) => {
     if (!questionType) return;
     await onGenerate(questionType, data);
     onOpenChange(false);

@@ -38,7 +38,7 @@ type AIGenerationDialogProps = {
   defaultDifficulty?: number;
 };
 
-export const AIGenerationDialog = ({
+export const AIQuizGenerationDialog = ({
   open,
   onOpenChange,
   title,
