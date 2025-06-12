@@ -6,7 +6,6 @@ import {
   convertToStrictQuestions,
   generateQuizFormDataSchema,
   questionSchemas,
-  QuestionType,
   quizDataSchema,
 } from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
@@ -272,47 +271,16 @@ export async function generateNewQuizAction({
   }
 }
 
-type GenerateNewQuestionActionParams = {
-  quizTitle: string;
-  positionTitle: string;
-  experienceLevel: string;
-  skills: string[];
-  type: QuestionType;
-  previousQuestions?: { question: string; type?: string }[];
-  specificModel?: string;
-  instructions?: string;
-  difficulty?: number;
-  questionIndex: number;
-};
+import { GenerateQuestionParams } from "../services/ai-service";
 
-export async function generateNewQuestionAction({
-  quizTitle,
-  positionTitle,
-  experienceLevel,
-  skills,
-  type,
-  previousQuestions,
-  specificModel,
-  instructions,
-  difficulty,
-  questionIndex,
-}: GenerateNewQuestionActionParams) {
+export async function generateNewQuestionAction(
+  params: GenerateQuestionParams
+) {
   const monitor = new PerformanceMonitor("generateNewQuestionAction");
 
   try {
-    // Generate question using AI service
-    const question = await aiQuizService.generateQuestion({
-      quizTitle,
-      positionTitle,
-      experienceLevel,
-      skills,
-      type,
-      difficulty,
-      previousQuestions,
-      specificModel,
-      instructions,
-      questionIndex,
-    });
+    // Generate question using AI service with the new parameter structure
+    const question = await aiQuizService.generateQuestion(params);
 
     // Validate generated question
     const validatedQuestion = questionSchemas.strict.parse(question);
@@ -333,9 +301,21 @@ export async function generateNewQuestionAction({
     try {
       await errorHandler.handleError(error, {
         operation: "generateNewQuestionAction",
-        questionType: type,
+        questionType: params.type,
       });
     } catch {
+      // If error handling fails, continue with original error
+    }
+
+    if (error instanceof z.ZodError) {
+      console.error("Question validation failed:", error.errors);
+      throw new QuizSystemError(
+        "Generated question failed validation",
+        QuizErrorCode.INVALID_INPUT,
+        { zodErrors: error.errors }
+      );
+    } else {
+      console.error("Unknown error in generateNewQuestionAction:", error);
       throw new Error("Question generation failed. Please try again.");
     }
   }

@@ -5,7 +5,6 @@ import {
   convertToStrictQuestions,
   Question,
   questionSchemas,
-  QuestionType,
 } from "../schemas";
 import { getOptimalModel } from "../utils";
 
@@ -146,18 +145,431 @@ export interface GenerateQuizParams {
   specificModel?: string;
 }
 
-// Question generation parameters - Updated to include difficulty and question index
-export interface GenerateQuestionParams {
+// Base parameters for all question types
+export interface BaseQuestionParams {
   quizTitle: string;
   positionTitle: string;
   experienceLevel: string;
   skills: string[];
-  type: QuestionType;
   difficulty?: number;
   previousQuestions?: { question: string; type?: string }[];
   specificModel?: string;
   instructions?: string;
-  questionIndex: number; // Add question index for proper ID generation
+  questionIndex: number;
+}
+
+// Type-specific question generation parameters
+export interface MultipleChoiceQuestionParams extends BaseQuestionParams {
+  type: "multiple_choice";
+  focusAreas?: string[];
+  distractorComplexity?: "simple" | "moderate" | "complex";
+}
+
+export interface OpenQuestionParams extends BaseQuestionParams {
+  type: "open_question";
+  requireCodeExample?: boolean;
+  expectedResponseLength?: "short" | "medium" | "long";
+  evaluationCriteria?: string[];
+}
+
+export interface CodeSnippetQuestionParams extends BaseQuestionParams {
+  type: "code_snippet";
+  language?: string;
+  bugType?: "syntax" | "logic" | "performance" | "security";
+  codeComplexity?: "basic" | "intermediate" | "advanced";
+  includeComments?: boolean;
+}
+
+// Union type for all question generation parameters
+export type GenerateQuestionParams =
+  | MultipleChoiceQuestionParams
+  | OpenQuestionParams
+  | CodeSnippetQuestionParams;
+
+// ====================
+// PROMPT BUILDERS BY QUESTION TYPE
+// ====================
+
+abstract class BasePromptBuilder {
+  protected sanitizeInput(input: string): string {
+    return sanitizeInput(input);
+  }
+
+  protected buildCommonContext(params: BaseQuestionParams): string {
+    const sanitizedQuizTitle = this.sanitizeInput(params.quizTitle);
+    const sanitizedPositionTitle = this.sanitizeInput(params.positionTitle);
+    const sanitizedInstructions = params.instructions
+      ? this.sanitizeInput(params.instructions)
+      : "";
+
+    return `
+Position Details:
+- Experience Level: ${params.experienceLevel}
+- Required Skills: ${params.skills.join(", ")}
+- Difficulty level: ${params.difficulty || 3}/5
+${
+  sanitizedInstructions
+    ? `- Special instructions: ${sanitizedInstructions}`
+    : ""
+}
+
+Quiz Context: "${sanitizedQuizTitle}" for position "${sanitizedPositionTitle}"
+
+${
+  params.previousQuestions && params.previousQuestions.length > 0
+    ? `
+Avoid repeating these existing questions:
+${params.previousQuestions
+  .map((q) => `- ${this.sanitizeInput(q.question)}`)
+  .join("\n")}
+`
+    : ""
+}`;
+  }
+
+  abstract buildSystemPrompt(questionIndex?: number): string;
+  abstract buildUserPrompt(params: BaseQuestionParams): string;
+}
+
+class MultipleChoicePromptBuilder extends BasePromptBuilder {
+  buildSystemPrompt(questionIndex?: number): string {
+    const idFormat = `Format "q${questionIndex || 1}" (use "q${
+      questionIndex || 1
+    }" for this specific question)`;
+
+    return `
+You are a technical recruitment expert specializing in creating multiple choice assessment questions.
+
+Generate a valid JSON object for a single multiple choice question (NOT an array) that adheres to these specifications:
+
+REQUIRED FIELDS:
+- id: ${idFormat}
+- type: "multiple_choice"
+- question: Italian text (clear, specific, and job-relevant)
+- options: Array of exactly 4 Italian strings (each at least 3 characters)
+- correctAnswer: Zero-based index number (0-3) of the correct option
+- keywords: Array of relevant strings (optional)
+- explanation: Italian text explaining the correct answer (optional)
+
+QUALITY REQUIREMENTS:
+- Question must test practical, job-relevant knowledge
+- Options should be plausible but clearly distinguishable
+- Avoid ambiguous or trick questions
+- Include realistic distractors that test understanding
+- Explanation should be educational and concise
+
+Example Structure:
+\`\`\`json
+{
+  "id": "q${questionIndex || 1}",
+  "type": "multiple_choice",
+  "question": "Cosa rappresenta il DOM in JavaScript?",
+  "options": [
+    "Document Object Model",
+    "Data Object Management", 
+    "Dynamic Object Mapping",
+    "Distributed Object Method"
+  ],
+  "correctAnswer": 0,
+  "keywords": ["DOM", "JavaScript", "web"],
+  "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
+}
+\`\`\``;
+  }
+
+  buildUserPrompt(params: MultipleChoiceQuestionParams): string {
+    const context = this.buildCommonContext(params);
+
+    const specificRequirements = [];
+    if (params.focusAreas?.length) {
+      specificRequirements.push(`Focus areas: ${params.focusAreas.join(", ")}`);
+    }
+    if (params.distractorComplexity) {
+      specificRequirements.push(
+        `Distractor complexity: ${params.distractorComplexity}`
+      );
+    }
+
+    return `${context}
+
+Create a multiple choice question with the following requirements:
+- Must be practical and job-relevant
+- Should test real-world application of skills
+- Appropriate for ${params.experienceLevel} level
+- Include 4 plausible options with clear distinctions
+
+${
+  specificRequirements.length > 0
+    ? `
+Additional Requirements:
+${specificRequirements.map((req) => `- ${req}`).join("\n")}
+`
+    : ""
+}
+
+Generate exactly 1 multiple choice question following these specifications.`;
+  }
+}
+
+class OpenQuestionPromptBuilder extends BasePromptBuilder {
+  buildSystemPrompt(questionIndex?: number): string {
+    const idFormat = `Format "q${questionIndex || 1}" (use "q${
+      questionIndex || 1
+    }" for this specific question)`;
+
+    return `
+You are a technical recruitment expert specializing in creating open-ended assessment questions.
+
+Generate a valid JSON object for a single open question (NOT an array) that adheres to these specifications:
+
+REQUIRED FIELDS:
+- id: ${idFormat}
+- type: "open_question"
+- question: Italian text (clear, specific, and open-ended)
+- keywords: Array of relevant strings for evaluation (optional)
+- sampleAnswer: Italian text providing an example answer
+- sampleSolution: Valid code string if question involves coding (optional)
+- codeSnippet: Valid code string for context if needed (optional)
+- explanation: Italian text with evaluation guidance (optional)
+
+QUALITY REQUIREMENTS:
+- Question should encourage detailed, thoughtful responses
+- Allow for multiple valid approaches or answers
+- Test understanding of concepts, not just memorization
+- Provide clear evaluation criteria in sampleAnswer
+- Include code examples when relevant to the role
+
+Example Structure:
+\`\`\`json
+{
+  "id": "q${questionIndex || 1}",
+  "type": "open_question",
+  "question": "Spiega come implementeresti la gestione dello stato in un'applicazione React complessa e giustifica la tua scelta.",
+  "keywords": ["React", "state management", "Redux", "Context API", "architecture"],
+  "sampleAnswer": "Una risposta completa dovrebbe includere: valutazione dei requisiti, confronto tra soluzioni (Redux, Context API, Zustand), considerazioni di performance, e esempi di implementazione appropriati per il caso d'uso specifico.",
+  "explanation": "Valutare la comprensione dell'architettura React, capacità di analisi dei trade-off, e esperienza pratica con diverse soluzioni di state management."
+}
+\`\`\``;
+  }
+
+  buildUserPrompt(params: OpenQuestionParams): string {
+    const context = this.buildCommonContext(params);
+
+    const specificRequirements = [];
+    if (params.requireCodeExample) {
+      specificRequirements.push("Include code examples in the answer");
+    }
+    if (params.expectedResponseLength) {
+      specificRequirements.push(
+        `Expected response length: ${params.expectedResponseLength}`
+      );
+    }
+    if (params.evaluationCriteria?.length) {
+      specificRequirements.push(
+        `Evaluation criteria: ${params.evaluationCriteria.join(", ")}`
+      );
+    }
+
+    return `${context}
+
+Create an open question with the following requirements:
+- Must be practical and job-relevant
+- Should encourage detailed, thoughtful responses
+- Allow for multiple valid approaches
+- Appropriate for ${params.experienceLevel} level
+- Test conceptual understanding and practical experience
+
+${
+  specificRequirements.length > 0
+    ? `
+Additional Requirements:
+${specificRequirements.map((req) => `- ${req}`).join("\n")}
+`
+    : ""
+}
+
+Generate exactly 1 open question following these specifications.`;
+  }
+}
+
+class CodeSnippetPromptBuilder extends BasePromptBuilder {
+  buildSystemPrompt(questionIndex?: number): string {
+    const idFormat = `Format "q${questionIndex || 1}" (use "q${
+      questionIndex || 1
+    }" for this specific question)`;
+
+    return `
+You are a technical recruitment expert specializing in creating code-based assessment questions.
+
+Generate a valid JSON object for a single code snippet question (NOT an array) that adheres to these specifications:
+
+REQUIRED FIELDS:
+- id: ${idFormat}
+- type: "code_snippet"
+- question: Italian text asking to analyze, improve, or fix code (NO CODE in question text)
+- codeSnippet: Valid code string (may contain bugs, performance issues, or be suitable for improvement)
+- sampleSolution: Valid code string with the improved/corrected version
+- language: Programming language (e.g., "javascript", "python", "java") MUST be included
+- keywords: Array of relevant technical concepts (optional)
+- explanation: Italian text explaining the solution (optional)
+
+CRITICAL REQUIREMENT:
+- You MUST use the programming language specified in the user prompt
+- The "language" field MUST match the language requested by the user
+- Both codeSnippet and sampleSolution MUST be written in the specified language
+- Do NOT default to JavaScript unless explicitly requested
+
+QUALITY REQUIREMENTS:
+- Code should be realistic and job-relevant
+- If fixing bugs: bugs should be common mistakes developers make
+- If improving code: focus on best practices, performance, or readability
+- Solution should demonstrate professional coding standards
+- Include proper error handling where appropriate
+- Code complexity should match experience level
+
+Example Structures (adapt to requested language):
+
+JavaScript Bug Fix Example:
+\`\`\`json
+{
+  "id": "q${questionIndex || 1}",
+  "type": "code_snippet",
+  "question": "Il seguente codice JavaScript presenta un bug che impedisce il corretto funzionamento asincrono. Identifica e correggi il problema.",
+  "codeSnippet": "async function fetchUserData(userId) {\\n  const response = fetch(\`/api/users/\${userId}\`);\\n  const userData = await response.json();\\n  return userData;\\n}",
+  "sampleSolution": "async function fetchUserData(userId) {\\n  const response = await fetch(\`/api/users/\${userId}\`);\\n  if (!response.ok) {\\n    throw new Error(\`HTTP error! status: \${response.status}\`);\\n  }\\n  const userData = await response.json();\\n  return userData;\\n}",
+  "language": "javascript",
+  "keywords": ["async/await", "fetch", "error handling", "Promise"],
+  "explanation": "Il bug principale era la mancanza di 'await' prima di fetch(). La soluzione include anche la gestione degli errori HTTP per robustezza."
+}
+\`\`\`
+
+Python Code Improvement Example:
+\`\`\`json
+{
+  "id": "q${questionIndex || 1}",
+  "type": "code_snippet", 
+  "question": "Il seguente codice Python funziona ma può essere migliorato per performance e leggibilità. Proponi una versione ottimizzata.",
+  "codeSnippet": "def calculate_total(numbers):\\n    total = 0\\n    for i in range(len(numbers)):\\n        if numbers[i] > 0:\\n            total = total + numbers[i]\\n    return total",
+  "sampleSolution": "def calculate_total(numbers):\\n    return sum(num for num in numbers if num > 0)",
+  "language": "python",
+  "keywords": ["list comprehension", "sum function", "pythonic code", "performance"],
+  "explanation": "La versione migliorata usa una generator expression con la funzione sum(), che è più efficiente e pythonica."
+}
+\`\`\`
+
+REMEMBER: Use the EXACT programming language specified in the user prompt, not these examples!`;
+  }
+
+  buildUserPrompt(params: CodeSnippetQuestionParams): string {
+    const context = this.buildCommonContext(params);
+
+    // Determine the programming language to use
+    // Explicit language parameter takes precedence over skills detection
+    let targetLanguage = params.language;
+    if (!targetLanguage) {
+      // Fall back to detecting from skills
+      const skills = params.skills.map((skill) => skill.toLowerCase());
+
+      if (
+        skills.some(
+          (skill) =>
+            skill.includes("javascript") ||
+            skill.includes("js") ||
+            skill.includes("node")
+        )
+      ) {
+        targetLanguage = "javascript";
+      } else if (
+        skills.some(
+          (skill) => skill.includes("typescript") || skill.includes("ts")
+        )
+      ) {
+        targetLanguage = "typescript";
+      } else if (skills.some((skill) => skill.includes("python"))) {
+        targetLanguage = "python";
+      } else if (skills.some((skill) => skill.includes("java"))) {
+        targetLanguage = "java";
+      } else if (
+        skills.some((skill) => skill.includes("c#") || skill.includes("csharp"))
+      ) {
+        targetLanguage = "csharp";
+      } else if (skills.some((skill) => skill.includes("php"))) {
+        targetLanguage = "php";
+      } else {
+        targetLanguage = "javascript"; // Default fallback
+      }
+    }
+
+    const specificRequirements = [];
+    specificRequirements.push(`Programming language: ${targetLanguage}`);
+
+    // Determine question type based on bugType parameter
+    const hasBugType = params.bugType && params.bugType.trim() !== "";
+    let questionType: string;
+    let codeRequirements: string;
+
+    if (hasBugType) {
+      questionType = "bug fixing";
+      codeRequirements = `- Include intentional ${params.bugType} bugs that are common in practice
+- Provide a corrected solution demonstrating best practices
+- Focus on practical debugging skills`;
+      specificRequirements.push(`Bug type focus: ${params.bugType}`);
+    } else {
+      questionType = "code improvement/analysis";
+      codeRequirements = `- Code should be functional but have room for improvement
+- Focus on best practices, performance optimization, or code readability
+- Provide an improved solution that demonstrates professional coding standards
+- Focus on code quality and modern programming techniques`;
+    }
+
+    if (params.codeComplexity) {
+      specificRequirements.push(`Code complexity: ${params.codeComplexity}`);
+    }
+    if (params.includeComments !== undefined) {
+      specificRequirements.push(
+        `Include comments: ${params.includeComments ? "yes" : "no"}`
+      );
+    }
+
+    return `${context}
+
+Create a code snippet question with the following requirements:
+- Must contain realistic, job-relevant code in ${targetLanguage}
+- CRITICAL: Both codeSnippet and sampleSolution MUST be written in ${targetLanguage}
+- The "language" field MUST be set to "${targetLanguage}"
+${codeRequirements}
+- Appropriate complexity for ${params.experienceLevel} level
+- Question type: ${questionType}
+
+${
+  specificRequirements.length > 0
+    ? `
+Additional Requirements:
+${specificRequirements.map((req) => `- ${req}`).join("\n")}
+`
+    : ""
+}
+
+Generate exactly 1 code snippet question following these specifications.`;
+  }
+}
+
+// Factory for prompt builders
+class PromptBuilderFactory {
+  static createBuilder(
+    type: "multiple_choice" | "open_question" | "code_snippet"
+  ): BasePromptBuilder {
+    switch (type) {
+      case "multiple_choice":
+        return new MultipleChoicePromptBuilder();
+      case "open_question":
+        return new OpenQuestionPromptBuilder();
+      case "code_snippet":
+        return new CodeSnippetPromptBuilder();
+      default:
+        throw new Error(`Unsupported question type: ${type}`);
+    }
+  }
 }
 
 export class AIQuizService {
@@ -168,96 +580,26 @@ export class AIQuizService {
   }
 
   /**
-   * Builds the appropriate system prompt for quiz or question generation
-   * @param isSingleQuestion Whether to generate a single question or full quiz
-   * @param questionIndex The index of the question (for single question generation)
-   * @returns The system prompt string
+   * Builds the appropriate system prompt for quiz generation
+   * @returns The system prompt string for quiz generation
    */
-  private buildQuizSystem(
-    isSingleQuestion: boolean = false,
-    questionIndex?: number
-  ): string {
-    const questionStructure = isSingleQuestion
-      ? "Generate a valid JSON object for a single question (NOT an array)"
-      : "Generate valid JSON that contains a questions array with individual question objects";
-
-    const idFormat = isSingleQuestion
-      ? `Format "q${questionIndex || 1}" (use "q${
-          questionIndex || 1
-        }" for this specific question)`
-      : 'Format "q1" through "q10"';
-
-    const exampleId = isSingleQuestion ? `q${questionIndex || 1}` : "q1";
-
-    const commonExample = `
-          "type": "multiple_choice",
-          "question": "Cosa rappresenta il DOM in JavaScript?",
-          "options": [
-            "Document Object Model",
-            "Data Object Management",
-            "Dynamic Object Mapping",
-            "Distributed Object Method"
-          ],
-          "correctAnswer": 0,
-          "keywords": ["DOM", "JavaScript", "web"],
-          "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
-    `;
-
-    const exampleStructure = isSingleQuestion
-      ? `Example Single Question Structure:
-
-        \`\`\`json
-        {
-          "id": "${exampleId}",
-          ${commonExample}
-        }
-        \`\`\`
-
-        Ensure your output is a single question object matching this exact format.`
-      : `Example Structure:
-
-        \`\`\`json
-        {
-          "title": "Quiz per Sviluppatore Frontend Senior",
-          "questions": [
-            {
-              "id": "q1",
-              ${commonExample}
-            }
-          ],
-          "time_limit": 60,
-          "difficulty": 3,
-          "instructions": "Rispondi alle domande nel tempo limite specificato"
-        }
-        \`\`\`
-
-        Ensure your output matches this exact format for seamless integration.`;
-
+  private buildQuizSystemPrompt(): string {
     return `
-        You are a technical recruitment expert specializing in creating assessment ${
-          isSingleQuestion ? "questions" : "quizzes"
-        }. ${questionStructure} that adheres to the following specifications:
+        You are a technical recruitment expert specializing in creating assessment quizzes. 
+        Generate valid JSON that contains a questions array with individual question objects that adheres to the following specifications:
   
         Schema Requirements:
   
         1. Output must be parseable JSON
-        ${
-          !isSingleQuestion
-            ? "2. Questions array must contain individual question objects"
-            : ""
-        }
-        ${
-          isSingleQuestion ? "2" : "3"
-        }. All property names must be explicit and in English
-        ${
-          isSingleQuestion ? "3" : "4"
-        }. String values must use proper escape sequences
-        ${isSingleQuestion ? "4" : "5"}. No trailing commas allowed
+        2. Questions array must contain individual question objects
+        3. All property names must be explicit and in English
+        4. String values must use proper escape sequences
+        5. No trailing commas allowed
   
         Question Types and Required Fields:
   
         1. Multiple Choice Questions (\`type: "multiple_choice"\`)
-          - id: ${idFormat}
+          - id: Format "q1" through "q10"
           - question: Italian text
           - options: Array of exactly 4 Italian strings
           - correctAnswer: Zero-based index number of the correct option
@@ -265,7 +607,7 @@ export class AIQuizService {
           - explanation: Italian text (optional)
   
         2. Open Questions (\`type: "open_question"\`)
-          - id: ${idFormat}
+          - id: Format "q1" through "q10"
           - question: Italian text
           - keywords: Array of relevant strings (optional)
           - sampleAnswer: Italian text
@@ -274,7 +616,7 @@ export class AIQuizService {
           - explanation: Italian text (optional)
   
         3. Code Questions (\`type: "code_snippet"\`)
-          - id: ${idFormat}
+          - id: Format "q1" through "q10"
           - question: Italian text, must be code related and ask to fix bugs, don't include code in the question text do it in the codeSnippet field
           - codeSnippet: Valid code string, must be relevant to the question and contain a bug if the question is about fixing bugs,
           - sampleSolution: Valid code string, must be the corrected version of the code snippet
@@ -288,13 +630,36 @@ export class AIQuizService {
         - Omit optional fields if not applicable
         - The "options" field must never be written as "options>" or any variant
   
-        ${exampleStructure}
+        Example Structure:
+
+        \`\`\`json
+        {
+          "title": "Quiz per Sviluppatore Frontend Senior",
+          "questions": [
+            {
+              "id": "q1",
+              "type": "multiple_choice",
+              "question": "Cosa rappresenta il DOM in JavaScript?",
+              "options": [
+                "Document Object Model",
+                "Data Object Management",
+                "Dynamic Object Mapping",
+                "Distributed Object Method"
+              ],
+              "correctAnswer": 0,
+              "keywords": ["DOM", "JavaScript", "web"],
+              "explanation": "Il DOM (Document Object Model) è una rappresentazione strutturata del documento HTML che permette a JavaScript di manipolare il contenuto e la struttura della pagina."
+            }
+          ],
+          "time_limit": 60,
+          "difficulty": 3,
+          "instructions": "Rispondi alle domande nel tempo limite specificato"
+        }
+        \`\`\`
+
+        Ensure your output matches this exact format for seamless integration.
       `;
   }
-  private system = () => this.buildQuizSystem(false);
-
-  private singleQuestionSystem = (questionIndex?: number) =>
-    this.buildQuizSystem(true, questionIndex);
 
   private buildQuizPrompt(params: GenerateQuizParams): string {
     const {
@@ -371,62 +736,9 @@ export class AIQuizService {
     return prompt;
   }
 
-  private buildQuestionPrompt(params: GenerateQuestionParams): string {
-    const {
-      quizTitle,
-      positionTitle,
-      experienceLevel,
-      skills,
-      type,
-      difficulty = 3,
-      previousQuestions = [],
-      instructions,
-    } = params;
-
-    // Sanitize inputs
-    const sanitizedQuizTitle = sanitizeInput(quizTitle);
-    const sanitizedPositionTitle = sanitizeInput(positionTitle);
-    const sanitizedInstructions = instructions
-      ? sanitizeInput(instructions)
-      : "";
-
-    const prompt = `Create a single ${type.replace(
-      "_",
-      " "
-    )} question for the quiz "${sanitizedQuizTitle}" for the position "${sanitizedPositionTitle}".
-
-                    Position Details:
-                    - Experience Level: ${experienceLevel}
-                    - Required Skills: ${skills.join(", ")}
-                    - Difficulty level: ${difficulty}/5
-                    ${
-                      sanitizedInstructions
-                        ? `- Special instructions: ${sanitizedInstructions}`
-                        : ""
-                    }
-
-                    ${
-                      previousQuestions.length > 0
-                        ? `
-                    Avoid repeating these existing questions:
-                    ${previousQuestions
-                      .map((q) => `- ${sanitizeInput(q.question)}`)
-                      .join("\n")}
-                    `
-                        : ""
-                    }
-
-                    Question Requirements:
-                    - Type: ${type}
-                    - Must be practical and job-relevant
-                    - Should test real-world application of skills
-                    - Appropriate for ${experienceLevel} level
-                    - Difficulty level: ${difficulty}/5
-
-                    Generate exactly 1 question following these specifications.`;
-
-    return prompt;
-  }
+  /**
+   * Builds quiz generation prompt from parameters
+   */
 
   async generateQuiz(
     params: GenerateQuizParams
@@ -445,7 +757,7 @@ export class AIQuizService {
             const response = await generateObject({
               model: groq(model),
               prompt,
-              system: this.system(),
+              system: this.buildQuizSystemPrompt(),
               schema: aiQuizGenerationSchema,
               temperature: 0.7,
             });
@@ -530,17 +842,23 @@ export class AIQuizService {
         "question_generation",
         params.specificModel
       );
-      const prompt = this.buildQuestionPrompt(params);
 
-      console.log(`Starting question generation with model: ${model}`);
+      // Get the appropriate prompt builder for the question type
+      const promptBuilder = PromptBuilderFactory.createBuilder(params.type);
+
+      // Build system and user prompts using the type-specific builder
+      const systemPrompt = promptBuilder.buildSystemPrompt(
+        params.questionIndex
+      );
+      const userPrompt = promptBuilder.buildUserPrompt(params);
 
       const result = await withTimeout(
         withRetry(async () => {
           try {
             const response = await generateObject({
               model: groq(model),
-              prompt,
-              system: this.singleQuestionSystem(params.questionIndex), // Use questionIndex for proper ID generation
+              prompt: userPrompt,
+              system: systemPrompt,
               schema: questionSchemas.flexible, // Use questionSchemas.flexible for single question
               temperature: 0.7,
             });
