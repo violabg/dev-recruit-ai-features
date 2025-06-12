@@ -57,11 +57,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     collapseAllQuestions,
   } = useQuestionManagement({ fields });
 
-  // AI Generation states
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
-  const [fullQuizDialogOpen, setFullQuizDialogOpen] = useState(false);
-
+  // AI generation state
   const AIGeneration = useAIGeneration({
     form,
     fields,
@@ -78,12 +74,15 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     generateNewQuestion,
     setRegeneratingQuestionIndex,
     generatingQuestionType,
-    getRegeneratingQuestionType,
     handleGenerateQuestion,
+    handleRegenerateQuestion,
     handleGenerateFullQuiz,
   } = AIGeneration;
 
-  getRegeneratingQuestionType();
+  // AI Generation states
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [fullQuizDialogOpen, setFullQuizDialogOpen] = useState(false);
 
   // Handle preset generation
   const handleGeneratePreset = async (
@@ -209,8 +208,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
         onGenerateQuestion={handleGenerateQuestion}
         regenerateDialogOpen={regenerateDialogOpen}
         setRegenerateDialogOpen={setRegenerateDialogOpen}
-        regeneratingQuestionType={getRegeneratingQuestionType()}
-        onRegenerateQuestion={handleGenerateQuestion}
+        onRegenerateQuestion={handleRegenerateQuestion}
         fullQuizDialogOpen={fullQuizDialogOpen}
         setFullQuizDialogOpen={setFullQuizDialogOpen}
         onGenerateFullQuiz={handleGenerateFullQuiz}

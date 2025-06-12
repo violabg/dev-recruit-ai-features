@@ -18,7 +18,7 @@ import {
   createOpenQuestionParams,
 } from "@/lib/utils/question-prompt-helpers";
 import { generateId } from "ai";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { EditQuizFormData } from "./use-edit-quiz-form";
@@ -382,14 +382,6 @@ export const useAIGeneration = ({
   };
 
   /**
-   * Get the question type being regenerated
-   */
-  const getRegeneratingQuestionType = (): QuestionType | null => {
-    if (regeneratingQuestionIndex === null) return null;
-    return fields[regeneratingQuestionIndex]?.type || null;
-  };
-
-  /**
    * Generate full quiz replacement (backward compatibility)
    */
   const handleGenerateFullQuiz = async (data: {
@@ -505,6 +497,12 @@ export const useAIGeneration = ({
     setRegeneratingQuestionIndex(index);
   };
 
+  useEffect(() => {
+    if (regeneratingQuestionIndex === null) return;
+    const questioType = fields[regeneratingQuestionIndex]?.type || null;
+    setGeneratingQuestionType(questioType);
+  }, [regeneratingQuestionIndex, fields]);
+
   return {
     aiLoading,
     generatingQuestionType,
@@ -516,7 +514,6 @@ export const useAIGeneration = ({
     //  methods
     handleGenerateQuestion,
     handleRegenerateQuestion,
-    getRegeneratingQuestionType,
     generateFrontendQuestion,
     generateBackendQuestion,
     generateQuestionWithParams,

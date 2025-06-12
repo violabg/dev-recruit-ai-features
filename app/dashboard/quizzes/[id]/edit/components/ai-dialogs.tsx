@@ -31,7 +31,6 @@ type AIDialogsProps = {
   // Question Regeneration Dialog
   regenerateDialogOpen: boolean;
   setRegenerateDialogOpen: (open: boolean) => void;
-  regeneratingQuestionType: QuestionType | null; // Add this new prop
   onRegenerateQuestion: (
     type: QuestionType,
     data: {
@@ -71,7 +70,6 @@ export const AIDialogs = ({
   onGenerateQuestion,
   regenerateDialogOpen,
   setRegenerateDialogOpen,
-  regeneratingQuestionType,
   onRegenerateQuestion,
   fullQuizDialogOpen,
   setFullQuizDialogOpen,
@@ -98,7 +96,7 @@ export const AIDialogs = ({
         onOpenChange={setRegenerateDialogOpen}
         title="Rigenera Domanda con AI Avanzata"
         description="Sostituisci la domanda esistente con una nuova utilizzando opzioni avanzate"
-        questionType={regeneratingQuestionType}
+        questionType={generatingQuestionType}
         onGenerate={onRegenerateQuestion}
         loading={aiLoading}
         defaultDifficulty={defaultDifficulty}
