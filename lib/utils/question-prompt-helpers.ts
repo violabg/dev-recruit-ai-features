@@ -5,6 +5,7 @@
  * for the new modular prompt builder system.
  */
 
+import { QuestionType } from "../schemas";
 import {
   BaseQuestionParams,
   CodeSnippetQuestionParams,
@@ -101,7 +102,7 @@ export const createCodeSnippetParams = (
  * Creates question parameters based on type with sensible defaults
  */
 export const createQuestionParams = (
-  type: "multiple_choice" | "open_question" | "code_snippet",
+  type: QuestionType,
   baseConfig: Omit<BaseQuestionParams, "questionIndex">,
   questionIndex: number,
   typeSpecificOptions?: Record<string, unknown>
@@ -134,7 +135,7 @@ export const createQuestionParams = (
  * Creates parameters for frontend development questions with smart defaults
  */
 export const createFrontendQuestionParams = (
-  type: "multiple_choice" | "open_question" | "code_snippet",
+  type: QuestionType,
   baseConfig: Omit<BaseQuestionParams, "questionIndex">,
   questionIndex: number
 ): GenerateQuestionParams => {
@@ -172,7 +173,7 @@ export const createFrontendQuestionParams = (
  * Creates parameters for backend development questions with smart defaults
  */
 export const createBackendQuestionParams = (
-  type: "multiple_choice" | "open_question" | "code_snippet",
+  type: QuestionType,
   baseConfig: Omit<BaseQuestionParams, "questionIndex">,
   questionIndex: number
 ): GenerateQuestionParams => {
@@ -205,123 +206,3 @@ export const createBackendQuestionParams = (
     backendDefaults[type]
   );
 };
-
-// ====================
-// VALIDATION HELPERS
-// ====================
-
-/**
- * Validates that question parameters are properly formed
- */
-export const validateQuestionParams = (
-  params: GenerateQuestionParams
-): boolean => {
-  // Check base requirements
-  if (!params.quizTitle || !params.positionTitle || !params.skills.length) {
-    return false;
-  }
-
-  if (params.questionIndex < 1) {
-    return false;
-  }
-
-  // Type-specific validation
-  switch (params.type) {
-    case "multiple_choice":
-      // No additional validation needed for multiple choice
-      break;
-    case "open_question":
-      // No additional validation needed for open questions
-      break;
-    case "code_snippet":
-      // Code snippet questions should preferably have a language specified
-      if (
-        !params.language &&
-        !params.skills.some((skill) =>
-          ["javascript", "typescript", "python", "java", "c#", "php"].includes(
-            skill.toLowerCase()
-          )
-        )
-      ) {
-        console.warn(
-          "Code snippet question without explicit language or programming language in skills"
-        );
-      }
-      break;
-  }
-
-  return true;
-};
-
-// ====================
-// TYPE GUARDS
-// ====================
-
-export const isMultipleChoiceParams = (
-  params: GenerateQuestionParams
-): params is MultipleChoiceQuestionParams => {
-  return params.type === "multiple_choice";
-};
-
-export const isOpenQuestionParams = (
-  params: GenerateQuestionParams
-): params is OpenQuestionParams => {
-  return params.type === "open_question";
-};
-
-export const isCodeSnippetParams = (
-  params: GenerateQuestionParams
-): params is CodeSnippetQuestionParams => {
-  return params.type === "code_snippet";
-};
-
-// ====================
-// EXAMPLES
-// ====================
-
-/**
- * Example usage:
- *
- * ```typescript
- * // Create a multiple choice question for a React developer
- * const mcParams = createMultipleChoiceParams(
- *   {
- *     quizTitle: "React Assessment",
- *     positionTitle: "Frontend Developer",
- *     experienceLevel: "senior",
- *     skills: ["React", "TypeScript", "CSS"],
- *     difficulty: 4,
- *   },
- *   1,
- *   {
- *     focusAreas: ["React Hooks", "State Management"],
- *     distractorComplexity: "complex"
- *   }
- * );
- *
- * // Create a code snippet question for a Node.js developer
- * const codeParams = createCodeSnippetParams(
- *   {
- *     quizTitle: "Backend Assessment",
- *     positionTitle: "Backend Developer",
- *     experienceLevel: "mid",
- *     skills: ["Node.js", "Express", "MongoDB"],
- *     difficulty: 3,
- *   },
- *   2,
- *   {
- *     language: "javascript",
- *     bugType: "logic",
- *     codeComplexity: "intermediate",
- *     includeComments: true
- *   }
- * );
- *
- * // Use convenience function for frontend questions
- * const frontendParams = createFrontendQuestionParams(
- *   "open_question",
- *   baseConfig,
- *   3
- * );
- * ```
- */
