@@ -104,6 +104,22 @@ export const quizApiSchemas = {
       .number()
       .int()
       .min(0, "Question index must be a non-negative integer"),
+
+    // Type-specific parameters for different question types
+    // Multiple choice specific
+    focusAreas: z.array(z.string()).optional(),
+    distractorComplexity: z.enum(["simple", "moderate", "complex"]).optional(),
+
+    // Open question specific
+    requireCodeExample: z.boolean().optional(),
+    expectedResponseLength: z.enum(["short", "medium", "long"]).optional(),
+    evaluationCriteria: z.array(z.string()).optional(),
+
+    // Code snippet specific
+    language: z.string().optional(), // 🎯 THIS IS THE KEY FIELD!
+    bugType: z.enum(["syntax", "logic", "performance", "security"]).optional(),
+    codeComplexity: z.enum(["basic", "intermediate", "advanced"]).optional(),
+    includeComments: z.boolean().optional(),
   }),
 } as const;
 

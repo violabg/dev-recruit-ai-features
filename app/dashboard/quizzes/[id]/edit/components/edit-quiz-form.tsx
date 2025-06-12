@@ -14,6 +14,7 @@ import { useAIGeneration } from "../hooks/use-ai-generation";
 import { useEditQuizForm } from "../hooks/use-edit-quiz-form";
 import { useQuestionManagement } from "../hooks/use-question-management";
 import { AIDialogs } from "./ai-dialogs";
+import { PresetGenerationButtons } from "./preset-generation-buttons";
 import { QuestionsHeader } from "./questions-header";
 import { QuestionsList } from "./questions-list";
 import { QuizSettings } from "./quiz-settings";
@@ -56,20 +57,8 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     collapseAllQuestions,
   } = useQuestionManagement({ fields });
 
-  // AI Generation states
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
-  const [fullQuizDialogOpen, setFullQuizDialogOpen] = useState(false);
-
-  // AI Generation logic
-  const {
-    aiLoading,
-    generateNewQuestion,
-    setRegeneratingQuestionIndex,
-    handleGenerateQuestion,
-    handleRegenerateQuestion,
-    handleGenerateFullQuiz,
-  } = useAIGeneration({
+  // AI generation state
+  const AIGeneration = useAIGeneration({
     form,
     fields,
     position,
@@ -79,6 +68,52 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
     update,
     setExpandedQuestions,
   });
+
+  const {
+    aiLoading,
+    generateNewQuestion,
+    setRegeneratingQuestionIndex,
+    generatingQuestionType,
+    handleGenerateQuestion,
+    handleRegenerateQuestion,
+    handleGenerateFullQuiz,
+  } = AIGeneration;
+
+  // AI Generation states
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [fullQuizDialogOpen, setFullQuizDialogOpen] = useState(false);
+
+  // Handle preset generation
+  const handleGeneratePreset = async (
+    type: QuestionType,
+    presetId: string,
+    options: Record<string, unknown>
+  ) => {
+    // Use enhanced generation if available
+    const enhancedOptions = {
+      llmModel: "llama-3.3-70b-versatile",
+      difficulty: 3,
+      ...options,
+    };
+    await handleGenerateQuestion(
+      type,
+      enhancedOptions as {
+        llmModel: string;
+        difficulty?: number;
+        instructions?: string;
+        focusAreas?: string[];
+        distractorComplexity?: "simple" | "moderate" | "complex";
+        requireCodeExample?: boolean;
+        expectedResponseLength?: "short" | "medium" | "long";
+        evaluationCriteria?: string[];
+        language?: string;
+        bugType?: "syntax" | "logic" | "performance" | "security";
+        codeComplexity?: "basic" | "intermediate" | "advanced";
+        includeComments?: boolean;
+      }
+    );
+  };
 
   const handleGenerateNewQuestion = useCallback(
     (type: QuestionType) => {
@@ -126,6 +161,13 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
             aiLoading={aiLoading}
           />
 
+          {/* Smart Question Presets */}
+          <PresetGenerationButtons
+            onGeneratePreset={handleGeneratePreset}
+            loading={aiLoading}
+            position={position}
+          />
+
           {/* Questions Management */}
           <QuestionsHeader
             fieldsLength={fields.length}
@@ -162,6 +204,7 @@ export function EditQuizForm({ quiz, position }: EditQuizFormProps) {
       <AIDialogs
         aiDialogOpen={aiDialogOpen}
         setAiDialogOpen={setAiDialogOpen}
+        generatingQuestionType={generatingQuestionType}
         onGenerateQuestion={handleGenerateQuestion}
         regenerateDialogOpen={regenerateDialogOpen}
         setRegenerateDialogOpen={setRegenerateDialogOpen}

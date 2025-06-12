@@ -2,13 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import {
-  convertToStrictQuestions,
-  generateQuizFormDataSchema,
-  questionSchemas,
-  QuestionType,
-  quizDataSchema,
-} from "../schemas";
+import { convertToStrictQuestions, questionSchemas } from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
   errorHandler,
@@ -53,138 +47,6 @@ type GenerateNewQuizActionParams = {
   previousQuestions?: { question: string }[];
   specificModel?: string;
 };
-
-// Keep for backward compatibility but deprecate
-export async function generateAndSaveQuiz(formData: FormData) {
-  const monitor = new PerformanceMonitor("generateAndSaveQuiz");
-
-  try {
-    const supabase = await createClient();
-
-    // Enhanced user authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new QuizSystemError(
-        "User authentication failed",
-        QuizErrorCode.UNAUTHORIZED,
-        { authError: authError?.message }
-      );
-    }
-
-    // Parse and validate form data using consolidated schema
-    const rawData = Object.fromEntries(formData.entries());
-    const validatedData = generateQuizFormDataSchema.parse(rawData);
-
-    // Validate that at least one question type is selected
-    if (
-      !validatedData.include_multiple_choice &&
-      !validatedData.include_open_questions &&
-      !validatedData.include_code_snippets
-    ) {
-      throw new QuizSystemError(
-        "At least one question type must be selected",
-        QuizErrorCode.INVALID_INPUT
-      );
-    }
-
-    // Fetch position with enhanced error handling
-    const { data: position, error: positionError } = await supabase
-      .from("positions")
-      .select("id, title, experience_level, skills, description")
-      .eq("id", validatedData.position_id)
-      .eq("created_by", user.id) // Ensure user owns the position
-      .single();
-
-    if (positionError || !position) {
-      throw new QuizSystemError(
-        "Position not found or access denied",
-        QuizErrorCode.POSITION_NOT_FOUND,
-        { positionId: validatedData.position_id, error: positionError?.message }
-      );
-    }
-
-    // Generate quiz using enhanced AI service
-    const quizData = await aiQuizService.generateQuiz({
-      positionTitle: position.title,
-      experienceLevel: position.experience_level,
-      skills: position.skills,
-      description: position.description || undefined,
-      quizTitle: validatedData.title,
-      questionCount: validatedData.question_count,
-      difficulty: validatedData.difficulty,
-      includeMultipleChoice: validatedData.include_multiple_choice,
-      includeOpenQuestions: validatedData.include_open_questions,
-      includeCodeSnippets: validatedData.include_code_snippets,
-      instructions: validatedData.instructions,
-      specificModel: validatedData.llm_model,
-    });
-
-    // Validate generated quiz
-    const validatedQuiz = quizDataSchema.parse(quizData);
-
-    // Save quiz to database
-    const { data: quiz, error: insertError } = await supabase
-      .from("quizzes")
-      .insert({
-        title: validatedData.title,
-        position_id: validatedData.position_id,
-        questions: convertToStrictQuestions(validatedQuiz.questions),
-        time_limit: validatedData.enable_time_limit
-          ? validatedData.time_limit
-          : null,
-        created_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (insertError || !quiz) {
-      throw new QuizSystemError(
-        "Failed to save quiz to database",
-        QuizErrorCode.DATABASE_ERROR,
-        { error: insertError?.message }
-      );
-    }
-
-    // Revalidate cache tags for new quiz
-    revalidateQuizCache(quiz.id);
-
-    monitor.end();
-    return quiz.id;
-  } catch (error) {
-    monitor.end();
-
-    // Use enhanced error handler
-    if (
-      error instanceof QuizSystemError ||
-      error instanceof AIGenerationError
-    ) {
-      const message =
-        error instanceof QuizSystemError
-          ? getUserFriendlyErrorMessage(error)
-          : "AI generation failed. Please try again.";
-      throw new Error(message);
-    }
-
-    // For other errors, use the error handler but still throw a user-friendly message
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      await errorHandler.handleError(error, {
-        operation: "generateAndSaveQuiz",
-        userId: user?.id,
-      });
-    } catch {
-      // If error handler fails, still throw the original error
-      throw new Error("Si è verificato un errore interno. Riprova più tardi.");
-    }
-  }
-}
 
 export async function generateNewQuizAction({
   positionId,
@@ -272,47 +134,16 @@ export async function generateNewQuizAction({
   }
 }
 
-type GenerateNewQuestionActionParams = {
-  quizTitle: string;
-  positionTitle: string;
-  experienceLevel: string;
-  skills: string[];
-  type: QuestionType;
-  previousQuestions?: { question: string; type?: string }[];
-  specificModel?: string;
-  instructions?: string;
-  difficulty?: number;
-  questionIndex: number;
-};
+import { GenerateQuestionParams } from "../services/ai-service";
 
-export async function generateNewQuestionAction({
-  quizTitle,
-  positionTitle,
-  experienceLevel,
-  skills,
-  type,
-  previousQuestions,
-  specificModel,
-  instructions,
-  difficulty,
-  questionIndex,
-}: GenerateNewQuestionActionParams) {
+export async function generateNewQuestionAction(
+  params: GenerateQuestionParams
+) {
   const monitor = new PerformanceMonitor("generateNewQuestionAction");
 
   try {
-    // Generate question using AI service
-    const question = await aiQuizService.generateQuestion({
-      quizTitle,
-      positionTitle,
-      experienceLevel,
-      skills,
-      type,
-      difficulty,
-      previousQuestions,
-      specificModel,
-      instructions,
-      questionIndex,
-    });
+    // Generate question using AI service with the new parameter structure
+    const question = await aiQuizService.generateQuestion(params);
 
     // Validate generated question
     const validatedQuestion = questionSchemas.strict.parse(question);
@@ -333,9 +164,21 @@ export async function generateNewQuestionAction({
     try {
       await errorHandler.handleError(error, {
         operation: "generateNewQuestionAction",
-        questionType: type,
+        questionType: params.type,
       });
     } catch {
+      // If error handling fails, continue with original error
+    }
+
+    if (error instanceof z.ZodError) {
+      console.error("Question validation failed:", error.errors);
+      throw new QuizSystemError(
+        "Generated question failed validation",
+        QuizErrorCode.INVALID_INPUT,
+        { zodErrors: error.errors }
+      );
+    } else {
+      console.error("Unknown error in generateNewQuestionAction:", error);
       throw new Error("Question generation failed. Please try again.");
     }
   }

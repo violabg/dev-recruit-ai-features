@@ -1,27 +1,56 @@
 "use client";
 
-import { AIGenerationDialog } from "@/components/ui/ai-generation-dialog";
+import { AIQuizGenerationDialog } from "@/app/dashboard/quizzes/[id]/edit/components/ai-quiz-generation-dialog";
+import { QuestionType } from "@/lib/schemas";
+import { AIQuestionGenerationDialog } from "./ai-question-generation-dialog";
 
 type AIDialogsProps = {
   // New Question Generation Dialog
   aiDialogOpen: boolean;
   setAiDialogOpen: (open: boolean) => void;
-  onGenerateQuestion: (data: {
-    instructions?: string;
-    llmModel: string;
-    difficulty?: number;
-  }) => Promise<void>;
+  generatingQuestionType: QuestionType | null;
+  onGenerateQuestion: (
+    type: QuestionType,
+    data: {
+      instructions?: string;
+      llmModel: string;
+      difficulty?: number;
+      // Type-specific options
+      focusAreas?: string[];
+      distractorComplexity?: "simple" | "moderate" | "complex";
+      requireCodeExample?: boolean;
+      expectedResponseLength?: "short" | "medium" | "long";
+      evaluationCriteria?: string[];
+      language?: string;
+      bugType?: "syntax" | "logic" | "performance" | "security";
+      codeComplexity?: "basic" | "intermediate" | "advanced";
+      includeComments?: boolean;
+    }
+  ) => Promise<void>;
 
   // Question Regeneration Dialog
   regenerateDialogOpen: boolean;
   setRegenerateDialogOpen: (open: boolean) => void;
-  onRegenerateQuestion: (data: {
-    instructions?: string;
-    llmModel: string;
-    difficulty?: number;
-  }) => Promise<void>;
+  onRegenerateQuestion: (
+    type: QuestionType,
+    data: {
+      instructions?: string;
+      llmModel: string;
+      difficulty?: number;
+      // Type-specific options
+      focusAreas?: string[];
+      distractorComplexity?: "simple" | "moderate" | "complex";
+      requireCodeExample?: boolean;
+      expectedResponseLength?: "short" | "medium" | "long";
+      evaluationCriteria?: string[];
+      language?: string;
+      bugType?: "syntax" | "logic" | "performance" | "security";
+      codeComplexity?: "basic" | "intermediate" | "advanced";
+      includeComments?: boolean;
+    }
+  ) => Promise<void>;
 
-  // Full Quiz Regeneration Dialog
+  // Full Quiz Regeneration Dialog (legacy)
   fullQuizDialogOpen: boolean;
   setFullQuizDialogOpen: (open: boolean) => void;
   onGenerateFullQuiz: (data: {
@@ -37,6 +66,7 @@ type AIDialogsProps = {
 export const AIDialogs = ({
   aiDialogOpen,
   setAiDialogOpen,
+  generatingQuestionType,
   onGenerateQuestion,
   regenerateDialogOpen,
   setRegenerateDialogOpen,
@@ -49,32 +79,31 @@ export const AIDialogs = ({
 }: AIDialogsProps) => {
   return (
     <>
-      {/* New Question Generation Dialog */}
-      <AIGenerationDialog
+      {/* Dialogo Generazione Domanda */}
+      <AIQuestionGenerationDialog
         open={aiDialogOpen}
         onOpenChange={setAiDialogOpen}
         title="Genera Domanda con AI"
-        description="Specifica le istruzioni per generare una nuova domanda"
+        description="Crea una domanda specializzata con opzioni specifiche per un migliore targeting"
+        questionType={generatingQuestionType}
         onGenerate={onGenerateQuestion}
         loading={aiLoading}
-        showDifficulty={true}
+        defaultDifficulty={defaultDifficulty}
+      />
+      {/* Dialogo Rigenerazione Domanda */}
+      <AIQuestionGenerationDialog
+        open={regenerateDialogOpen}
+        onOpenChange={setRegenerateDialogOpen}
+        title="Rigenera Domanda con AI Avanzata"
+        description="Sostituisci la domanda esistente con una nuova utilizzando opzioni avanzate"
+        questionType={generatingQuestionType}
+        onGenerate={onRegenerateQuestion}
+        loading={aiLoading}
         defaultDifficulty={defaultDifficulty}
       />
 
-      {/* Question Regeneration Dialog */}
-      <AIGenerationDialog
-        open={regenerateDialogOpen}
-        onOpenChange={setRegenerateDialogOpen}
-        title="Rigenera Domanda con AI"
-        description="Sostituisci la domanda esistente con una nuova generata dall'AI"
-        onGenerate={onRegenerateQuestion}
-        loading={aiLoading}
-        showDifficulty={true}
-        defaultDifficulty={3}
-      />
-
-      {/* Full Quiz Regeneration Dialog */}
-      <AIGenerationDialog
+      {/* Full Quiz Regeneration Dialog - Keep legacy for now */}
+      <AIQuizGenerationDialog
         open={fullQuizDialogOpen}
         onOpenChange={setFullQuizDialogOpen}
         title="Genera Nuovo Quiz con AI"
@@ -82,7 +111,7 @@ export const AIDialogs = ({
         onGenerate={onGenerateFullQuiz}
         loading={aiLoading}
         showDifficulty={true}
-        defaultDifficulty={3}
+        defaultDifficulty={defaultDifficulty}
       />
     </>
   );

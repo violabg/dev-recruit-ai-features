@@ -37,6 +37,22 @@ const generateQuestionHandler = withValidation(
         specificModel: validatedData.specificModel,
         instructions: validatedData.instructions,
         questionIndex: validatedData.questionIndex,
+
+        // Pass type-specific parameters
+        // Multiple choice specific
+        focusAreas: validatedData.focusAreas,
+        distractorComplexity: validatedData.distractorComplexity,
+
+        // Open question specific
+        requireCodeExample: validatedData.requireCodeExample,
+        expectedResponseLength: validatedData.expectedResponseLength,
+        evaluationCriteria: validatedData.evaluationCriteria,
+
+        // Code snippet specific - THE CRITICAL FIX!
+        language: validatedData.language,
+        bugType: validatedData.bugType,
+        codeComplexity: validatedData.codeComplexity,
+        includeComments: validatedData.includeComments,
       });
 
       // Log performance metrics

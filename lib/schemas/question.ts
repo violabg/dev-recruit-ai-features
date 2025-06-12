@@ -39,14 +39,17 @@ const codeSnippetQuestionSchema = baseQuestionSchema.extend({
   language: z.string().min(1, "Programming language required"),
 });
 
+// Question type schemas for automatic type inference
+const questionTypeSchemas = [
+  multipleChoiceQuestionSchema,
+  openQuestionSchema,
+  codeSnippetQuestionSchema,
+] as const;
+
 // Discriminated union for type safety
 export const questionSchemas = {
   // Strict schema for runtime validation
-  strict: z.discriminatedUnion("type", [
-    multipleChoiceQuestionSchema,
-    openQuestionSchema,
-    codeSnippetQuestionSchema,
-  ]),
+  strict: z.discriminatedUnion("type", questionTypeSchemas),
 
   // Flexible schema for parsing AI responses and existing data
   flexible: z

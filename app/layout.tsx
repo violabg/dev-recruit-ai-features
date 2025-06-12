@@ -41,7 +41,7 @@ export default function RootLayout({
               richColors
               position="top-right"
               toastOptions={{
-                className: "glass-card border-0 backdrop-blur-vision",
+                className: "glass-card border-0 ",
                 style: {
                   background: "var(--glass-bg)",
                   backdropFilter: "blur(20px) saturate(1.8)",

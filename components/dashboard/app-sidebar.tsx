@@ -81,7 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="px-3">
         <NavMain items={data.navSecondary} />
       </SidebarContent>
-      <SidebarFooter className="bg-sidebar/60 backdrop-blur-vision m-2 border-0 rounded-xl glass-card">
+      <SidebarFooter className="bg-sidebar/60 m-2 border-0 rounded-xl glass-card">
         <NavUser />
       </SidebarFooter>
     </Sidebar>
