@@ -84,12 +84,19 @@ export function InterviewResultsClient({
           maxPossibleScore += maxScore;
         } catch (error) {
           console.error("Error evaluating answer:", error);
+          toast.error("Errore valutazione", {
+            description: `Errore nella valutazione della domanda: ${question.question.slice(
+              0,
+              50
+            )}...`,
+          });
           evaluatedQuestions[question.id] = {
-            evaluation: "Errore durante la valutazione automatica.",
+            evaluation:
+              "Errore durante la valutazione automatica. La risposta verrà valutata manualmente.",
             score: 0,
             maxScore,
             strengths: [],
-            weaknesses: [],
+            weaknesses: ["Valutazione automatica non riuscita"],
           };
           maxPossibleScore += maxScore;
         }
@@ -119,9 +126,13 @@ export function InterviewResultsClient({
         setOverallEvaluation(result);
       } catch (error) {
         console.error("Error generating overall evaluation:", error);
+        toast.error("Errore valutazione complessiva", {
+          description:
+            "Non è stato possibile generare la valutazione complessiva automatica",
+        });
         setOverallEvaluation({
           evaluation:
-            "Non è stato possibile generare una valutazione complessiva. Si prega di rivedere manualmente i risultati.",
+            "Non è stato possibile generare una valutazione complessiva automatica. Si prega di rivedere manualmente i risultati delle singole domande.",
         });
       }
     } catch (error) {

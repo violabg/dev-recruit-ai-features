@@ -759,6 +759,12 @@ export class AIQuizService {
               system: this.buildQuizSystemPrompt(),
               schema: aiQuizGenerationSchema,
               temperature: 0.7,
+              mode: "json",
+              providerOptions: {
+                groq: {
+                  structuredOutputs: false,
+                },
+              },
             });
 
             if (
@@ -811,6 +817,10 @@ export class AIQuizService {
         for (const fallbackModel of this.config.fallbackModels) {
           if (fallbackModel !== params.specificModel) {
             try {
+              console.log(
+                "🚀 ~ AIQuizService ~ generateQuiz ~ fallbackModel:",
+                fallbackModel
+              );
               return await this.generateQuiz({
                 ...params,
                 specificModel: fallbackModel,
@@ -860,6 +870,12 @@ export class AIQuizService {
               system: systemPrompt,
               schema: questionSchemas.flexible, // Use questionSchemas.flexible for single question
               temperature: 0.7,
+              mode: "json",
+              providerOptions: {
+                groq: {
+                  structuredOutputs: false,
+                },
+              },
             });
 
             if (!response.object) {
@@ -914,6 +930,10 @@ export class AIQuizService {
       if (params.specificModel && this.config.fallbackModels.length > 0) {
         console.log("Attempting fallback models...");
         for (const fallbackModel of this.config.fallbackModels) {
+          console.log(
+            "🚀 ~ AIQuizService ~ generateQuestion ~ fallbackModel:",
+            fallbackModel
+          );
           if (fallbackModel !== params.specificModel) {
             try {
               return await this.generateQuestion({

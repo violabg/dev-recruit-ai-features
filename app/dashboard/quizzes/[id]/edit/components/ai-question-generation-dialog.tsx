@@ -34,11 +34,12 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { QuestionType } from "@/lib/schemas";
+import { LLM_MODELS } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 const getDifficultyLabel = (value: number) => {
   const labels = {
@@ -102,7 +103,7 @@ export const AIQuestionGenerationDialog = ({
   const form = useForm<GenerationFormData>({
     resolver: zodResolver(generationSchema),
     defaultValues: {
-      llmModel: "llama-3.3-70b-versatile",
+      llmModel: LLM_MODELS.VERSATILE,
       difficulty: defaultDifficulty,
       distractorComplexity: "moderate",
       expectedResponseLength: "medium",
@@ -117,7 +118,7 @@ export const AIQuestionGenerationDialog = ({
   useEffect(() => {
     if (open && questionType) {
       form.reset({
-        llmModel: "llama-3.3-70b-versatile",
+        llmModel: LLM_MODELS.VERSATILE,
         difficulty: defaultDifficulty,
         distractorComplexity: "moderate",
         expectedResponseLength: "medium",

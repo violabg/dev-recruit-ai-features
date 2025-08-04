@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { baseSchemas, formTransformers } from "./base";
 import { questionSchemas } from "./question";
 
@@ -26,8 +26,8 @@ export const quizDataSchema = z.object({
   time_limit: baseSchemas.timeLimit,
   difficulty: baseSchemas.difficulty.optional(),
   instructions: baseSchemas.instructions,
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime().optional(),
+  created_at: z.iso.datetime(),
+  updated_at: z.iso.datetime().optional(),
   created_by: baseSchemas.uuid,
   updated_by: baseSchemas.uuid.optional(),
 });
@@ -100,9 +100,7 @@ export const quizApiSchemas = {
       .optional(),
     specificModel: z.string().optional(),
     instructions: baseSchemas.instructions,
-    questionIndex: z
-      .number()
-      .int()
+    questionIndex: z.int()
       .min(0, "Question index must be a non-negative integer"),
 
     // Type-specific parameters for different question types
@@ -187,7 +185,7 @@ export const quizEntitySchemas = {
     position_id: baseSchemas.uuid,
     difficulty: baseSchemas.difficulty.optional(),
     created_at: z.string(),
-    question_count: z.number().int().min(0),
+    question_count: z.int().min(0),
   }),
 } as const;
 

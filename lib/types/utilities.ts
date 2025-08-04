@@ -3,7 +3,7 @@
 // ====================
 // Enhanced utility types for better type inference and safety across the application
 
-import { z } from "zod";
+import { z } from "zod/v4";
 
 // Utility type for extracting form data types from Zod schemas
 export type FormDataType<T extends Record<string, z.ZodTypeAny>> = {
@@ -120,16 +120,16 @@ export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
 // Type for schema validation middleware configuration
 export type ValidationConfig = {
-  body?: z.ZodSchema;
-  query?: z.ZodSchema;
-  params?: z.ZodSchema;
-  headers?: z.ZodSchema;
+  body?: z.ZodJSONSchema;
+  query?: z.ZodJSONSchema;
+  params?: z.ZodJSONSchema;
+  headers?: z.ZodJSONSchema;
 };
 
 // Type for validated request data in API routes
 export type ValidatedRequestData<T extends ValidationConfig> = {
-  body: T["body"] extends z.ZodSchema ? z.infer<T["body"]> : never;
-  query: T["query"] extends z.ZodSchema ? z.infer<T["query"]> : never;
-  params: T["params"] extends z.ZodSchema ? z.infer<T["params"]> : never;
-  headers: T["headers"] extends z.ZodSchema ? z.infer<T["headers"]> : never;
+  body: T["body"] extends z.ZodJSONSchema ? z.infer<T["body"]> : never;
+  query: T["query"] extends z.ZodJSONSchema ? z.infer<T["query"]> : never;
+  params: T["params"] extends z.ZodJSONSchema ? z.infer<T["params"]> : never;
+  headers: T["headers"] extends z.ZodJSONSchema ? z.infer<T["headers"]> : never;
 };

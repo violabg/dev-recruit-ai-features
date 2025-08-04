@@ -16,6 +16,7 @@ export const LLM_MODELS = {
 
   // Preview models - experimental, may be discontinued
   REASONING: "deepseek-r1-distill-llama-70b", // 128K context - Best for evaluation/reasoning
+  KIMI: "moonshotai/kimi-k2-instruct",
   MAVERICK: "meta-llama/llama-4-maverick-17b-128e-instruct", // 131K context, 8K output
   SCOUT: "meta-llama/llama-4-scout-17b-16e-instruct", // 131K context, 8K output
   ALLAM_2_7B: "allam-2-7b", // 4K context - Saudi Data and AI Authority model
@@ -72,6 +73,7 @@ export const getModelsByCategory = () => {
     preview: {
       text: [
         LLM_MODELS.REASONING,
+        LLM_MODELS.KIMI,
         LLM_MODELS.MAVERICK,
         LLM_MODELS.SCOUT,
         LLM_MODELS.ALLAM_2_7B,
@@ -113,13 +115,11 @@ export const getOptimalModel = (
       // Single question generation can use faster model
       return LLM_MODELS.INSTANT;
 
+    case "overall_evaluation":
     case "evaluation":
       // Answer evaluation benefits from reasoning capabilities
+      // Using DeepSeek R1 model with proper v5 configuration for structured outputs
       return LLM_MODELS.REASONING;
-
-    case "overall_evaluation":
-      // Comprehensive assessment needs high capability
-      return LLM_MODELS.VERSATILE;
 
     case "simple_task":
       // Basic tasks use fastest model

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { baseSchemas } from "./base";
 
 // ====================
@@ -8,7 +8,9 @@ import { baseSchemas } from "./base";
 export const candidateFormSchema = z.object({
   name: baseSchemas.name,
   email: baseSchemas.email,
-  position_id: z.string().min(1, { message: "Seleziona una posizione." }),
+  position_id: z.string().min(1, {
+      error: "Seleziona una posizione."
+}),
 });
 
 // ====================

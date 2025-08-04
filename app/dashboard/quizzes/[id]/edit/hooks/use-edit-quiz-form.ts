@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
+import * as z from "zod/v4";
 
 // Use the consolidated schemas with form-specific validation
 const editQuizFormSchema = saveQuizRequestSchema.extend({

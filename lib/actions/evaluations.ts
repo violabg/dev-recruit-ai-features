@@ -3,8 +3,8 @@
 import {
   EvaluationResult,
   evaluationResultSchema,
-  OverallEvaluation,
   overallEvaluationSchema,
+  Question,
 } from "@/lib/schemas";
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
@@ -12,8 +12,8 @@ import { getOptimalModel } from "../utils";
 
 // Evaluation actions
 export async function evaluateAnswer(
-  question: any,
-  answer: any,
+  question: Question,
+  answer: string,
   specificModel?: string
 ) {
   if (!question || !answer) {
@@ -24,78 +24,161 @@ export async function evaluateAnswer(
   let prompt = "";
   if (question.type === "multiple_choice") {
     prompt = `
-              Valuta questa risposta a scelta multipla:
+          Evaluate this multiple choice answer:
 
-              Domanda: ${question.question}
-              Opzione selezionata dal candidato: "${answer}"
-              Opzione corretta: "${
-                question.options[Number.parseInt(question.correctAnswer)]
-              }"
+          Question: ${question.question}
+          Candidate's selected option: "${answer}"
+          Correct option: "${question.options?.[question.correctAnswer || 0]}"
 
-              La risposta è ${
-                answer === question.correctAnswer ? "corretta" : "errata"
-              }.
-
-              Fornisci una valutazione dettagliata della risposta, spiegando perché è corretta o errata.
-              Identifica i punti di forza e le debolezze nella comprensione del candidato.
-              `;
+          The answer is ${
+            Number.parseInt(answer) === question.correctAnswer
+              ? "correct"
+              : "incorrect"
+          }.
+          Provide a detailed evaluation of the answer, explaining why it is correct or incorrect.
+          Identify strengths and weaknesses in the candidate's understanding.
+          You must respond with EXACTLY this JSON structure:
+          {
+          "evaluation": "detailed evaluation text here",
+          "score": number_from_0_to_10,
+          "strengths": ["strength1", "strength2"],
+          "weaknesses": ["weakness1", "weakness2"]
+          }
+          `;
   } else if (question.type === "open_question") {
     prompt = `
-              Valuta questa risposta aperta:
+          Evaluate this open-ended answer:
 
-              Domanda: ${question.question}
-              Risposta del candidato: "${answer}"
-            Risposta di esempio: "${question.sampleAnswer}"
-            ${
-              question.keywords
-                ? `Parole chiave da cercare: ${question.keywords.join(", ")}`
-                : ""
-            }
+          Question: ${question.question}
+          Candidate's answer: "${answer}"
+          Sample answer: "${question.sampleAnswer}"
+          ${
+            question.keywords
+              ? `Keywords to look for: ${question.keywords.join(", ")}`
+              : ""
+          }
+          Provide a detailed evaluation of the answer, considering:
+          1. Technical correctness
+          2. Completeness
+          3. Clarity of expression
+          4. Presence of key words or important concepts
 
-            Fornisci una valutazione dettagliata della risposta, considerando:
-            1. Correttezza tecnica
-            2. Completezza
-            3. Chiarezza dell'espressione
-            4. Presenza delle parole chiave o concetti importanti
-            `;
+          You must respond with EXACTLY this JSON structure:
+          {
+            "evaluation": "detailed evaluation text here",
+            "score": number_from_0_to_10,
+            "strengths": ["strength1", "strength2"],
+            "weaknesses": ["weakness1", "weakness2"]
+          }
+        `;
   } else if (question.type === "code_snippet") {
     prompt = `
-              Valuta questo snippet di codice:
+              Evaluate this code snippet:
 
-              Domanda: ${question.question}
-              Codice del candidato:
+              Question: ${question.question}
+              Candidate's code:
               \`\`\`
               ${answer}
               \`\`\`
 
-              Soluzione di esempio:
+              Sample solution:
               \`\`\`
               ${question.sampleSolution}
               \`\`\`
 
-              Fornisci una valutazione dettagliata del codice, considerando:
-              1. Correttezza funzionale
-              2. Efficienza dell'algoritmo
-              3. Leggibilità e stile del codice
-              4. Gestione degli errori
+              Provide a detailed evaluation of the code, considering:
+              1. Functional correctness
+              2. Algorithm efficiency
+              3. Code readability and style
+              4. Error handling
 
-              Restituisci SOLO un oggetto JSON valido che rispetti esattamente questo schema: { evaluation: string, score: number, strengths: string[], weaknesses: string[] }. Non includere testo aggiuntivo, markdown o spiegazioni.
+              You must respond with EXACTLY this JSON structure:
+              {
+                "evaluation": "detailed evaluation text here",
+                "score": number_from_0_to_10,
+                "strengths": ["strength1", "strength2"],
+                "weaknesses": ["weakness1", "weakness2"]
+              }
               `;
   }
+  prompt += ` 
+
+  IMPORTANT: Your response must be valid JSON that exactly matches this structure:
+  {
+    "evaluation": "Your detailed evaluation text here",
+    "score": 7,
+    "strengths": ["First strength", "Second strength"],
+    "weaknesses": ["First weakness", "Second weakness"]
+  }
+  The values of the fields must be in italian.
+  Do not include any other fields, nested objects, or additional formatting.`;
 
   // Use Groq to evaluate the answer with generateObject
-  const { object: result } = await generateObject<EvaluationResult>({
-    model: groq(getOptimalModel("evaluation", specificModel)),
-    prompt,
-    system:
-      "Sei un esperto valutatore tecnico che analizza le risposte dei candidati durante i colloqui di lavoro. Fornisci valutazioni oggettive, dettagliate e costruttive.",
-    schema: evaluationResultSchema,
-  });
+  try {
+    const { object: result } = await generateObject({
+      model: groq(getOptimalModel("evaluation", specificModel)),
+      prompt,
+      system:
+        "You are an expert technical evaluator. You must respond ONLY with valid JSON matching the exact schema: {evaluation: string, score: number, strengths: string[], weaknesses: string[]}. No additional text, formatting, or nested objects.",
+      schema: evaluationResultSchema,
+      mode: "json",
+      providerOptions: {
+        groq: {
+          structuredOutputs: false, // Disable for DeepSeek R1 - not supported
+          reasoningFormat: "hidden", // Hide reasoning tokens for cleaner output
+        },
+      },
+    });
 
-  return {
-    ...result,
-    maxScore: 10,
-  };
+    return {
+      ...result,
+      maxScore: 10,
+    } as EvaluationResult & { maxScore: number };
+  } catch (error) {
+    console.error("Primary model failed, trying fallback model:", error);
+
+    // Fallback to a different stable model if the primary fails
+    const fallbackModel = "llama-3.1-8b-instant"; // Fast and reliable model
+
+    try {
+      const { object: result } = await generateObject({
+        model: groq(fallbackModel),
+        prompt,
+        system:
+          "You are an expert technical evaluator. You must respond ONLY with valid JSON matching the exact schema: {evaluation: string, score: number, strengths: string[], weaknesses: string[]}. No additional text, formatting, or nested objects.",
+        schema: evaluationResultSchema,
+        mode: "json",
+        providerOptions: {
+          groq: {
+            structuredOutputs: false,
+          },
+        },
+      });
+
+      return {
+        ...result,
+        maxScore: 10,
+      } as EvaluationResult & { maxScore: number };
+    } catch (fallbackError) {
+      console.error("Fallback model also failed:", fallbackError);
+
+      // Provide more specific error message based on error type
+      let errorMessage = "Evaluation service temporarily unavailable";
+      if (fallbackError instanceof Error) {
+        if (fallbackError.message.includes("rate limit")) {
+          errorMessage =
+            "Rate limit exceeded. Please try again in a few minutes.";
+        } else if (fallbackError.message.includes("Internal Server Error")) {
+          errorMessage =
+            "AI service is experiencing issues. Please try again later.";
+        } else {
+          errorMessage = `Evaluation failed: ${fallbackError.message}`;
+        }
+      }
+
+      throw new Error(errorMessage);
+    }
+  }
 }
 
 export async function generateOverallEvaluation(
@@ -103,14 +186,14 @@ export async function generateOverallEvaluation(
   answeredCount: number,
   totalCount: number,
   percentageScore: number,
-  evaluations: Record<string, any>,
+  evaluations: Record<string, EvaluationResult>,
   specificModel?: string
 ) {
   // Extract strengths and weaknesses from evaluations
   const allStrengths: string[] = [];
   const allWeaknesses: string[] = [];
 
-  Object.values(evaluations).forEach((evaluationItem: any) => {
+  Object.values(evaluations).forEach((evaluationItem: EvaluationResult) => {
     if (evaluationItem.strengths)
       allStrengths.push(...evaluationItem.strengths);
     if (evaluationItem.weaknesses)
@@ -119,29 +202,94 @@ export async function generateOverallEvaluation(
 
   // Prepare the prompt for overall evaluation
   const prompt = `
-                  Fornisci una valutazione complessiva del candidato ${candidateName} basata sulle sue risposte al quiz tecnico.
+                  Provide an overall evaluation of candidate ${candidateName} based on their technical quiz responses.
 
-                  Il candidato ha risposto a ${answeredCount} domande su ${totalCount}.
-                  Il punteggio complessivo è ${percentageScore}%.
+                  The candidate answered ${answeredCount} questions out of ${totalCount}.
+                  The overall score is ${percentageScore}%.
 
-                  Punti di forza identificati:
+                  Identified strengths:
                   ${allStrengths.map((s) => `- ${s}`).join("\n")}
 
-                  Aree di miglioramento:
+                  Areas for improvement:
                   ${allWeaknesses.map((w) => `- ${w}`).join("\n")}
 
-                  Fornisci una valutazione dettagliata delle competenze del candidato, evidenziando i punti di forza e le aree di miglioramento.
-                  Includi una raccomandazione su come procedere con questo candidato (es. procedere con un colloquio dal vivo, considerare per un'altra posizione, ecc.).
+                  Provide a detailed evaluation of the candidate's skills, highlighting strengths and areas for improvement.
+                  Include a recommendation on how to proceed with this candidate (e.g., proceed with a live interview, consider for another position, etc.).
+                  
+                  You must return a JSON object with these exact field names:
+                  - evaluation: string (detailed evaluation)
+                  - strengths: array of strings
+                  - weaknesses: array of strings  
+                  - recommendation: string
+                  - fitScore: number (0-100, overall fit score for the position)
+
+                  the values of the fields must be in italian.
                   `;
 
   // Generate overall evaluation using AI
-  const { object: result } = await generateObject<OverallEvaluation>({
-    model: groq(getOptimalModel("overall_evaluation", specificModel)),
-    prompt,
-    system:
-      "Sei un esperto di reclutamento tecnico che fornisce valutazioni oggettive e costruttive dei candidati. Basa la tua valutazione esclusivamente sulle informazioni fornite.",
-    schema: overallEvaluationSchema,
-  });
+  try {
+    const { object: result } = await generateObject({
+      model: groq(getOptimalModel("overall_evaluation", specificModel)),
+      prompt,
+      system:
+        "You are an expert technical recruiter who provides objective and constructive candidate evaluations. Base your evaluation exclusively on the provided information and return responses in English.",
+      schema: overallEvaluationSchema,
+      mode: "json",
+      providerOptions: {
+        groq: {
+          structuredOutputs: false, // Disable for DeepSeek R1 - not supported
+          reasoningFormat: "hidden", // Hide reasoning tokens for cleaner output
+        },
+      },
+    });
 
-  return result;
+    return result;
+  } catch (error) {
+    console.error(
+      "Primary model failed for overall evaluation, trying fallback:",
+      error
+    );
+
+    // Fallback to a different stable model if the primary fails
+    const fallbackModel = "llama-3.1-8b-instant";
+
+    try {
+      const { object: result } = await generateObject({
+        model: groq(fallbackModel),
+        prompt,
+        system:
+          "You are an expert technical recruiter who provides objective and constructive candidate evaluations. Base your evaluation exclusively on the provided information and return responses in English.",
+        schema: overallEvaluationSchema,
+        mode: "json",
+        providerOptions: {
+          groq: {
+            structuredOutputs: false,
+          },
+        },
+      });
+
+      return result;
+    } catch (fallbackError) {
+      console.error(
+        "Fallback model also failed for overall evaluation:",
+        fallbackError
+      );
+
+      // Provide more specific error message based on error type
+      let errorMessage = "Overall evaluation service temporarily unavailable";
+      if (fallbackError instanceof Error) {
+        if (fallbackError.message.includes("rate limit")) {
+          errorMessage =
+            "Rate limit exceeded. Please try again in a few minutes.";
+        } else if (fallbackError.message.includes("Internal Server Error")) {
+          errorMessage =
+            "AI service is experiencing issues. Please try again later.";
+        } else {
+          errorMessage = `Overall evaluation failed: ${fallbackError.message}`;
+        }
+      }
+
+      throw new Error(errorMessage);
+    }
+  }
 }

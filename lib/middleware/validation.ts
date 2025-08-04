@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ZodSchema } from "zod";
+import type { ZodSchema } from "zod/v4";
 import {
   ApiResponse,
   ValidatedRequestData,

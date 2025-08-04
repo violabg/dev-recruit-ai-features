@@ -35,6 +35,9 @@ export const LLMModelSelect = ({
         <SelectItem value={LLM_MODELS.REASONING}>
           🧠 Reasoning - DeepSeek R1 70B (Valutazione)
         </SelectItem>
+        <SelectItem value={LLM_MODELS.KIMI}>
+          🔬 Kimi - Kimi K2 Instruct (Sperimentale)
+        </SelectItem>
         <SelectItem value={LLM_MODELS.MAVERICK}>
           🔬 Maverick - Llama 4 17B (Sperimentale)
         </SelectItem>

@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { quizGenerationConfigSchema } from "@/lib/schemas";
 import { LLM_MODELS } from "@/lib/utils";
 import { toast } from "sonner";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 type Position = {
   id: string;

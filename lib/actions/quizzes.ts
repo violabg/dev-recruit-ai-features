@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { convertToStrictQuestions, questionSchemas } from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {

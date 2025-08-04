@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 // ====================
 // UNIFIED BASE SCHEMAS
@@ -7,7 +7,7 @@ import { z } from "zod";
 
 export const baseSchemas = {
   // Identity schemas
-  uuid: z.string().uuid("Invalid UUID format"),
+  uuid: z.uuid(),
   id: z.string().min(1, "ID is required"),
 
   // Text schemas with consistent validation
@@ -28,30 +28,26 @@ export const baseSchemas = {
     .optional(),
 
   // Email validation with Italian error message
-  email: z.string().email({ message: "Email non valida" }),
+  email: z.email(),
 
   // Password validation with Italian error message
-  password: z.string().min(6, { message: "Minimo 6 caratteri" }),
+  password: z.string().min(6, {
+      error: "Minimo 6 caratteri"
+}),
 
   // Name validation with Italian error message
   name: z.string().min(2, "Nome deve contenere almeno 2 caratteri"),
 
   // Numeric schemas with validation
-  difficulty: z
-    .number()
-    .int("Difficulty must be an integer")
+  difficulty: z.int()
     .min(1, "Minimum difficulty is 1")
     .max(5, "Maximum difficulty is 5"),
 
-  questionCount: z
-    .number()
-    .int("Question count must be an integer")
+  questionCount: z.int()
     .min(1, "At least 1 question required")
     .max(50, "Maximum 50 questions allowed"),
 
-  timeLimit: z
-    .number()
-    .int("Time limit must be an integer")
+  timeLimit: z.int()
     .min(5, "Minimum time limit is 5 minutes")
     .max(120, "Maximum time limit is 120 minutes")
     .nullable(),
@@ -77,28 +73,28 @@ export const baseSchemas = {
 
   // Enum schemas
   questionType: z.enum(["multiple_choice", "open_question", "code_snippet"], {
-    errorMap: () => ({ message: "Invalid question type" }),
+    error: () => "Invalid question type",
   }),
 
   experienceLevel: z.enum(["junior", "mid", "senior", "lead"], {
-    errorMap: () => ({ message: "Invalid experience level" }),
+    error: () => "Invalid experience level",
   }),
 
   contractType: z.enum(["full-time", "part-time", "contract", "internship"], {
-    errorMap: () => ({ message: "Invalid contract type" }),
+    error: () => "Invalid contract type",
   }),
 
   interviewStatus: z.enum(
     ["pending", "in_progress", "completed", "cancelled"],
     {
-      errorMap: () => ({ message: "Invalid interview status" }),
+      error: () => "Invalid interview status",
     }
   ),
 
   candidateStatus: z.enum(
     ["pending", "in_progress", "completed", "hired", "rejected"],
     {
-      errorMap: () => ({ message: "Invalid candidate status" }),
+      error: () => "Invalid candidate status",
     }
   ),
 } as const;
@@ -106,13 +102,13 @@ export const baseSchemas = {
 // Composite schemas for reuse
 export const commonSchemas = {
   pagination: z.object({
-    page: z.number().int().min(1).default(1),
-    limit: z.number().int().min(1).max(100).default(10),
+    page: z.int().min(1).prefault(1),
+    limit: z.int().min(1).max(100).prefault(10),
   }),
 
   timestamps: z.object({
-    created_at: z.string().datetime(),
-    updated_at: z.string().datetime().optional(),
+    created_at: z.iso.datetime(),
+    updated_at: z.iso.datetime().optional(),
   }),
 
   userReference: z.object({
@@ -145,7 +141,7 @@ export const formTransformers = {
   coerceNumber: z.coerce.number(),
 
   // Coerce string to integer (for FormData)
-  coerceInt: z.coerce.number().int(),
+  coerceInt: z.int(),
 } as const;
 
 // Type exports for the base schemas

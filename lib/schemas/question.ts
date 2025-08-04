@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { baseSchemas } from "./base";
 
 // ====================
@@ -22,7 +22,7 @@ const multipleChoiceQuestionSchema = baseQuestionSchema.extend({
   options: z
     .array(z.string().min(3, "Each option must be at least 3 characters long"))
     .min(4, "Must be at least 4 options"),
-  correctAnswer: z.number().int().min(0).max(3),
+  correctAnswer: z.int().min(0).max(3),
 });
 
 const openQuestionSchema = baseQuestionSchema.extend({
@@ -70,20 +70,22 @@ export const questionSchemas = {
       // For multiple choice questions, validate options
       if (data.type === "multiple_choice") {
         if (!data.options || data.options.length < 4) {
-          ctx.addIssue({
+          ctx.issues.push({
             code: z.ZodIssueCode.custom,
-            message:
-              "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
             path: ["options"],
+            error:
+              "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
+            input: "",
           });
         }
         if (data.options) {
           data.options.forEach((option, index) => {
             if (option.length < 3) {
-              ctx.addIssue({
+              ctx.issues.push({
                 code: z.ZodIssueCode.custom,
-                message: "Each option must be at least 3 characters long",
                 path: ["options", index],
+                error: "Each option must be at least 3 characters long",
+                input: "",
               });
             }
           });
@@ -93,11 +95,12 @@ export const questionSchemas = {
           data.options !== undefined &&
           data.correctAnswer >= data.options.length
         ) {
-          ctx.addIssue({
+          ctx.issues.push({
             code: z.ZodIssueCode.custom,
-            message:
-              "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
             path: ["correctAnswer"],
+            error:
+              "Multiple choice questions require at least 4 options (each with at least 3 characters) and correct answer within bounds",
+            input: "",
           });
         }
       }
