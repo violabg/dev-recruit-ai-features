@@ -37,6 +37,11 @@ export function InterviewResultsClient({
   const [evaluations, setEvaluations] = useState<Record<string, any>>({});
   const [overallEvaluation, setOverallEvaluation] = useState<any | null>(null);
   const [overallScore, setOverallScore] = useState<number | null>(null);
+  const [currentEvaluationIndex, setCurrentEvaluationIndex] = useState(0);
+  const [totalQuestionsToEvaluate, setTotalQuestionsToEvaluate] = useState(0);
+  const [currentQuestionTitle, setCurrentQuestionTitle] = useState<string>("");
+  const [isGeneratingOverallEvaluation, setIsGeneratingOverallEvaluation] =
+    useState(false);
 
   const evaluateAnswers = async () => {
     setLoading(true);
@@ -45,9 +50,19 @@ export function InterviewResultsClient({
       let totalScore = 0;
       let maxPossibleScore = 0;
 
+      // Get questions that have answers
+      const questionsToEvaluate = quizQuestions.filter((q) => answers[q.id]);
+      setTotalQuestionsToEvaluate(questionsToEvaluate.length);
+      setCurrentEvaluationIndex(0);
+
       // Evaluate each question
-      for (const question of quizQuestions) {
-        if (!answers[question.id]) continue;
+      for (let i = 0; i < questionsToEvaluate.length; i++) {
+        const question = questionsToEvaluate[i];
+        setCurrentEvaluationIndex(i + 1);
+        setCurrentQuestionTitle(
+          question.question.slice(0, 60) +
+            (question.question.length > 60 ? "..." : "")
+        );
 
         let answer = "";
         switch (question.type) {
@@ -112,6 +127,8 @@ export function InterviewResultsClient({
       setOverallScore(percentageScore);
 
       // Generate overall evaluation
+      setIsGeneratingOverallEvaluation(true);
+      setCurrentQuestionTitle("");
       try {
         const answeredQuestions = quizQuestions.filter((q) => answers[q.id]);
 
@@ -143,6 +160,11 @@ export function InterviewResultsClient({
       });
     } finally {
       setLoading(false);
+      // Reset progress indicators
+      setCurrentEvaluationIndex(0);
+      setTotalQuestionsToEvaluate(0);
+      setCurrentQuestionTitle("");
+      setIsGeneratingOverallEvaluation(false);
     }
   };
 
@@ -233,13 +255,52 @@ export function InterviewResultsClient({
           </div>
 
           {!overallEvaluation && (
-            <Button
-              onClick={evaluateAnswers}
-              disabled={loading || getAnsweredQuestionsCount() === 0}
-            >
-              {loading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
-              Valuta risposte con AI
-            </Button>
+            <div className="space-y-4">
+              <Button
+                onClick={evaluateAnswers}
+                disabled={loading || getAnsweredQuestionsCount() === 0}
+              >
+                {loading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                Valuta risposte con AI
+              </Button>
+
+              {loading && (
+                <div className="space-y-2">
+                  {!isGeneratingOverallEvaluation &&
+                  totalQuestionsToEvaluate > 0 ? (
+                    // Show individual question progress
+                    <>
+                      <div className="flex justify-between items-center text-muted-foreground text-sm">
+                        <span>Valutazione in corso...</span>
+                        <span>
+                          {currentEvaluationIndex} di {totalQuestionsToEvaluate}
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          (currentEvaluationIndex / totalQuestionsToEvaluate) *
+                          100
+                        }
+                        className="w-full"
+                      />
+                      {currentQuestionTitle && (
+                        <p className="text-muted-foreground text-xs">
+                          {currentQuestionTitle}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    // Show overall evaluation progress
+                    <div className="flex items-center space-x-3">
+                      <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                      <div className="text-muted-foreground text-sm">
+                        Generazione valutazione complessiva...
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {overallEvaluation && (
