@@ -26,6 +26,8 @@ export const LLM_MODELS = {
   PLAYAI_TTS: "playai-tts", // 10K context - Text to speech
   PLAYAI_TTS_ARABIC: "playai-tts-arabic", // 10K context - Arabic text to speech
   QWEN_QWQ_32B: "qwen-qwq-32b", // 128K context - Alibaba Cloud model
+  GPT_OSS_20B: "openai/gpt-oss-20b", // 131K context - OpenAI model has  Tool Use, Browser Search, Code Execution, JSON Object Mode, Reasoning
+  GPT_OSS_120B: "openai/gpt-oss-120b", // 131K context - OpenAI model has  Tool Use, Browser Search, Code Execution, JSON Object Mode, Reasoning
 
   // Preview systems - compound models with tools
   COMPOUND_BETA: "compound-beta", // 128K context, 8K output - Agentic system
@@ -79,6 +81,8 @@ export const getModelsByCategory = () => {
         LLM_MODELS.ALLAM_2_7B,
         LLM_MODELS.MISTRAL_SABA_24B,
         LLM_MODELS.QWEN_QWQ_32B,
+        LLM_MODELS.GPT_OSS_20B,
+        LLM_MODELS.GPT_OSS_120B,
       ],
       safety: [
         LLM_MODELS.LLAMA_PROMPT_GUARD_2_22M,
@@ -109,17 +113,20 @@ export const getOptimalModel = (
   switch (taskType) {
     case "quiz_generation":
       // Complex multi-question generation needs high capability and large output
-      return LLM_MODELS.VERSATILE;
+      return LLM_MODELS.GPT_OSS_20B;
+    // return LLM_MODELS.VERSATILE;
 
     case "question_generation":
       // Single question generation can use faster model
-      return LLM_MODELS.INSTANT;
+      return LLM_MODELS.GPT_OSS_20B;
+    // return LLM_MODELS.INSTANT;
 
     case "overall_evaluation":
     case "evaluation":
       // Answer evaluation benefits from reasoning capabilities
       // Using DeepSeek R1 model with proper v5 configuration for structured outputs
-      return LLM_MODELS.REASONING;
+      return LLM_MODELS.GPT_OSS_120B;
+    // return LLM_MODELS.REASONING;
 
     case "simple_task":
       // Basic tasks use fastest model

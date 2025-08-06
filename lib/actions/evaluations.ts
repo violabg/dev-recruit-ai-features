@@ -114,9 +114,10 @@ export async function evaluateAnswer(
   Do not include any other fields, nested objects, or additional formatting.`;
 
   // Use Groq to evaluate the answer with generateObject
+  const model = groq(getOptimalModel("evaluation", specificModel));
   try {
     const { object: result } = await generateObject({
-      model: groq(getOptimalModel("evaluation", specificModel)),
+      model,
       prompt,
       system:
         "You are an expert technical evaluator. You must respond ONLY with valid JSON matching the exact schema: {evaluation: string, score: number, strengths: string[], weaknesses: string[]}. No additional text, formatting, or nested objects.",
@@ -125,7 +126,6 @@ export async function evaluateAnswer(
       providerOptions: {
         groq: {
           structuredOutputs: false, // Disable for DeepSeek R1 - not supported
-          reasoningFormat: "hidden", // Hide reasoning tokens for cleaner output
         },
       },
     });
@@ -238,7 +238,6 @@ export async function generateOverallEvaluation(
       providerOptions: {
         groq: {
           structuredOutputs: false, // Disable for DeepSeek R1 - not supported
-          reasoningFormat: "hidden", // Hide reasoning tokens for cleaner output
         },
       },
     });

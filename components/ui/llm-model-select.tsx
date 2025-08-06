@@ -50,6 +50,12 @@ export const LLMModelSelect = ({
         <SelectItem value={LLM_MODELS.QWEN_QWQ_32B}>
           🌟 Qwen QWQ 32B (Alibaba)
         </SelectItem>
+        <SelectItem value={LLM_MODELS.GPT_OSS_20B}>
+          🌟 GPT OSS 20B (OpenAI)
+        </SelectItem>
+        <SelectItem value={LLM_MODELS.GPT_OSS_120B}>
+          🌟 GPT OSS 120B (OpenAI)
+        </SelectItem>
       </SelectContent>
     </Select>
   );
