@@ -26,6 +26,7 @@ function DropdownMenuTrigger({
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
+      suppressHydrationWarning
       {...props}
     />
   );
@@ -155,7 +156,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+        "px-2 py-1.5 data-[inset]:pl-8 font-medium text-sm",
         className
       )}
       {...props}
@@ -170,7 +171,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("bg-border -mx-1 my-1 h-px", className)}
+      className={cn("-mx-1 my-1 bg-border h-px", className)}
       {...props}
     />
   );
@@ -184,7 +185,7 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "text-muted-foreground ml-auto text-xs tracking-widest",
+        "ml-auto text-muted-foreground text-xs tracking-widest",
         className
       )}
       {...props}
@@ -211,7 +212,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+        "flex items-center data-[state=open]:bg-accent focus:bg-accent px-2 py-1.5 data-[inset]:pl-8 rounded-sm outline-hidden text-sm data-[state=open]:text-accent-foreground focus:text-accent-foreground cursor-default select-none",
         className
       )}
       {...props}

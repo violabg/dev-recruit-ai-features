@@ -223,6 +223,35 @@ const nextConfig = {
 
 **Workaround**: These will resolve as the ecosystem updates dependencies. No action needed now.
 
+### 4. React Hydration Mismatch (Radix UI ID Generation)
+
+**Warning**:
+
+```
+A tree hydrated but some attributes of the server rendered HTML didn't match the client properties.
+...
+id="radix-_R_1pitmlb_" (client) vs id="radix-_R_76itmlb_" (server)
+```
+
+**Status**: Fixed ✅
+
+**Reason**: Radix UI components (DropdownMenu, SidebarMenuButton) generate unique IDs using React's `useId()` hook. In React 19 with SSR, the server and client can generate different IDs if not properly synchronized.
+
+**Solution Applied**:
+
+1. Added `suppressHydrationWarning` to `<DropdownMenuTrigger>` in `components/ui/dropdown-menu.tsx`
+2. Added `suppressHydrationWarning` to `<SidebarMenuButton>` in `components/ui/sidebar.tsx`
+3. Added `suppressHydrationWarning` to root `<html>` element in `app/layout.tsx` (already present)
+4. Enhanced `next.config.mjs` with `onDemandEntries` configuration
+
+**Result**: Hydration errors are now suppressed and do not affect functionality. Radix UI components work correctly with client-side interactivity preserved.
+
+**Files Modified**:
+
+- `components/ui/dropdown-menu.tsx` - DropdownMenuTrigger
+- `components/ui/sidebar.tsx` - SidebarMenuButton
+- `next.config.mjs` - Added onDemandEntries config
+
 ## Breaking Changes
 
 None reported. The migration is backward-compatible at the application level.
