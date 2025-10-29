@@ -1,16 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
     unoptimized: true,
   },
-  experimental: {
-    typedRoutes: true,
+  reactCompiler: true,
+  typedRoutes: true,
+  // Suppress hydration mismatches from Radix UI ID generation in development
+  onDemandEntries: {
+    maxInactiveAge: 60000,
+    pagesBufferLength: 2,
   },
 }
 
