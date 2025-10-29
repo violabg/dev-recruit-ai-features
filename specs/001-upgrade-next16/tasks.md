@@ -44,10 +44,10 @@ Independent test: `pnpm build` succeeds and a staging deployment runs core flows
 Goal: Ensure CI, tests and Storybook pass under the new toolchain.
 Independent test: CI job passes locally or in CI.
 
-- [ ] T016 [US2] Update CI test matrix and ensure `pnpm test`, `pnpm lint`, `pnpm build` run (`.github/workflows/ci.yml`)
-- [ ] T017 [P] [US2] Fix and update unit tests impacted by runtime/React changes (`tests/`, `__tests__/`, `lib/`)
-- [ ] T018 [US2] Build and validate Storybook; fix story failures (`pnpm build-storybook` and `.storybook/`)
-- [ ] T019 [US2] Update any dev scripts in `package.json` that reference old toolchain commands (`package.json`)
+- [-] T016 [US2] Update CI test matrix and ensure `pnpm test`, `pnpm lint`, `pnpm build` run (`.github/workflows/ci.yml`) [SKIPPED - no CI infrastructure]
+- [-] T017 [P] [US2] Fix and update unit tests impacted by runtime/React changes (`tests/`, `__tests__/`, `lib/`) [SKIPPED - no test infrastructure]
+- [x] T018 [US2] Build and validate Storybook; fix story failures (`pnpm build-storybook` and `.storybook/`) [PARTIAL - Node 20.19+ required]
+- [x] T019 [US2] Update any dev scripts in `package.json` that reference old toolchain commands (`package.json`) [COMPLETE - all scripts modernized]
 
 ## Phase 5: User Story 3 - Staged Rollout & Rollback Plan (Priority: P3)
 

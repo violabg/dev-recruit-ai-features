@@ -19,9 +19,28 @@ The migration involved:
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 20.19+ (required for Storybook 10.x build; 20.x minimum for development)
 - pnpm 10.x
 - Current working directory: repository root
+
+### Node Version Details
+
+The project targets Node.js 20 as specified in `.nvmrc`. For local development with Storybook builds:
+- **Minimum**: Node 20.10.0 (works for most development)
+- **Recommended for Storybook**: Node 20.19.0 or higher (required for `pnpm build-storybook`)
+- **Production/Deployment**: Node 20.19.0+ (to ensure Storybook builds successfully in CI/CD)
+
+If you encounter Storybook build errors, upgrade your local Node version:
+
+```bash
+# Using nvm
+nvm install 20.19.0
+nvm use 20.19.0
+
+# Using fnm
+fnm install 20.19.0
+fnm use 20.19.0
+```
 
 ## What Changed
 
