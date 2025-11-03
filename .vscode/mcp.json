@@ -5,6 +5,12 @@
       "id": "supabase-access-token",
       "description": "Supabase personal access token",
       "password": true
+    },
+    {
+      "type": "promptString",
+      "id": "shadcn-access-token",
+      "description": "Shadcn personal access token",
+      "password": true
     }
   ],
   "servers": {
@@ -14,6 +20,14 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "${input:supabase-access-token}"
       }
+    },
+    "shadcn-ui": {
+      "command": "npx",
+      "args": [
+        "@jpisnice/shadcn-ui-mcp-server",
+        "--github-api-key",
+        "${input:shadcn-access-token}"
+      ]
     }
   }
 }
