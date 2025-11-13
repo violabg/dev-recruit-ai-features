@@ -9,9 +9,48 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { BarChart3, Briefcase, Plus, Users } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+import { DashboardStatsSkeleton, RecentPositionsSkeleton } from "./fallbacks";
 
 // Server component for dashboard stats
-async function DashboardStats() {
+async function OpenPositions() {
+  // "use cache";
+  // cacheLife("hours");
+  // cacheTag("positions");
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+  // Fetch positions count
+  const { count: positionsCount } = await supabase
+    .from("positions")
+    .select("*", { count: "exact", head: true })
+    .eq("created_by", user.id);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row justify-between items-center pb-2">
+        <CardTitle className="font-medium text-sm">Posizioni Aperte</CardTitle>
+        <Briefcase className="w-4 h-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="font-bold text-2xl">{positionsCount || 0}</div>
+        <p className="text-muted-foreground text-xs">
+          Posizioni attualmente aperte
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+async function Candidates() {
+  // "use cache";
+  // cacheLife("hours");
+  // cacheTag("candidates");
   const supabase = await createClient();
 
   const {
@@ -22,17 +61,32 @@ async function DashboardStats() {
     return null;
   }
 
-  // Fetch positions count
-  const { count: positionsCount } = await supabase
-    .from("positions")
-    .select("*", { count: "exact", head: true })
-    .eq("created_by", user.id);
-
   // Fetch candidates count
   const { count: candidatesCount } = await supabase
     .from("candidates")
     .select("*", { count: "exact", head: true })
     .eq("created_by", user.id);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row justify-between items-center pb-2">
+        <CardTitle className="font-medium text-sm">Candidati</CardTitle>
+        <Users className="w-4 h-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="font-bold text-2xl">{candidatesCount || 0}</div>
+        <p className="text-muted-foreground text-xs">
+          Candidati totali nel sistema
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+async function Interviews() {
+  // "use cache";
+  // cacheLife("hours");
+  // cacheTag("interviews");
+  const supabase = await createClient();
 
   // Fetch interviews count
   const { count: interviewsCount } = await supabase
@@ -41,48 +95,20 @@ async function DashboardStats() {
     .eq("status", "completed");
 
   return (
-    <div className="gap-4 grid md:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row justify-between items-center pb-2">
-          <CardTitle className="font-medium text-sm">
-            Posizioni Aperte
-          </CardTitle>
-          <Briefcase className="w-4 h-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="font-bold text-2xl">{positionsCount || 0}</div>
-          <p className="text-muted-foreground text-xs">
-            Posizioni attualmente aperte
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row justify-between items-center pb-2">
-          <CardTitle className="font-medium text-sm">Candidati</CardTitle>
-          <Users className="w-4 h-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="font-bold text-2xl">{candidatesCount || 0}</div>
-          <p className="text-muted-foreground text-xs">
-            Candidati totali nel sistema
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row justify-between items-center pb-2">
-          <CardTitle className="font-medium text-sm">
-            Colloqui Completati
-          </CardTitle>
-          <BarChart3 className="w-4 h-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="font-bold text-2xl">{interviewsCount || 0}</div>
-          <p className="text-muted-foreground text-xs">
-            Colloqui completati con successo
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row justify-between items-center pb-2">
+        <CardTitle className="font-medium text-sm">
+          Colloqui Completati
+        </CardTitle>
+        <BarChart3 className="w-4 h-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="font-bold text-2xl">{interviewsCount || 0}</div>
+        <p className="text-muted-foreground text-xs">
+          Colloqui completati con successo
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -156,16 +182,6 @@ async function RecentPositions() {
 
 // Main dashboard page (server component)
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -178,14 +194,26 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      {/* Stats cards */}
-      <DashboardStats />
+      <div className="gap-4 grid md:grid-cols-3">
+        {/* Stats cards */}
+        <Suspense fallback={<DashboardStatsSkeleton />}>
+          <OpenPositions />
+        </Suspense>
+        <Suspense fallback={<DashboardStatsSkeleton />}>
+          <Candidates />
+        </Suspense>
+        <Suspense fallback={<DashboardStatsSkeleton />}>
+          <Interviews />
+        </Suspense>
+      </div>
 
-      <div className="gap-4 grid md:grid-cols-2">
+      <div className="">
         {/* Recent positions */}
-        <RecentPositions />
+        <Suspense fallback={<RecentPositionsSkeleton />}>
+          <RecentPositions />
+        </Suspense>
 
-        <Card className="col-span-1">
+        {/* <Card className="col-span-1">
           <CardHeader>
             <CardTitle>Attività Recenti</CardTitle>
             <CardDescription>
@@ -201,7 +229,7 @@ export default async function DashboardPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

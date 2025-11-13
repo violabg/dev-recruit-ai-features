@@ -5,12 +5,24 @@ import { prismLanguage } from "@/lib/utils";
 import { ArrowRight, BrainCircuit, CheckCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { Highlight, themes } from "prism-react-renderer";
+import { Suspense } from "react";
 
-export default async function Home() {
+async function StartButton() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  return (
+    <Link href={user ? "/dashboard" : "/auth/login"}>
+      <Button size="lg" className="gap-1.5">
+        Inizia ora
+        <ArrowRight className="w-4 h-4" />
+      </Button>
+    </Link>
+  );
+}
+
+export default async function Home() {
   return (
     <div className="flex flex-col items-center min-h-dvh">
       <main className="flex-1">
@@ -30,12 +42,9 @@ export default async function Home() {
                 </div>
                 <div className="flex min-[400px]:flex-row flex-col items-center gap-2">
                   <ThemeToggle />
-                  <Link href={user ? "/dashboard" : "/auth/login"}>
-                    <Button size="lg" className="gap-1.5">
-                      Inizia ora
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <StartButton />
+                  </Suspense>
                 </div>
               </div>
               <div className="relative mx-auto lg:mx-0">

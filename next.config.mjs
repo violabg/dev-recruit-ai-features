@@ -13,6 +13,7 @@ const nextConfig = {
     maxInactiveAge: 60000,
     pagesBufferLength: 2,
   },
+  cacheComponents: true,
 }
 
 export default nextConfig

@@ -5,11 +5,7 @@ import { Loader2, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
-export function SearchPositions({
-  defaultValue = "",
-}: {
-  defaultValue?: string;
-}) {
+export function SearchPositions({ defaultValue }: { defaultValue?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -39,7 +35,7 @@ export function SearchPositions({
         type="search"
         placeholder="Cerca posizioni..."
         className="pl-8"
-        defaultValue={defaultValue}
+        defaultValue={defaultValue ?? ""}
         onChange={(e) => handleSearch(e.target.value)}
       />
     </div>

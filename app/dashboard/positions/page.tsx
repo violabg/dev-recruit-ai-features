@@ -13,16 +13,41 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+import PositionsSkeleton from "./fallback";
 
 // Server component for positions page
 export default async function PositionsPage({
   searchParams,
 }: {
-  searchParams: any;
+  searchParams: Promise<{ q: string | undefined }>;
 }) {
-  // Await searchParams if it's a Promise (Next.js server component requirement)
-  const params =
-    typeof searchParams.then === "function" ? await searchParams : searchParams;
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="font-bold text-3xl">Posizioni</h1>
+        <Button asChild>
+          <Link href="/dashboard/positions/new">
+            <Plus className="mr-2 w-4 h-4" />
+            Nuova Posizione
+          </Link>
+        </Button>
+      </div>
+      <Suspense fallback={<PositionsSkeleton />}>
+        <PositionsTable
+          defaultValue={searchParams.then((search) => search.q)}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+const PositionsTable = async ({
+  defaultValue,
+}: {
+  defaultValue: Promise<string | undefined>;
+}) => {
+  const q = await defaultValue;
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,30 +65,18 @@ export default async function PositionsPage({
     .order("created_at", { ascending: false });
 
   // Apply search filter if provided
-  if (params?.q) {
-    query = query.ilike("title", `%${params.q}%`);
+  if (q) {
+    query = query.ilike("title", `%${q}%`);
   }
 
   const { data: positions } = await query;
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Posizioni</h1>
-        <Button asChild>
-          <Link href="/dashboard/positions/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuova Posizione
-          </Link>
-        </Button>
-      </div>
-
+    <>
       <div className="flex items-center gap-4">
-        <SearchPositions defaultValue={params?.q} />
+        <SearchPositions defaultValue={q} />
       </div>
-
       {positions && positions.length > 0 ? (
-        <div className="rounded-md border">
+        <div className="border rounded-md">
           <Table>
             <TableHeader>
               <TableRow>
@@ -111,17 +124,15 @@ export default async function PositionsPage({
           </Table>
         </div>
       ) : (
-        <div className="flex h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">
+        <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[400px]">
           <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              {params?.q
-                ? "Nessuna posizione trovata"
-                : "Nessuna posizione creata"}
+            <p className="text-muted-foreground text-sm">
+              {q ? "Nessuna posizione trovata" : "Nessuna posizione creata"}
             </p>
-            {!params?.q && (
+            {!q && (
               <Button className="mt-2" size="sm" asChild>
                 <Link href="/dashboard/positions/new">
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="mr-2 w-4 h-4" />
                   Crea posizione
                 </Link>
               </Button>
@@ -129,6 +140,6 @@ export default async function PositionsPage({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
-}
+};
