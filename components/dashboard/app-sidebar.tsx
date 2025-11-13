@@ -7,7 +7,6 @@ import {
   MessageSquareMore,
   Users,
 } from "lucide-react";
-import * as React from "react";
 
 import { NavMain } from "@/components/dashboard/nav-main";
 import { NavUser } from "@/components/dashboard/nav-user";
@@ -21,6 +20,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
+import { Suspense } from "react";
 
 const data = {
   navSecondary: [
@@ -79,7 +79,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="px-3">
-        <NavMain items={data.navSecondary} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <NavMain items={data.navSecondary} />
+        </Suspense>
       </SidebarContent>
       <SidebarFooter className="bg-sidebar/60 m-2 border-0 rounded-xl glass-card">
         <NavUser />

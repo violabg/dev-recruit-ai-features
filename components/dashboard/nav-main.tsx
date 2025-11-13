@@ -46,11 +46,11 @@ export function NavMain({
                   asChild
                   size="default"
                   className={cn(
-                    "relative overflow-hidden transition-all duration-300 ease-vision group",
+                    "group relative overflow-hidden transition-all duration-300 ease-vision",
                     "hover:bg-sidebar-accent/60 hover: hover:shadow-vision-sm",
                     "rounded-xl border border-transparent hover:border-sidebar-border/30",
                     isActive && [
-                      "bg-gradient-to-r from-primary/50 to-gradient-secondary/30",
+                      "bg-linear-to-r from-primary/50 to-gradient-secondary/30",
                       "border-primary/30 shadow-vision text-primary-foreground",
                       "",
                     ]
@@ -74,7 +74,7 @@ export function NavMain({
                     <div className="relative">
                       <route.icon
                         className={cn(
-                          "w-5 h-5 transition-all duration-300 group-hover:scale-110",
+                          "w-5 h-5 group-hover:scale-110 transition-all duration-300",
                           isActive
                             ? "text-foreground"
                             : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"
@@ -101,7 +101,7 @@ export function NavMain({
 
                     {/* Glass shimmer effect on hover */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 transition-transform -translate-x-full group-hover:translate-x-full duration-1000 ease-out" />
+                      <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent skew-x-12 transition-transform -translate-x-full group-hover:translate-x-full duration-1000 ease-out" />
                     </div>
                   </span>
                 </SidebarMenuButton>

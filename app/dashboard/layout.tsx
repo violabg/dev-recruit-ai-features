@@ -8,6 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import type React from "react";
+import { Suspense } from "react";
 
 export default async function DashboardLayout({
   children,
@@ -25,7 +26,9 @@ export default async function DashboardLayout({
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            <Breadcrumbs />
+            <Suspense>
+              <Breadcrumbs />
+            </Suspense>
             <div className="flex-1 text-right">
               <ThemeToggle />
             </div>
