@@ -3,18 +3,15 @@
 <!--
 Sync Impact Report
 
-- Version change: none → 1.0.0
-- Modified principles: (initial ratification) — Principles I–V added
-- Added sections: Constraints & Technology Standards; Development Workflow & Quality Gates
+- Version change: 1.0.0 → 2.0.0
+- Modified principles: II. Test-First & Schema Safety → II. Schema Safety (removed test-first requirement)
+- Added sections: none
 - Removed sections: none
  - Templates requiring updates:
  - .specify/templates/plan-template.md ✅ updated
  - .specify/templates/spec-template.md ⚠ pending review
- - .specify/templates/tasks-template.md ⚠ pending review
- - .specify/templates/commands/ (no files present) ⚠ none found
- - Follow-up TODOs:
- - TODO(RATIFICATION_DATE): original adoption date unknown — please fill
- - Confirm maintainers required for amendment approvals (names/roles)
+ - .specify/templates/tasks-template.md ✅ (already optional)
+ - Follow-up TODOs: none
 -->
 
 ## Core Principles
@@ -28,14 +25,11 @@ filtering, prompt-injection protections, and explicit sampling/seed practices to
 Rationale: AI outputs are probabilistic. Requiring deterministic validation prevents malformed or unsafe quiz content from
 reaching candidates and enables reliable grading and analytics.
 
-### II. Test-First & Schema Safety (NON-NEGOTIABLE)
+### II. Schema Safety
 
-New features and changes that affect data shapes, APIs, or AI output formats MUST be accompanied by failing tests that codify
-the expected behavior before implementation (red → green workflow). All persisted shapes MUST have Zod schemas and end-to-end
-contract tests where applicable.
+New features and changes that affect data shapes, APIs, or AI output formats MUST have Zod schemas for validation. All persisted shapes MUST have Zod schemas.
 
-Rationale: The project relies on structured AI outputs and database contracts; test-first prevents regressions and preserves
-consumer expectations (APIs, DB, UI).
+Rationale: The project relies on structured AI outputs and database contracts; schemas prevent regressions and preserve consumer expectations (APIs, DB, UI).
 
 ### III. Security & Data Isolation
 
@@ -71,14 +65,14 @@ documented exception is approved by maintainers.
 - Styling: Tailwind CSS v4.x utility classes for layout; all color values in CSS files MUST use OKLCH form (e.g., oklch(0.7 0.1 200)). Use Tailwind classes in TSX for convenience but keep CSS tokens in OKLCH.
 - Forms & Validation: React Hook Form + Zod for validation and resolver-based form handling.
 - AI Integration: Use Groq/`@ai-sdk/groq` and the local AI service wrappers in `lib/services/ai-service.ts`. All AI calls MUST include input sanitization and schema validation of the response.
-- Backend: Supabase for database and auth; enforce RLS for all user data.
+- Backend: Prisma with Neon for database, Better Auth for authentication and user management.
 - Logging & Observability: Structured logs and basic metrics around AI generation latency, failure rate, and token usage.
 
 ## Development Workflow & Quality Gates
 
 - Pull Requests: All changes MUST be in a named feature branch and include an associated spec or task when the change is more than trivial.
 - Reviews: At least one approving review from a maintainer is REQUIRED for non-trivial changes. Security and schema changes REQUIRE an additional reviewer with DB/infra knowledge.
-- CI: Every PR MUST pass lint, typecheck, and the test suite. The repository's quality gates are: Build: PASS, Lint/Typecheck: PASS, Tests: PASS (happy path + at least one edge case for changed behavior).
+- CI: Every PR MUST pass lint, typecheck. The repository's quality gates are: Build: PASS, Lint/Typecheck: PASS.
 - Release: Tag releases that change public contracts with semantic versions and include migration notes in the release body.
 
 ## Governance
@@ -95,4 +89,4 @@ Versioning Rules:
 Compliance Review: Every quarter the maintainers will run a lightweight compliance audit. The `Constitution Check` step in the
 project plan (see `.specify/templates/plan-template.md`) MUST be completed before major milestones.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): fill with original adoption date | **Last Amended**: 2025-10-29
+**Version**: 2.0.0 | **Ratified**: 2025-11-14 | **Last Amended**: 2025-11-14

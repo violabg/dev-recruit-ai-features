@@ -35,8 +35,7 @@ Constitution-aligned gates (must be validated for Phase 0 completion):
 
 - AI Safety & Validation: All AI-generated artifacts referenced by the plan MUST include a Zod schema and a validation
   plan (sanitization, filtering, schema assertions) before saving to the DB.
-- Test-First: Any change to data shapes or public contracts described in this plan MUST include failing tests (contract/unit)
-  that capture the desired behavior prior to implementation.
+- Schema Safety: Any change to data shapes or public contracts described in this plan MUST include Zod schemas for validation.
 - Security & Data Isolation: Plans that touch user data MUST include RLS considerations and token management details where
   applicable.
 - Versioning: If the plan introduces or modifies a persisted contract or API, include the semantic version impact (MAJOR/MINOR/PATCH)

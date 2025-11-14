@@ -26,6 +26,7 @@ The migration involved:
 ### Node Version Details
 
 The project targets Node.js 20 as specified in `.nvmrc`. For local development with Storybook builds:
+
 - **Minimum**: Node 20.10.0 (works for most development)
 - **Recommended for Storybook**: Node 20.19.0 or higher (required for `pnpm build-storybook`)
 - **Production/Deployment**: Node 20.19.0+ (to ensure Storybook builds successfully in CI/CD)
@@ -50,7 +51,7 @@ fnm use 20.19.0
 
 | Package                     | Before  | After   | Reason                                      |
 | --------------------------- | ------- | ------- | ------------------------------------------- |
-| next                        | ^15.3.1 | ^16.0.1 | Major version upgrade for React 19 compiler |
+| next                        | ^15.3.1 | ^16.0.2 | Major version upgrade for React 19 compiler |
 | react                       | ^19.1.0 | ^19.2.0 | Minor version for compatibility             |
 | react-dom                   | ^19.1.0 | ^19.2.0 | Paired with React upgrade                   |
 | storybook                   | ^9.1.0  | ^10.0.1 | Required for Next.js 16 support             |

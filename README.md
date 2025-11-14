@@ -1,7 +1,7 @@
 # DevRecruit AI
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.3.2-black)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.1.0-blue)](https://reactjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.0.2-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-2.49.4-green)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1.4-38B2AC)](https://tailwindcss.com/)
@@ -310,8 +310,8 @@ All database functions are defined in [`schema.sql`](schema.sql) with proper sec
 
 ### Frontend Framework
 
-- **[Next.js 15.3.2](https://nextjs.org/)** - React framework with App Router
-- **[React 19.1.0](https://reactjs.org/)** - UI library with concurrent features
+- **[Next.js 16.0.2](https://nextjs.org/)** - React framework with App Router
+- **[React 19.2.0](https://reactjs.org/)** - UI library with concurrent features
 - **[TypeScript 5.8.3](https://www.typescriptlang.org/)** - Type-safe development
 
 ### Backend & Database
