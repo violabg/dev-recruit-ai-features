@@ -1,7 +1,13 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  Suspense,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface SupabaseContextValue {
   loading: boolean;
@@ -64,11 +70,13 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   }, [supabase.auth]);
 
   return (
-    <SupabaseContext.Provider
-      value={{ loading, supabase, user, refreshSession }}
-    >
-      {children}
-    </SupabaseContext.Provider>
+    <Suspense>
+      <SupabaseContext.Provider
+        value={{ loading, supabase, user, refreshSession }}
+      >
+        {children}
+      </SupabaseContext.Provider>
+    </Suspense>
   );
 }
 
