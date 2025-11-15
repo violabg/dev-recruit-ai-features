@@ -7,7 +7,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth-server";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCandidatesCount,
+  getCompletedInterviewsCount,
+  getPositionsCount,
+  getRecentPositions,
+} from "@/lib/data/dashboard";
 import { BarChart3, Briefcase, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -18,17 +23,12 @@ async function OpenPositions() {
   // "use cache";
   // cacheLife("hours");
   // cacheTag("positions");
-  const supabase = await createClient();
   const user = await getCurrentUser();
 
   if (!user) {
     return null;
   }
-  // Fetch positions count
-  const { count: positionsCount } = await supabase
-    .from("positions")
-    .select("*", { count: "exact", head: true })
-    .eq("created_by", user.id);
+  const positionsCount = await getPositionsCount(user.id);
 
   return (
     <Card>
@@ -49,18 +49,13 @@ async function Candidates() {
   // "use cache";
   // cacheLife("hours");
   // cacheTag("candidates");
-  const supabase = await createClient();
   const user = await getCurrentUser();
 
   if (!user) {
     return null;
   }
 
-  // Fetch candidates count
-  const { count: candidatesCount } = await supabase
-    .from("candidates")
-    .select("*", { count: "exact", head: true })
-    .eq("created_by", user.id);
+  const candidatesCount = await getCandidatesCount(user.id);
 
   return (
     <Card>
@@ -81,13 +76,13 @@ async function Interviews() {
   // "use cache";
   // cacheLife("hours");
   // cacheTag("interviews");
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  // Fetch interviews count
-  const { count: interviewsCount } = await supabase
-    .from("interviews")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "completed");
+  if (!user) {
+    return null;
+  }
+
+  const interviewsCount = await getCompletedInterviewsCount(user.id);
 
   return (
     <Card>
@@ -109,20 +104,13 @@ async function Interviews() {
 
 // Server component for recent positions
 async function RecentPositions() {
-  const supabase = await createClient();
   const user = await getCurrentUser();
 
   if (!user) {
     return null;
   }
 
-  // Fetch recent positions
-  const { data: positions } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("created_by", user.id)
-    .order("created_at", { ascending: false })
-    .limit(5);
+  const positions = await getRecentPositions(user.id, 5);
 
   return (
     <Card className="col-span-1">
@@ -131,7 +119,7 @@ async function RecentPositions() {
         <CardDescription>Le ultime posizioni create</CardDescription>
       </CardHeader>
       <CardContent>
-        {positions && positions.length > 0 ? (
+        {positions.length > 0 ? (
           <div className="space-y-2">
             {positions.map((position) => (
               <div
@@ -141,7 +129,7 @@ async function RecentPositions() {
                 <div>
                   <div className="font-medium">{position.title}</div>
                   <div className="text-muted-foreground text-sm">
-                    {position.experience_level}
+                    {position.experienceLevel ?? "Esperienza non indicata"}
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" asChild>

@@ -18,32 +18,37 @@ import {
   startInterview,
   submitAnswer,
 } from "@/lib/actions/interviews";
-import { createClient } from "@/lib/supabase/client";
-import { Interview } from "@/lib/supabase/types";
 import { BrainCircuit, Clock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ThemeToggle } from "../theme-toggle";
 
-interface Candidate {
+type InterviewAnswer = string | { code: string } | null;
+
+type InterviewRecord = {
+  token: string;
+  status: "pending" | "in_progress" | "completed";
+  answers: Record<string, InterviewAnswer> | null;
+};
+
+type Candidate = {
   id: string;
   name: string;
   email: string;
-}
+};
 
 export function InterviewClient({
   interview,
   quiz,
   candidate,
 }: {
-  interview: Interview;
+  interview: InterviewRecord;
   quiz: Quiz;
   candidate: Candidate;
 }) {
-  const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>(
-    interview.answers || {}
+  const [answers, setAnswers] = useState<Record<string, InterviewAnswer>>(
+    interview.answers ? { ...interview.answers } : {}
   );
   const [timeRemaining, setTimeRemaining] = useState<number | null>(
     quiz.time_limit ? quiz.time_limit * 60 : null
@@ -55,16 +60,16 @@ export function InterviewClient({
     interview.status === "in_progress"
   );
 
-  const supabase = createClient();
-
   const handleCompleteInterview = useCallback(async () => {
     try {
       await completeInterview(interview.token);
       setIsCompleted(true);
-    } catch (error: any) {
-      toast.error("Errore", {
-        description: error.message || "Impossibile completare l'intervista",
-      });
+    } catch (cause) {
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Impossibile completare l'intervista";
+      toast.error("Errore", { description: message });
     }
   }, [interview.token]);
 
@@ -86,85 +91,37 @@ export function InterviewClient({
     return () => clearInterval(timer);
   }, [timeRemaining, isStarted, isCompleted, handleCompleteInterview]);
 
-  // Set up real-time subscription for monitoring
-  useEffect(() => {
-    if (!supabase || !interview) return;
-
-    // Subscribe to changes on this interview
-    const channel = supabase
-      .channel(`interview_${interview.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "interviews",
-          filter: `id=eq.${interview.id}`,
-        },
-        (payload) => {
-          // Update local state if the interview is updated
-          if (payload.new.status === "completed") {
-            setIsCompleted(true);
-          }
-        }
-      )
-      .subscribe();
-
-    setLoading(false);
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, interview]);
-
   const handleStartInterview = async () => {
     try {
       await startInterview(interview.token);
       setIsStarted(true);
-
-      // Broadcast the event to the real-time channel
-      await supabase.channel(`interview_${interview.id}`).send({
-        type: "broadcast",
-        event: "interview_started",
-        payload: { interview_id: interview.id },
-      });
-    } catch (error: any) {
-      toast.error("Errore", {
-        description: error.message || "Impossibile avviare l'intervista",
-      });
+    } catch (cause) {
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Impossibile avviare l'intervista";
+      toast.error("Errore", { description: message });
     }
   };
 
-  const handleAnswer = async (questionId: string, answer: any) => {
+  const handleAnswer = async (questionId: string, answer: InterviewAnswer) => {
     try {
-      // Save answer locally
       setAnswers((prev) => ({
         ...prev,
         [questionId]: answer,
       }));
 
-      // Save answer to server
       await submitAnswer(interview.token, questionId, answer);
 
-      // Broadcast the answer to the real-time channel
-      await supabase.channel(`interview_${interview.id}`).send({
-        type: "broadcast",
-        event: "answer_submitted",
-        payload: {
-          question_id: questionId,
-          answer,
-          interview_id: interview.id,
-        },
-      });
-
-      // Move to next question if not the last one
-      if (quiz && currentQuestionIndex < quiz.questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      if (currentQuestionIndex < quiz.questions.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1);
       }
-    } catch (error: any) {
-      toast.error("Errore", {
-        description: error.message || "Impossibile salvare la risposta",
-      });
+    } catch (cause) {
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Impossibile salvare la risposta";
+      toast.error("Errore", { description: message });
     }
   };
 
@@ -173,17 +130,6 @@ export function InterviewClient({
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-dvh">
-        <div className="flex flex-col items-center gap-2">
-          <div className="border-4 border-primary border-t-transparent rounded-full w-8 h-8 animate-spin" />
-          <p className="font-medium text-lg">Caricamento intervista...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (isCompleted) {
     return <InterviewComplete />;

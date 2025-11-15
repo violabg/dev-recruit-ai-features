@@ -19,7 +19,6 @@ export const viewport: Viewport = {
   ],
 };
 
-// Update the RootLayout component to handle Supabase provider errors gracefully
 export default function RootLayout({
   children,
 }: Readonly<{

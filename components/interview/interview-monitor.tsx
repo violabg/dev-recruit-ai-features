@@ -8,11 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Question } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/client";
 import { prismLanguage } from "@/lib/utils";
 import { Highlight, themes } from "prism-react-renderer";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 
 interface InterviewMonitorProps {
   interviewId: string;
@@ -31,49 +29,30 @@ export function InterviewMonitor({
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(
     null
   );
-  const [isConnected, setIsConnected] = useState(false);
 
-  const supabase = createClient();
-
-  // Set up real-time subscription for monitoring
   useEffect(() => {
-    // Subscribe to the interview channel
-    const channel = supabase
-      .channel(`interview_${interviewId}`)
-      .on("broadcast", { event: "answer_submitted" }, (payload) => {
-        if (payload.payload.interview_id === interviewId) {
-          setAnswers((prev) => ({
-            ...prev,
-            [payload.payload.question_id]: payload.payload.answer,
-          }));
-          setCurrentQuestionId(payload.payload.question_id);
-        }
-      })
-      .on("broadcast", { event: "interview_started" }, (payload) => {
-        if (payload.payload.interview_id === interviewId) {
-          toast.error("Intervista iniziata", {
-            description: "Il candidato ha iniziato l'intervista",
-          });
-        }
-      })
-      .on("broadcast", { event: "interview_completed" }, (payload) => {
-        if (payload.payload.interview_id === interviewId) {
-          toast.success("Intervista completata", {
-            description: "Il candidato ha completato l'intervista",
-          });
-          setAnswers(payload.payload.answers);
-        }
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          setIsConnected(true);
-        }
-      });
+    setAnswers(initialAnswers);
+  }, [initialAnswers]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [interviewId, supabase]);
+  useEffect(() => {
+    const latestAnswered = [...quizQuestions]
+      .reverse()
+      .find((question) => answers[question.id] !== undefined);
+
+    setCurrentQuestionId(latestAnswered ? latestAnswered.id : null);
+  }, [quizQuestions, answers]);
+
+  const statusIndicator = useMemo(() => {
+    switch (status) {
+      case "completed":
+        return { color: "bg-blue-500", label: "Intervista completata" };
+      case "in_progress":
+        return { color: "bg-green-500", label: "In corso" };
+      case "pending":
+      default:
+        return { color: "bg-yellow-500", label: "In attesa del candidato" };
+    }
+  }, [status]);
 
   const getAnsweredQuestionsCount = () => {
     return Object.keys(answers).length;
@@ -84,22 +63,8 @@ export function InterviewMonitor({
       <div className="flex justify-between items-center">
         <h2 className="font-semibold text-xl">Monitoraggio in tempo reale</h2>
         <div className="flex items-center gap-2">
-          <div
-            className={`h-2 w-2 rounded-full ${
-              isConnected
-                ? "bg-green-500"
-                : status === "completed"
-                ? "bg-blue-500"
-                : "bg-yellow-500"
-            }`}
-          />
-          <span className="text-sm">
-            {isConnected
-              ? "Connesso"
-              : status === "completed"
-              ? "Intervista completata"
-              : "In attesa del candidato"}
-          </span>
+          <div className={`h-2 w-2 rounded-full ${statusIndicator.color}`} />
+          <span className="text-sm">{statusIndicator.label}</span>
         </div>
       </div>
 
@@ -217,7 +182,7 @@ export function InterviewMonitor({
                             }
                             style={style}
                           >
-                            <code className="break-words whitespace-pre-wrap">
+                            <code className="wrap-break-word whitespace-pre-wrap">
                               {tokens.map((line, i) => {
                                 const { key: lineKey, ...lineProps } =
                                   getLineProps({

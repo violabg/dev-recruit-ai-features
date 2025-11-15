@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@/lib/supabase/server";
+import { getInterviewDetail } from "@/lib/data/interview-data";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -32,16 +32,9 @@ export default async function InterviewDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const unwrappedParams = await params;
-  const supabase = await createClient();
+  const interviewData = await getInterviewDetail(unwrappedParams.id);
 
-  // Fetch interview details
-  const { data: interview, error: interviewError } = await supabase
-    .from("interviews")
-    .select("*")
-    .eq("id", unwrappedParams.id)
-    .single();
-
-  if (interviewError || !interview) {
+  if (!interviewData) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Intervista non trovata</p>
@@ -52,49 +45,7 @@ export default async function InterviewDetailPage({
     );
   }
 
-  // Fetch quiz details
-  const { data: quiz, error: quizError } = await supabase
-    .from("quizzes")
-    .select(
-      `
-      id, 
-      title, 
-      questions,
-      time_limit,
-      position:positions(title)
-      `
-    )
-    .eq("id", interview.quiz_id)
-    .single();
-
-  if (quizError || !quiz) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[400px]">
-        <p className="font-medium text-lg">Quiz non trovato</p>
-        <Button className="mt-4" asChild>
-          <Link href="/dashboard/quizzes">Torna ai quiz</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  // Fetch candidate details
-  const { data: candidate, error: candidateError } = await supabase
-    .from("candidates")
-    .select("id, name, email")
-    .eq("id", interview.candidate_id)
-    .single();
-
-  if (candidateError || !candidate) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[400px]">
-        <p className="font-medium text-lg">Candidato non trovato</p>
-        <Button className="mt-4" asChild>
-          <Link href="/dashboard/quizzes">Torna ai quiz</Link>
-        </Button>
-      </div>
-    );
-  }
+  const { interview, quiz, candidate } = interviewData;
 
   // Set active tab based on interview status
   const activeTab = interview.status === "completed" ? "results" : "monitor";
@@ -114,7 +65,9 @@ export default async function InterviewDetailPage({
         <div>
           <h1 className="font-bold text-3xl">Intervista: {quiz.title}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline">{quiz.position.title}</Badge>
+            <Badge variant="outline">
+              {quiz.positions?.title ?? "Senza ruolo"}
+            </Badge>
             <Badge
               variant={
                 interview.status === "pending"
@@ -146,9 +99,11 @@ export default async function InterviewDetailPage({
           <CardContent>
             <div className="flex items-center gap-2">
               <div>
-                <div className="font-medium">{candidate.name}</div>
+                <div className="font-medium">
+                  {candidate.name ?? "Nome non disponibile"}
+                </div>
                 <div className="text-muted-foreground text-sm">
-                  {candidate.email}
+                  {candidate.email ?? "Email non disponibile"}
                 </div>
               </div>
             </div>
@@ -162,11 +117,11 @@ export default async function InterviewDetailPage({
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-sm">Inizio:</span>
-                <span>{formatDate(interview.started_at, true)}</span>
+                <span>{formatDate(interview.startedAt, true)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-sm">Fine:</span>
-                <span>{formatDate(interview.completed_at, true)}</span>
+                <span>{formatDate(interview.completedAt, true)}</span>
               </div>
             </div>
           </CardContent>
@@ -178,10 +133,7 @@ export default async function InterviewDetailPage({
           <CardContent>
             <div className="flex items-center gap-2">
               <span>
-                {calculateDuration(
-                  interview.started_at,
-                  interview.completed_at
-                )}
+                {calculateDuration(interview.startedAt, interview.completedAt)}
               </span>
             </div>
           </CardContent>
@@ -212,7 +164,7 @@ export default async function InterviewDetailPage({
               interviewId={interview.id}
               quizQuestions={quiz.questions}
               answers={interview.answers || {}}
-              candidateName={candidate.name}
+              candidateName={candidate.name ?? ""}
             />
           ) : (
             <Card>

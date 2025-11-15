@@ -4,6 +4,8 @@ description: "Task list template for feature implementation"
 
 # Tasks: Backend Migration to Prisma + Neon + Better Auth
 
+> **Current Phase:** Phase 8 - Polish & Cross-Cutting Concerns
+
 **Input**: Design documents from `/specs/001-backend-migration/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
@@ -133,25 +135,29 @@ description: "Task list template for feature implementation"
 
 ## Phase 7: User Story 5 - Interviews Migration (Priority: P2)
 
+**Status:** Completed
+
 **Goal**: Migrate interviews operations from Supabase to Prisma
 
 **Independent Test**: Create, read, update interviews and token access works with Prisma
 
 ### Implementation for User Story 5
 
-- [ ] T037 Replace Supabase queries with Prisma in lib/actions/interviews.ts
-- [ ] T038 Update interview creation logic for Prisma
-- [ ] T039 Update interview retrieval logic for Prisma
-- [ ] T040 Update interview update logic for Prisma
-- [ ] T041 Update interview deletion logic for Prisma
-- [ ] T042 Migrate database functions to Prisma/raw SQL
-- [ ] T043 Test interviews operations and token access
+- [x] T037 Replace Supabase queries with Prisma in lib/actions/interviews.ts
+- [x] T038 Update interview creation logic for Prisma
+- [x] T039 Update interview retrieval logic for Prisma
+- [x] T040 Update interview update logic for Prisma
+- [x] T041 Update interview deletion logic for Prisma
+- [x] T042 Migrate database functions to Prisma/raw SQL
+- [x] T043 Test interviews operations and token access
 
 **Checkpoint**: Interviews fully migrated - all interview operations use Prisma
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting Concerns
+
+**Status:** In progress
 
 **Purpose**: Final cleanup and validation
 

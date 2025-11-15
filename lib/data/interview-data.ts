@@ -1,5 +1,7 @@
+import type { Quiz } from "@/app/dashboard/quizzes/quizzes-actions";
 import { requireUser } from "@/lib/auth-server";
 import prisma from "@/lib/prisma";
+import type { Question } from "@/lib/schemas";
 import type {
   AssignedInterview,
   CandidateQuizData,
@@ -249,4 +251,190 @@ export const getCandidateQuizData = async (
 ): Promise<CandidateQuizData | null> => {
   const user = await requireUser();
   return getCandidateQuizDataCached(candidateId, user.id);
+};
+
+type InterviewAnswer = string | { code: string } | null;
+
+export type InterviewByTokenResult = {
+  interview: {
+    token: string;
+    status: string;
+    answers: Record<string, InterviewAnswer> | null;
+  };
+  quiz: Quiz;
+  candidate: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
+};
+
+export const getInterviewByToken = async (
+  token: string
+): Promise<InterviewByTokenResult | null> => {
+  const interview = await prisma.interview.findUnique({
+    where: { token },
+    include: {
+      quiz: {
+        include: {
+          position: {
+            select: {
+              id: true,
+              title: true,
+              experienceLevel: true,
+            },
+          },
+        },
+      },
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!interview || !interview.quiz || !interview.candidate) {
+    return null;
+  }
+
+  const quiz: Quiz = {
+    id: interview.quiz.id,
+    title: interview.quiz.title,
+    created_at: interview.quiz.createdAt.toISOString(),
+    position_id: interview.quiz.positionId,
+    positions: interview.quiz.position
+      ? {
+          id: interview.quiz.position.id,
+          title: interview.quiz.position.title,
+          experience_level: interview.quiz.position.experienceLevel,
+        }
+      : null,
+    time_limit: interview.quiz.timeLimit,
+    questions: Array.isArray(interview.quiz.questions)
+      ? (interview.quiz.questions as Question[])
+      : [],
+  };
+
+  const interviewAnswers =
+    (interview.answers as Record<string, InterviewAnswer> | null) ?? null;
+
+  return {
+    interview: {
+      token: interview.token,
+      status: interview.status,
+      answers: interviewAnswers,
+    },
+    quiz,
+    candidate: {
+      id: interview.candidate.id,
+      name: interview.candidate.name,
+      email: interview.candidate.email,
+    },
+  };
+};
+
+export type InterviewDetailResult = {
+  interview: {
+    id: string;
+    token: string;
+    status: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    createdAt: string;
+    score: number | null;
+    answers: Record<string, InterviewAnswer> | null;
+  };
+  quiz: Quiz;
+  candidate: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
+};
+
+export const getInterviewDetail = async (
+  id: string
+): Promise<InterviewDetailResult | null> => {
+  const user = await requireUser();
+
+  const interview = await prisma.interview.findFirst({
+    where: {
+      id,
+      quiz: {
+        createdBy: user.id,
+      },
+      candidate: {
+        createdBy: user.id,
+      },
+    },
+    include: {
+      quiz: {
+        include: {
+          position: {
+            select: {
+              id: true,
+              title: true,
+              experienceLevel: true,
+            },
+          },
+        },
+      },
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!interview || !interview.quiz || !interview.candidate) {
+    return null;
+  }
+
+  const quiz: Quiz = {
+    id: interview.quiz.id,
+    title: interview.quiz.title,
+    created_at: interview.quiz.createdAt.toISOString(),
+    position_id: interview.quiz.positionId,
+    positions: interview.quiz.position
+      ? {
+          id: interview.quiz.position.id,
+          title: interview.quiz.position.title,
+          experience_level: interview.quiz.position.experienceLevel,
+        }
+      : null,
+    time_limit: interview.quiz.timeLimit,
+    questions: Array.isArray(interview.quiz.questions)
+      ? (interview.quiz.questions as Question[])
+      : [],
+  };
+
+  const answers =
+    (interview.answers as Record<string, InterviewAnswer> | null) ?? null;
+
+  return {
+    interview: {
+      id: interview.id,
+      token: interview.token,
+      status: interview.status,
+      startedAt: interview.startedAt ? interview.startedAt.toISOString() : null,
+      completedAt: interview.completedAt
+        ? interview.completedAt.toISOString()
+        : null,
+      createdAt: interview.createdAt.toISOString(),
+      score: interview.score ?? null,
+      answers,
+    },
+    quiz,
+    candidate: {
+      id: interview.candidate.id,
+      name: interview.candidate.name,
+      email: interview.candidate.email,
+    },
+  };
 };
