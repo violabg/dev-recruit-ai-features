@@ -1,5 +1,6 @@
 import { CandidateNewForm } from "@/components/candidates/candidate-new-form";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import prisma from "@/lib/prisma";
 
 type NewCandidatePageProps = {
   searchParams: Promise<{ positionId?: string }>;
@@ -11,10 +12,7 @@ export default async function NewCandidatePage({
   const params = await searchParams;
   const positionId = params.positionId;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return (
@@ -27,16 +25,15 @@ export default async function NewCandidatePage({
     );
   }
 
-  // Fetch positions for the select
-  const { data: positions } = await supabase
-    .from("positions")
-    .select("id, title")
-    .eq("created_by", user.id)
-    .order("title", { ascending: true });
+  const positions = await prisma.position.findMany({
+    where: { createdBy: user.id },
+    select: { id: true, title: true },
+    orderBy: { title: "asc" },
+  });
 
   // Validate that the positionId exists if provided
   const validPositionId =
-    positionId && positions?.some((p) => p.id === positionId)
+    positionId && positions.some((p) => p.id === positionId)
       ? positionId
       : undefined;
 

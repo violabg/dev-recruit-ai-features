@@ -137,13 +137,15 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
             <div className="space-y-2">
               <div className="flex items-center text-sm">
                 <Briefcase className="mr-2 w-4 h-4 text-muted-foreground" />
-                {candidate.positions ? (
+                {candidate.position ? (
                   <div>
-                    <span>{candidate.positions.title}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {" "}
-                      • {candidate.positions.experience_level}
-                    </span>
+                    <span>{candidate.position.title}</span>
+                    {candidate.position.experienceLevel && (
+                      <span className="text-muted-foreground text-xs">
+                        {" "}
+                        • {candidate.position.experienceLevel}
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <span className="text-muted-foreground">
@@ -153,10 +155,10 @@ export function CandidateGrid({ candidates }: CandidateGridProps) {
               </div>
               <div className="flex items-center text-sm">
                 <Calendar className="mr-2 w-4 h-4 text-muted-foreground" />
-                {candidate.created_at && (
+                {candidate.createdAt && (
                   <span>
                     Aggiunto il{" "}
-                    {format(new Date(candidate.created_at), "dd MMMM yyyy", {
+                    {format(new Date(candidate.createdAt), "dd MMMM yyyy", {
                       locale: it,
                     })}
                   </span>

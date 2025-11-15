@@ -17,8 +17,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { authClient } from "@/lib/auth-client";
 import { UpdatePasswordFormData, updatePasswordSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -40,17 +40,23 @@ export function UpdatePasswordForm({
   const { handleSubmit, setError } = form;
 
   const handleUpdatePassword = async (values: UpdatePasswordFormData) => {
-    const supabase = createClient();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      const result = await authClient.resetPassword({
         password: values.password,
       });
-      if (error) throw error;
-      router.push("/");
+
+      if (result.error) {
+        throw new Error(
+          result.error.message ?? "Errore nell'aggiornamento della password"
+        );
+      }
+
+      router.push("/dashboard");
     } catch (error: unknown) {
       setError("password", {
-        message: error instanceof Error ? error.message : "An error occurred",
+        message:
+          error instanceof Error ? error.message : "Si è verificato un errore",
       });
     } finally {
       setIsLoading(false);

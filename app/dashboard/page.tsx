@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getCurrentUser } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
 import { BarChart3, Briefcase, Plus, Users } from "lucide-react";
 import Link from "next/link";
@@ -18,10 +19,7 @@ async function OpenPositions() {
   // cacheLife("hours");
   // cacheTag("positions");
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return null;
@@ -52,10 +50,7 @@ async function Candidates() {
   // cacheLife("hours");
   // cacheTag("candidates");
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return null;
@@ -115,10 +110,7 @@ async function Interviews() {
 // Server component for recent positions
 async function RecentPositions() {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return null;

@@ -1,6 +1,6 @@
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
 import { prismLanguage } from "@/lib/utils";
 import { ArrowRight, BrainCircuit, CheckCircle, Users } from "lucide-react";
 import Link from "next/link";
@@ -8,10 +8,7 @@ import { Highlight, themes } from "prism-react-renderer";
 import { Suspense } from "react";
 
 async function StartButton() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   return (
     <Link href={user ? "/dashboard" : "/auth/login"}>
       <Button size="lg" className="gap-1.5">

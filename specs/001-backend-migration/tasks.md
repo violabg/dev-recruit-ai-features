@@ -84,8 +84,8 @@ description: "Task list template for feature implementation"
 - [x] T018 Replace Supabase queries with Prisma in lib/actions/positions.ts
 - [x] T019 Update position creation logic for Prisma
 - [x] T020 Update position retrieval logic for Prisma
-- [ ] T021 Update position update logic for Prisma
-- [ ] T022 Update position deletion logic for Prisma
+- [x] T021 Update position update logic for Prisma
+- [x] T022 Update position deletion logic for Prisma
 - [ ] T023 Test positions CRUD operations
 
 **Checkpoint**: Positions fully migrated - all position operations use Prisma
@@ -100,11 +100,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T024 Replace Supabase queries with Prisma in lib/actions/candidates.ts
-- [ ] T025 Update candidate creation logic for Prisma
-- [ ] T026 Update candidate retrieval logic for Prisma
-- [ ] T027 Update candidate update logic for Prisma
-- [ ] T028 Update candidate deletion logic for Prisma
+- [x] T024 Replace Supabase queries with Prisma in lib/actions/candidates.ts
+- [x] T025 Update candidate creation logic for Prisma
+- [x] T026 Update candidate retrieval logic for Prisma
+- [x] T027 Update candidate update logic for Prisma
+- [x] T028 Update candidate deletion logic for Prisma
 - [ ] T029 Test candidates CRUD operations
 
 **Checkpoint**: Candidates fully migrated - all candidate operations use Prisma
@@ -256,5 +256,4 @@ With multiple developers:
 - Keep Supabase as fallback during migration
 - Commit after each task or logical group
 - Stop at any checkpoint to validate phase independently
-- Avoid: breaking existing functionality, data loss, auth failures</content>
-  <parameter name="filePath">/Users/paolo/Sites/ai/dev-recruit-ai-features/specs/001-backend-migration/tasks.md
+- Avoid: breaking existing functionality, data loss, auth failures

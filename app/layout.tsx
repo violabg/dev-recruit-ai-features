@@ -1,5 +1,4 @@
 import { ThemeProvider } from "@/components/theme-provider";
-import { SupabaseProvider } from "@/lib/supabase/supabase-provider";
 import type { Metadata, Viewport } from "next";
 import type React from "react";
 import { Toaster } from "sonner";
@@ -35,22 +34,20 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SupabaseProvider>
-            <div className="relative min-h-dvh">{children}</div>
-            <Toaster
-              richColors
-              position="top-right"
-              toastOptions={{
-                className: "glass-card border-0 ",
-                style: {
-                  background: "var(--glass-bg)",
-                  backdropFilter: "blur(20px) saturate(1.8)",
-                  border: "1px solid var(--glass-border)",
-                  boxShadow: "var(--glass-shadow)",
-                },
-              }}
-            />
-          </SupabaseProvider>
+          <div className="relative min-h-dvh">{children}</div>
+          <Toaster
+            richColors
+            position="top-right"
+            toastOptions={{
+              className: "glass-card border-0 ",
+              style: {
+                background: "var(--glass-bg)",
+                backdropFilter: "blur(20px) saturate(1.8)",
+                border: "1px solid var(--glass-border)",
+                boxShadow: "var(--glass-shadow)",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

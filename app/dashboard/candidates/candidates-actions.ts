@@ -1,10 +1,51 @@
 import { requireUser } from "@/lib/auth-server";
-import { createClient } from "@/lib/supabase/server";
-import { Candidate, Interview, Position } from "@/lib/supabase/types";
+import prisma from "@/lib/prisma";
+import { Prisma } from "@/lib/prisma/client";
 
-export type CandidateWithRelations = Candidate & {
-  positions: Position | null;
-  interviews: Interview[] | null;
+type PrismaCandidateWithRelations = Prisma.CandidateGetPayload<{
+  include: {
+    position: {
+      select: {
+        id: true;
+        title: true;
+        experienceLevel: true;
+      };
+    };
+    interviews: {
+      select: {
+        id: true;
+        status: true;
+        score: true;
+        createdAt: true;
+      };
+    };
+  };
+}>;
+
+export type CandidateWithRelations = {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  resumeUrl: string | null;
+  positionId: string;
+  createdAt: string;
+  position: {
+    id: string;
+    title: string;
+    experienceLevel: string | null;
+  } | null;
+  interviews: {
+    id: string;
+    status: string;
+    score: number | null;
+    createdAt: string | null;
+  }[];
+};
+
+export type CandidateStatusSummary = {
+  status: string;
+  count: number;
 };
 
 type FetchCandidatesParams = {
@@ -20,83 +61,111 @@ export async function fetchCandidatesData({
   positionId,
   sort,
 }: FetchCandidatesParams) {
-  const supabase = await createClient();
-
-  // Get the current user
   const user = await requireUser();
 
-  // Build the query
-  let query = supabase
-    .from("candidates")
-    .select(
-      `
-      *,
-      positions (
-        id,
-        title,
-        experience_level
-      ),
-      interviews (
-        id,
-        status,
-        score,
-        created_at
-      )
-    `
-    )
-    .eq("created_by", user.id);
+  const where: Prisma.CandidateWhereInput = {
+    createdBy: user.id,
+  };
 
-  // Apply search filter
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
-  }
-
-  // Apply status filter
   if (status !== "all") {
-    query = query.eq("status", status);
+    where.status = status;
   }
 
-  // Apply position filter
   if (positionId !== "all") {
-    query = query.eq("position_id", positionId);
+    where.positionId = positionId;
   }
 
-  // Apply sorting
-  if (sort === "newest") {
-    query = query.order("created_at", { ascending: false });
-  } else if (sort === "oldest") {
-    query = query.order("created_at", { ascending: true });
-  } else if (sort === "name") {
-    query = query.order("name", { ascending: true });
-  } else if (sort === "status") {
-    query = query.order("status", { ascending: true });
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
   }
 
-  // Execute the query
-  const { data: candidates } = await query;
+  const orderByMap: Record<string, Prisma.CandidateOrderByWithRelationInput> = {
+    newest: { createdAt: "desc" },
+    oldest: { createdAt: "asc" },
+    name: { name: "asc" },
+    status: { status: "asc" },
+  };
 
-  // Get all positions for the filter dropdown
-  const { data: positions } = await supabase
-    .from("positions")
-    .select("id, title")
-    .eq("created_by", user.id)
-    .order("title", { ascending: true });
+  const orderBy = orderByMap[sort] ?? orderByMap.newest;
 
-  // Get candidate count by status
-  const { data: statusCounts } = await supabase.rpc(
-    "count_candidates_by_status",
-    {
-      user_id: user.id,
-    }
+  const candidates = await prisma.candidate.findMany({
+    where,
+    orderBy,
+    include: {
+      position: {
+        select: {
+          id: true,
+          title: true,
+          experienceLevel: true,
+        },
+      },
+      interviews: {
+        select: {
+          id: true,
+          status: true,
+          score: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  const mappedCandidates: CandidateWithRelations[] = candidates.map(
+    (candidate: PrismaCandidateWithRelations) => ({
+      id: candidate.id,
+      name: candidate.name,
+      email: candidate.email,
+      status: candidate.status,
+      resumeUrl: candidate.resumeUrl,
+      positionId: candidate.positionId,
+      createdAt: candidate.createdAt.toISOString(),
+      position: candidate.position
+        ? {
+            id: candidate.position.id,
+            title: candidate.position.title,
+            experienceLevel: candidate.position.experienceLevel,
+          }
+        : null,
+      interviews: candidate.interviews.map((interview) => ({
+        id: interview.id,
+        status: interview.status,
+        score: interview.score,
+        createdAt: interview.createdAt
+          ? interview.createdAt.toISOString()
+          : null,
+      })),
+    })
   );
 
-  // Calculate total candidates
-  const totalCandidates =
-    statusCounts?.reduce((acc: number, curr) => acc + curr.count, 0) || 0;
+  const positions = await prisma.position.findMany({
+    where: { createdBy: user.id },
+    select: { id: true, title: true },
+    orderBy: { title: "asc" },
+  });
+
+  const statusCountsRaw = await prisma.candidate.groupBy({
+    by: ["status"],
+    where: { createdBy: user.id },
+    _count: { _all: true },
+  });
+
+  const statusCounts: CandidateStatusSummary[] = statusCountsRaw.map(
+    (item) => ({
+      status: item.status,
+      count: item._count._all,
+    })
+  );
+
+  const totalCandidates = await prisma.candidate.count({
+    where: { createdBy: user.id },
+  });
 
   return {
     user,
-    candidates: (candidates || []) as CandidateWithRelations[],
+    candidates: mappedCandidates,
     positions,
     statusCounts,
     totalCandidates,

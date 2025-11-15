@@ -18,8 +18,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { authClient } from "@/lib/auth-client";
 import { SignUpFormData, signUpSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -48,25 +48,33 @@ export function SignUpForm({
   const { handleSubmit, setError } = form;
 
   const handleSignUp = async (values: SignUpFormData) => {
-    const supabase = createClient();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const result = await authClient.signUp.email({
         email: values.email,
         password: values.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: `${values.first_name} ${values.last_name}`,
-            full_name: `${values.first_name} ${values.last_name}`,
-          },
-        },
+        name: `${values.first_name} ${values.last_name}`,
+        callbackURL: `${window.location.origin}/dashboard`,
       });
-      if (error) throw error;
+
+      if (result.error) {
+        throw new Error(
+          result.error.message ?? "Errore durante la registrazione"
+        );
+      }
+
+      if (result.data?.redirect && result.data.url) {
+        window.location.href = result.data.url;
+        return;
+      }
+
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError("email", {
-        message: error instanceof Error ? error.message : "An error occurred",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Si è verificato un errore durante la registrazione",
       });
     } finally {
       setIsLoading(false);

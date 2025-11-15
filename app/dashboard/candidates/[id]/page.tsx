@@ -2,7 +2,8 @@ import { CandidateStatusBadge } from "@/components/candidates/candidate-status-b
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import prisma from "@/lib/prisma";
 import Link from "next/link";
 
 export default async function CandidateDetailPage({
@@ -11,10 +12,7 @@ export default async function CandidateDetailPage({
   params: { id: string };
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return (
@@ -27,19 +25,29 @@ export default async function CandidateDetailPage({
     );
   }
 
-  // Fetch candidate with position and interviews
-  const { data: candidate, error } = await supabase
-    .from("candidates")
-    .select(
-      `*,
-        positions (id, title, experience_level),
-        interviews (id, status, score, created_at)`
-    )
-    .eq("id", id)
-    .eq("created_by", user.id)
-    .single();
+  const candidate = await prisma.candidate.findFirst({
+    where: { id, createdBy: user.id },
+    include: {
+      position: {
+        select: {
+          id: true,
+          title: true,
+          experienceLevel: true,
+        },
+      },
+      interviews: {
+        select: {
+          id: true,
+          status: true,
+          score: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
 
-  if (error || !candidate) {
+  if (!candidate) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Candidato non trovato</p>
@@ -57,8 +65,8 @@ export default async function CandidateDetailPage({
           <h1 className="font-bold text-3xl">{candidate.name}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline">{candidate.status}</Badge>
-            {candidate.positions && (
-              <Badge variant="secondary">{candidate.positions.title}</Badge>
+            {candidate.position && (
+              <Badge variant="secondary">{candidate.position.title}</Badge>
             )}
             <span className="text-muted-foreground text-sm">
               {candidate.email}
@@ -89,12 +97,12 @@ export default async function CandidateDetailPage({
             </div>
             <div>
               <div className="font-semibold">Posizione</div>
-              <div>{candidate.positions?.title || "-"}</div>
+              <div>{candidate.position?.title || "-"}</div>
             </div>
           </div>
         </CardContent>
       </Card>
-      {candidate.interviews && candidate.interviews.length > 0 && (
+      {candidate.interviews.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Colloqui</CardTitle>
@@ -108,9 +116,9 @@ export default async function CandidateDetailPage({
                 >
                   <div>
                     <div className="font-medium">{interview.status}</div>
-                    {interview.created_at && (
+                    {interview.createdAt && (
                       <div className="text-muted-foreground text-sm">
-                        {new Date(interview.created_at).toLocaleString()}
+                        {new Date(interview.createdAt).toLocaleString()}
                       </div>
                     )}
                   </div>

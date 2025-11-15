@@ -128,6 +128,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      pg:
+        specifier: ^8.16.3
+        version: 8.16.3
       prism-react-renderer:
         specifier: ^2.4.1
         version: 2.4.1(react@19.2.0)

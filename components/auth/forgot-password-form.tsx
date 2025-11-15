@@ -18,8 +18,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { authClient } from "@/lib/auth-client";
 import { ForgotPasswordFormData, forgotPasswordSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -40,20 +40,24 @@ export function ForgotPasswordForm({
   const { handleSubmit, setError } = form;
 
   const handleForgotPassword = async (values: ForgotPasswordFormData) => {
-    const supabase = createClient();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        values.email,
-        {
-          redirectTo: `${window.location.origin}/auth/update-password`,
-        }
-      );
-      if (error) throw error;
+      const result = await authClient.forgetPassword({
+        email: values.email,
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+
+      if (result.error) {
+        throw new Error(
+          result.error.message ?? "Errore durante l'invio dell'email"
+        );
+      }
+
       setSuccess(true);
     } catch (error: unknown) {
       setError("email", {
-        message: error instanceof Error ? error.message : "An error occurred",
+        message:
+          error instanceof Error ? error.message : "Si è verificato un errore",
       });
     } finally {
       setIsLoading(false);

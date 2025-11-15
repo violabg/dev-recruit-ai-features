@@ -82,12 +82,14 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
               <TableCell className="font-medium">{candidate.name}</TableCell>
               <TableCell>{candidate.email}</TableCell>
               <TableCell>
-                {candidate.positions ? (
+                {candidate.position ? (
                   <div className="flex flex-col">
-                    <span>{candidate.positions.title}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {candidate.positions.experience_level}
-                    </span>
+                    <span>{candidate.position.title}</span>
+                    {candidate.position.experienceLevel && (
+                      <span className="text-muted-foreground text-xs">
+                        {candidate.position.experienceLevel}
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <span className="text-muted-foreground">
@@ -99,8 +101,8 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 <CandidateStatusBadge status={candidate.status} />
               </TableCell>
               <TableCell>
-                {candidate.created_at &&
-                  format(new Date(candidate.created_at), "dd MMM yyyy", {
+                {candidate.createdAt &&
+                  format(new Date(candidate.createdAt), "dd MMM yyyy", {
                     locale: it,
                   })}
               </TableCell>

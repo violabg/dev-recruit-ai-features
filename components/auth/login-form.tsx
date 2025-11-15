@@ -73,32 +73,12 @@ export function LoginForm({
     }
   };
 
-  const handleSocialLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const result = await authClient.signIn.social({
-        provider: "github",
-        callbackURL: `${window.location.origin}/dashboard`,
-        errorCallbackURL: `${window.location.origin}/auth/error`,
-      });
-
-      if (result.error) {
-        throw new Error(
-          result.error.message ?? "Impossibile avviare l'accesso con GitHub"
-        );
-      }
-    } catch (error: unknown) {
-      console.error("GitHub login failed:", error);
-      setError("email", {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Impossibile avviare l'accesso con GitHub",
-      });
-    }
-    setIsLoading(false);
+  const handleSocialSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "github",
+      callbackURL: `${window.location.origin}/dashboard`,
+      errorCallbackURL: `${window.location.origin}/auth/error`,
+    });
   };
 
   return (
@@ -171,7 +151,7 @@ export function LoginForm({
             </form>
           </Form>
           <Separator className="my-4" />
-          <form onSubmit={handleSocialLogin}>
+          <form onSubmit={handleSocialSignIn}>
             <div className="flex flex-col gap-6">
               {/* {error && <p className=\"text-destructive-500 text-sm\">{error}</p>} */}
               <Button

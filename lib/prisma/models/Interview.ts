@@ -551,10 +551,6 @@ export type InterviewUncheckedUpdateManyWithoutQuizNestedInput = {
   deleteMany?: Prisma.InterviewScalarWhereInput | Prisma.InterviewScalarWhereInput[]
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type NullableFloatFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number

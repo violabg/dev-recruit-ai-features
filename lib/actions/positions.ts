@@ -51,14 +51,43 @@ export async function deletePosition(id: string) {
 export async function updatePosition(id: string, formData: FormData) {
   const user = await requireUser();
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const experienceLevel = formData.get("experience_level") as string;
-  const skills = JSON.parse(formData.get("skills") as string);
-  const softSkills = JSON.parse(
-    (formData.get("soft_skills") as string) || "[]"
-  );
-  const contractType = formData.get("contract_type") as string;
+  const parseJsonArray = (
+    value: FormDataEntryValue | null,
+    field: string
+  ): string[] => {
+    if (!value) {
+      return [] as string[];
+    }
+
+    if (typeof value !== "string") {
+      throw new Error(`Invalid ${field} value`);
+    }
+
+    try {
+      const parsed = JSON.parse(value);
+
+      if (!Array.isArray(parsed)) {
+        throw new Error();
+      }
+
+      return parsed as string[];
+    } catch {
+      throw new Error(`Invalid ${field} format`);
+    }
+  };
+
+  const rawSkills = formData.get("skills");
+  const rawSoftSkills = formData.get("soft_skills");
+
+  const payload = positionFormSchema.parse({
+    title: formData.get("title"),
+    description: formData.get("description") ?? undefined,
+    experience_level: formData.get("experience_level"),
+    skills: parseJsonArray(rawSkills, "skills"),
+    soft_skills: parseJsonArray(rawSoftSkills, "soft_skills"),
+    contract_type:
+      (formData.get("contract_type") as string | null)?.trim() || undefined,
+  });
 
   const current = await prisma.position.findUnique({
     where: { id },
@@ -72,12 +101,12 @@ export async function updatePosition(id: string, formData: FormData) {
   await prisma.position.update({
     where: { id },
     data: {
-      title,
-      description,
-      experienceLevel,
-      skills,
-      softSkills,
-      contractType,
+      title: payload.title,
+      description: payload.description?.trim() || null,
+      experienceLevel: payload.experience_level,
+      skills: payload.skills,
+      softSkills: payload.soft_skills ?? [],
+      contractType: payload.contract_type ?? null,
     },
   });
 
