@@ -30,9 +30,9 @@ type Position = {
   id: string;
   title: string;
   description: string | null;
-  experience_level: string;
+  experienceLevel: string;
   skills: string[];
-  soft_skills: string[] | null;
+  softSkills: string[];
 };
 
 type QuizFormProps = {
@@ -54,7 +54,7 @@ export const QuizForm = ({ position }: QuizFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      quizTitle: `Quiz per ${position.title} (${position.experience_level})`,
+      quizTitle: `Quiz per ${position.title} (${position.experienceLevel})`,
       instructions: "",
       questionCount: 10,
       includeMultipleChoice: true,

@@ -28,7 +28,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { updatePosition } from "@/lib/actions/positions";
 import { PositionFormData, positionFormSchema } from "@/lib/schemas";
-import { Position } from "@/lib/supabase/types";
+import type { Position as PrismaPosition } from "@prisma/client";
 import {
   contractTypes,
   databases,
@@ -40,7 +40,7 @@ import {
 } from "./data";
 
 type EditPositionFormProps = {
-  position: Position;
+  position: PrismaPosition;
 };
 
 export function EditPositionForm({ position }: EditPositionFormProps) {
@@ -52,10 +52,10 @@ export function EditPositionForm({ position }: EditPositionFormProps) {
     defaultValues: {
       title: position.title,
       description: position.description || "",
-      experience_level: position.experience_level,
+      experience_level: position.experienceLevel,
       skills: position.skills || [],
-      soft_skills: position.soft_skills || [],
-      contract_type: position.contract_type || "",
+      soft_skills: position.softSkills || [],
+      contract_type: position.contractType || "",
     },
   });
 

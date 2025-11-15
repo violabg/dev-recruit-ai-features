@@ -9,7 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import { getUserPositions } from "@/lib/data/positions";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -22,6 +23,8 @@ export default async function PositionsPage({
 }: {
   searchParams: Promise<{ q: string | undefined }>;
 }) {
+  const params = await searchParams;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -34,46 +37,24 @@ export default async function PositionsPage({
         </Button>
       </div>
       <Suspense fallback={<PositionsSkeleton />}>
-        <PositionsTable
-          defaultValue={searchParams.then((search) => search.q)}
-        />
+        <PositionsTable query={params.q} />
       </Suspense>
     </div>
   );
 }
 
-const PositionsTable = async ({
-  defaultValue,
-}: {
-  defaultValue: Promise<string | undefined>;
-}) => {
-  const q = await defaultValue;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const PositionsTable = async ({ query }: { query?: string }) => {
+  const user = await getCurrentUser();
 
   if (!user) {
     return null;
   }
 
-  // Fetch positions
-  let query = supabase
-    .from("positions")
-    .select("*")
-    .eq("created_by", user.id)
-    .order("created_at", { ascending: false });
-
-  // Apply search filter if provided
-  if (q) {
-    query = query.ilike("title", `%${q}%`);
-  }
-
-  const { data: positions } = await query;
+  const positions = await getUserPositions(user.id, query);
   return (
     <>
       <div className="flex items-center gap-4">
-        <SearchPositions defaultValue={q} />
+        <SearchPositions defaultValue={query} />
       </div>
       {positions && positions.length > 0 ? (
         <div className="border rounded-md">
@@ -94,7 +75,7 @@ const PositionsTable = async ({
                     {position.title}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{position.experience_level}</Badge>
+                    <Badge variant="outline">{position.experienceLevel}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -110,7 +91,9 @@ const PositionsTable = async ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{formatDate(position.created_at)}</TableCell>
+                  <TableCell>
+                    {formatDate(position.createdAt.toISOString())}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button variant="default" size="sm" asChild>
                       <Link href={`/dashboard/positions/${position.id}`}>
@@ -127,9 +110,9 @@ const PositionsTable = async ({
         <div className="flex flex-col justify-center items-center border border-dashed rounded-lg h-[400px]">
           <div className="text-center">
             <p className="text-muted-foreground text-sm">
-              {q ? "Nessuna posizione trovata" : "Nessuna posizione creata"}
+              {query ? "Nessuna posizione trovata" : "Nessuna posizione creata"}
             </p>
-            {!q && (
+            {!query && (
               <Button className="mt-2" size="sm" asChild>
                 <Link href="/dashboard/positions/new">
                   <Plus className="mr-2 w-4 h-4" />

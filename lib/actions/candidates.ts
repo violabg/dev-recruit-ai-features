@@ -1,19 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireUser } from "../auth-server";
 import { createClient } from "../supabase/server";
 
 // Candidate actions
 export async function createCandidate(formData: FormData) {
   const supabase = await createClient();
-
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
+  const user = await requireUser();
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
@@ -47,14 +41,7 @@ export async function createCandidate(formData: FormData) {
 // Delete candidate
 export async function deleteCandidate(id: string) {
   const supabase = await createClient();
-
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
+  const user = await requireUser();
 
   // First, check if the candidate belongs to the user
   const { data: candidate, error: fetchError } = await supabase

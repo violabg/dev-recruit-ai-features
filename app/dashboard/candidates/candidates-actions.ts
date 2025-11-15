@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
 import { Candidate, Interview, Position } from "@/lib/supabase/types";
 
@@ -22,19 +23,7 @@ export async function fetchCandidatesData({
   const supabase = await createClient();
 
   // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      user: null,
-      candidates: [],
-      positions: [],
-      statusCounts: [],
-      totalCandidates: 0,
-    };
-  }
+  const user = await requireUser();
 
   // Build the query
   let query = supabase

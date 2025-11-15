@@ -2,6 +2,7 @@
 
 import { candidateQuizAssignmentSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
+import { requireUser } from "../auth-server";
 import { createClient } from "../supabase/server";
 
 export type AssignQuizzesToCandidateState = {
@@ -42,12 +43,7 @@ export async function assignQuizzesToCandidate(
   const { quizIds: validatedQuizIds, candidateId: validatedCandidateId } =
     validatedFields.data;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { message: "User not authenticated." };
-  }
+  const user = await requireUser();
 
   // Verify candidate ownership
   const { data: candidate, error: candidateError } = await supabase

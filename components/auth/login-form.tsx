@@ -10,8 +10,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import { LoginFormData, loginSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -40,21 +40,33 @@ export function LoginForm({
     defaultValues: { email: "", password: "" },
     mode: "onChange",
   });
-  const supabase = createClient();
   const { handleSubmit, setError } = form;
 
   const handleLogin = async (values: LoginFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const result = await authClient.signIn.email({
         email: values.email,
         password: values.password,
+        callbackURL: `${window.location.origin}/dashboard`,
       });
-      if (error) throw error;
+
+      if (result.error) {
+        throw new Error(result.error.message ?? "Credenziali non valide");
+      }
+
+      if (result.data?.redirect && result.data.url) {
+        window.location.href = result.data.url;
+        return;
+      }
+
       router.push("/dashboard");
     } catch (error: unknown) {
       setError("email", {
-        message: error instanceof Error ? error.message : "An error occurred",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Si è verificato un errore durante l'accesso",
       });
     } finally {
       setIsLoading(false);
@@ -66,19 +78,27 @@ export function LoginForm({
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const result = await authClient.signIn.social({
         provider: "github",
-        options: {
-          redirectTo: `${window.location.origin}/auth/oauth?next=/dashboard`,
-        },
+        callbackURL: `${window.location.origin}/dashboard`,
+        errorCallbackURL: `${window.location.origin}/auth/error`,
       });
 
-      if (error) throw error;
+      if (result.error) {
+        throw new Error(
+          result.error.message ?? "Impossibile avviare l'accesso con GitHub"
+        );
+      }
     } catch (error: unknown) {
-      console.log("error :>> ", error);
-      //  setError(error instanceof Error ? error.message : 'An error occurred')
-      setIsLoading(false);
+      console.error("GitHub login failed:", error);
+      setError("email", {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Impossibile avviare l'accesso con GitHub",
+      });
     }
+    setIsLoading(false);
   };
 
   return (

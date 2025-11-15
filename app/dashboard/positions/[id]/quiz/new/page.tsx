@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import { getUserPositionById } from "@/lib/data/positions";
 import { BrainCircuit } from "lucide-react";
 import { redirect } from "next/navigation";
 import { QuizForm } from "./QuizForm";
@@ -11,15 +12,15 @@ export default async function GenerateQuizPage({
 }) {
   // await new Promise((resolve) => setTimeout(resolve, 10000));
   const { id } = await incomingParams;
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const { data: position, error } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("id", id)
-    .single();
+  if (!user) {
+    redirect("/dashboard/positions");
+  }
 
-  if (error || !position) {
+  const position = await getUserPositionById(user.id, id);
+
+  if (!position) {
     redirect("/dashboard/positions");
   }
 
@@ -50,7 +51,7 @@ export default async function GenerateQuizPage({
                 </div>
                 <div>
                   <span className="font-medium">Livello:</span>{" "}
-                  {position.experience_level}
+                  {position.experienceLevel}
                 </div>
                 <div>
                   <span className="font-medium">Competenze:</span>

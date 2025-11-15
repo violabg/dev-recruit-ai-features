@@ -2,6 +2,7 @@
 
 import { candidateQuizSelectionSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
+import { requireUser } from "../auth-server";
 import { createClient } from "../supabase/server";
 import { Json } from "../supabase/types";
 
@@ -18,13 +19,7 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
   const supabase = await createClient();
 
   // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
+  const user = await requireUser();
 
   const {
     search = "",
@@ -256,12 +251,7 @@ export async function assignCandidatesToQuiz(
   const { candidateIds: validatedCandidateIds, quizId: validatedQuizId } =
     validatedFields.data;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { message: "User not authenticated." };
-  }
+  const user = await requireUser();
 
   // Verify quiz ownership
   const { data: quiz, error: quizError } = await supabase

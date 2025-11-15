@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod/v4";
+import { requireUser } from "../auth-server";
 import { convertToStrictQuestions, questionSchemas } from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
@@ -66,16 +67,7 @@ export async function generateNewQuizAction({
     const supabase = await createClient();
 
     // Validate user authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new QuizSystemError(
-        "User not authenticated",
-        QuizErrorCode.UNAUTHORIZED
-      );
-    }
+    const user = await requireUser();
 
     // Get position details with ownership check
     const { data: position, error: positionError } = await supabase

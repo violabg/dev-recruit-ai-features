@@ -1,7 +1,7 @@
 "use server";
 
+import { requireUser } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
-import type { User } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
 export type Profile = {
@@ -16,20 +16,13 @@ export type Profile = {
 
 export async function getProfile(): Promise<{
   profile: Profile | null;
-  user: User | null;
+  user: any | null;
   error?: string;
 }> {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return { profile: null, user: null, error: "User not authenticated" };
-    }
+    const user = await requireUser();
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -54,15 +47,7 @@ export async function getProfile(): Promise<{
 export async function updateProfile(formData: FormData) {
   try {
     const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      throw new Error("User not authenticated");
-    }
+    const user = await requireUser();
 
     const full_name = formData.get("full_name") as string;
     const user_name = formData.get("user_name") as string;
@@ -107,15 +92,7 @@ export async function updateProfile(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   try {
     const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      throw new Error("User not authenticated");
-    }
+    const user = await requireUser();
 
     const currentPassword = formData.get("current_password") as string;
     const newPassword = formData.get("new_password") as string;

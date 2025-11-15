@@ -1,6 +1,7 @@
 import { EditPositionForm } from "@/components/positions/edit-position-form";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import { getUserPositionById } from "@/lib/data/positions";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -11,12 +12,7 @@ export default async function EditPositionPage({
 }) {
   const params = await incomingParams;
 
-  const supabase = await createClient();
-
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return (
@@ -29,32 +25,12 @@ export default async function EditPositionPage({
     );
   }
 
-  // Fetch position details
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("id", params.id)
-    .single();
+  const position = await getUserPositionById(user.id, params.id);
 
-  if (positionError || !position) {
+  if (!position) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Posizione non trovata</p>
-        <Button className="mt-4" asChild>
-          <Link href="/dashboard/positions">Torna alle posizioni</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  // Check if user owns this position
-  if (position.created_by !== user.id) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[400px]">
-        <p className="font-medium text-lg">Non autorizzato</p>
-        <p className="mt-2 text-muted-foreground text-sm">
-          Non hai i permessi per modificare questa posizione
-        </p>
         <Button className="mt-4" asChild>
           <Link href="/dashboard/positions">Torna alle posizioni</Link>
         </Button>

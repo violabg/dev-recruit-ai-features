@@ -2,78 +2,54 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "../supabase/server";
+import { requireUser } from "../auth-server";
+import prisma from "../prisma";
+import { PositionFormData, positionFormSchema } from "../schemas";
 
 // Position actions
-export async function createPosition(formData: FormData) {
-  const supabase = await createClient();
+export async function createPosition(values: PositionFormData) {
+  const user = await requireUser();
 
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
+  const payload = positionFormSchema.parse(values);
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const experienceLevel = formData.get("experience_level") as string;
-  const skills = JSON.parse(formData.get("skills") as string);
-  const softSkills = JSON.parse(
-    (formData.get("soft_skills") as string) || "[]"
-  );
-  const contractType = formData.get("contract_type") as string;
-
-  const { data, error } = await supabase
-    .from("positions")
-    .insert({
-      title,
-      description,
-      experience_level: experienceLevel,
-      skills,
-      soft_skills: softSkills,
-      contract_type: contractType,
-      created_by: user.id,
-    })
-    .select();
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  const position = await prisma.position.create({
+    data: {
+      title: payload.title,
+      description: payload.description || null,
+      experienceLevel: payload.experience_level,
+      skills: payload.skills,
+      softSkills: payload.soft_skills ?? [],
+      contractType: payload.contract_type ?? null,
+      createdBy: user.id,
+    },
+    select: { id: true },
+  });
 
   revalidatePath("/dashboard/positions");
 
-  if (data && data[0]) {
-    redirect(`/dashboard/positions/${data[0].id}`);
-  } else {
-    redirect("/dashboard/positions");
-  }
+  redirect(`/dashboard/positions/${position.id}`);
 }
 
 export async function deletePosition(id: string) {
-  const supabase = await createClient();
+  const user = await requireUser();
 
-  const { error } = await supabase.from("positions").delete().eq("id", id);
+  const position = await prisma.position.findUnique({
+    where: { id },
+    select: { createdBy: true },
+  });
 
-  if (error) {
-    throw new Error(error.message);
+  if (!position || position.createdBy !== user.id) {
+    throw new Error("Not authorized to delete this position");
   }
+
+  await prisma.position.delete({ where: { id } });
 
   revalidatePath("/dashboard/positions");
   redirect("/dashboard/positions");
 }
 
 export async function updatePosition(id: string, formData: FormData) {
-  const supabase = await createClient();
-
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
+  const user = await requireUser();
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -84,30 +60,29 @@ export async function updatePosition(id: string, formData: FormData) {
   );
   const contractType = formData.get("contract_type") as string;
 
-  const { data, error } = await supabase
-    .from("positions")
-    .update({
+  const current = await prisma.position.findUnique({
+    where: { id },
+    select: { createdBy: true },
+  });
+
+  if (!current || current.createdBy !== user.id) {
+    throw new Error("Not authorized to update this position");
+  }
+
+  await prisma.position.update({
+    where: { id },
+    data: {
       title,
       description,
-      experience_level: experienceLevel,
+      experienceLevel,
       skills,
-      soft_skills: softSkills,
-      contract_type: contractType,
-    })
-    .eq("id", id)
-    .eq("created_by", user.id) // Ensure user owns the position
-    .select();
-
-  if (error) {
-    throw new Error(error.message);
-  }
+      softSkills,
+      contractType,
+    },
+  });
 
   revalidatePath("/dashboard/positions");
   revalidatePath(`/dashboard/positions/${id}`);
 
-  if (data && data[0]) {
-    redirect(`/dashboard/positions/${data[0].id}`);
-  } else {
-    redirect("/dashboard/positions");
-  }
+  redirect(`/dashboard/positions/${id}`);
 }

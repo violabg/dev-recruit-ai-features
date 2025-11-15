@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import { getUserPositionById } from "@/lib/data/positions";
 import { formatDate } from "@/lib/utils";
 import { Edit } from "lucide-react";
 import Link from "next/link";
@@ -28,15 +29,25 @@ export default async function PositionDetailPage({
 async function PositionDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; // Await the params object
 
-  const supabase = await createClient();
-  // Fetch position details
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const user = await getCurrentUser();
 
-  if (positionError || !position) {
+  if (!user) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Accesso richiesto</p>
+        <p className="mt-2 text-muted-foreground text-sm">
+          Effettua l&apos;accesso per visualizzare i dettagli della posizione
+        </p>
+        <Button className="mt-4" asChild>
+          <Link href="/dashboard/positions">Torna alle posizioni</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const position = await getUserPositionById(user.id, id);
+
+  if (!position) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Posizione non trovata</p>
@@ -53,12 +64,12 @@ async function PositionDetail({ params }: { params: Promise<{ id: string }> }) {
         <div>
           <h1 className="font-bold text-3xl">{position.title}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline">{position.experience_level}</Badge>
-            {position.contract_type && (
-              <Badge variant="outline">{position.contract_type}</Badge>
+            <Badge variant="outline">{position.experienceLevel}</Badge>
+            {position.contractType && (
+              <Badge variant="outline">{position.contractType}</Badge>
             )}
             <span className="text-muted-foreground text-sm">
-              Creata il {formatDate(position.created_at)}
+              Creata il {formatDate(position.createdAt.toISOString())}
             </span>
           </div>
         </div>
@@ -110,14 +121,14 @@ async function PositionDetail({ params }: { params: Promise<{ id: string }> }) {
                 </CardContent>
               </Card>
 
-              {position.soft_skills && position.soft_skills.length > 0 && (
+              {position.softSkills.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Soft skills</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {position.soft_skills.map((skill, index) => (
+                      {position.softSkills.map((skill, index) => (
                         <Badge key={index} variant="secondary">
                           {skill}
                         </Badge>

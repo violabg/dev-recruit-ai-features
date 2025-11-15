@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth-server";
 import { withValidation } from "@/lib/middleware/validation";
 import { convertToStrictQuestions, saveQuizRequestSchema } from "@/lib/schemas";
 import { QuizErrorCode } from "@/lib/services/error-handler";
@@ -14,12 +15,9 @@ const saveQuizHandler = withValidation(
       const validatedData = validated.body!;
 
       // Check user authentication
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const user = await requireUser();
 
-      if (authError || !user) {
+      if (!user) {
         return NextResponse.json(
           {
             error: "Authentication required",

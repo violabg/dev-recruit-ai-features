@@ -81,9 +81,9 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T018 Replace Supabase queries with Prisma in lib/actions/positions.ts
-- [ ] T019 Update position creation logic for Prisma
-- [ ] T020 Update position retrieval logic for Prisma
+- [x] T018 Replace Supabase queries with Prisma in lib/actions/positions.ts
+- [x] T019 Update position creation logic for Prisma
+- [x] T020 Update position retrieval logic for Prisma
 - [ ] T021 Update position update logic for Prisma
 - [ ] T022 Update position deletion logic for Prisma
 - [ ] T023 Test positions CRUD operations

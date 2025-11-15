@@ -58,15 +58,7 @@ export function NewPositionForm() {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("title", values.title);
-      formData.append("description", values.description || "");
-      formData.append("experience_level", values.experience_level);
-      formData.append("skills", JSON.stringify(values.skills));
-      formData.append("soft_skills", JSON.stringify(values.soft_skills || []));
-      formData.append("contract_type", values.contract_type || "");
-
-      await createPosition(formData);
+      await createPosition(values);
     } catch (error) {
       console.error("Error creating position:", error);
       setIsSubmitting(false);
