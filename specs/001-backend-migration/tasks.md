@@ -119,12 +119,12 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 4
 
-- [ ] T030 Replace Supabase queries with Prisma in lib/actions/quizzes.ts
-- [ ] T031 Update quiz creation logic for Prisma
-- [ ] T032 Update quiz retrieval logic for Prisma
-- [ ] T033 Update quiz update logic for Prisma
-- [ ] T034 Update quiz deletion logic for Prisma
-- [ ] T035 Update quiz save API route at app/api/quiz/save/route.ts
+- [x] T030 Replace Supabase queries with Prisma in lib/actions/quizzes.ts
+- [x] T031 Update quiz creation logic for Prisma
+- [x] T032 Update quiz retrieval logic for Prisma
+- [x] T033 Update quiz update logic for Prisma
+- [x] T034 Update quiz deletion logic for Prisma
+- [x] T035 Update quiz save API route at app/api/quiz/save/route.ts
 - [ ] T036 Test quizzes CRUD operations
 
 **Checkpoint**: Quizzes fully migrated - all quiz operations use Prisma

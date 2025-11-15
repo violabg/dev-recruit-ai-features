@@ -1,8 +1,8 @@
 import { requireUser } from "@/lib/auth-server";
 import { withValidation } from "@/lib/middleware/validation";
+import prisma from "@/lib/prisma";
 import { convertToStrictQuestions, saveQuizRequestSchema } from "@/lib/schemas";
 import { QuizErrorCode } from "@/lib/services/error-handler";
-import { createClient } from "@/lib/supabase/server";
 import { getErrorResponse } from "@/lib/utils/error-response";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,7 +11,6 @@ const saveQuizHandler = withValidation(
   {}, // Remove auth requirement from middleware since we handle it manually
   async (req, validated) => {
     try {
-      const supabase = await createClient();
       const validatedData = validated.body!;
 
       // Check user authentication
@@ -28,14 +27,15 @@ const saveQuizHandler = withValidation(
       }
 
       // Verify user owns the position
-      const { data: position, error: positionError } = await supabase
-        .from("positions")
-        .select("id")
-        .eq("id", validatedData.position_id)
-        .eq("created_by", user.id)
-        .single();
+      const position = await prisma.position.findFirst({
+        where: {
+          id: validatedData.position_id,
+          createdBy: user.id,
+        },
+        select: { id: true },
+      });
 
-      if (positionError || !position) {
+      if (!position) {
         return NextResponse.json(
           {
             error: "Position not found or access denied",
@@ -46,19 +46,20 @@ const saveQuizHandler = withValidation(
       }
 
       // Save quiz to database
-      const { data: quiz, error: insertError } = await supabase
-        .from("quizzes")
-        .insert({
+      const quiz = await prisma.quiz.create({
+        data: {
           title: validatedData.title,
-          position_id: validatedData.position_id,
+          positionId: position.id,
           questions: convertToStrictQuestions(validatedData.questions),
-          time_limit: validatedData.time_limit,
-          created_by: user.id,
-        })
-        .select()
-        .single();
+          timeLimit: validatedData.time_limit,
+          createdBy: user.id,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-      if (insertError || !quiz) {
+      if (!quiz) {
         return NextResponse.json(
           {
             error: "Failed to save quiz to database",

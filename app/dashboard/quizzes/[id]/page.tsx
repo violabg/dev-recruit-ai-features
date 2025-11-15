@@ -19,7 +19,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteQuiz } from "@/lib/actions/quizzes";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import prisma from "@/lib/prisma";
+import { Question } from "@/lib/schemas";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft, Clock, Edit, Link2, Send, Trash } from "lucide-react";
 import Link from "next/link";
@@ -36,16 +38,33 @@ export default async function QuizDetailPage({
   params: { id: string };
 }) {
   const { id } = await Promise.resolve(params);
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  // Fetch quiz details
-  const { data: quiz, error: quizError } = await supabase
-    .from("quizzes")
-    .select("*")
-    .eq("id", id)
-    .single();
+  if (!user) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[400px]">
+        <p className="font-medium text-lg">Accesso richiesto</p>
+        <Button className="mt-4" asChild>
+          <Link href="/dashboard/quizzes">Torna ai quiz</Link>
+        </Button>
+      </div>
+    );
+  }
 
-  if (quizError || !quiz) {
+  const quizRecord = await prisma.quiz.findFirst({
+    where: { id, createdBy: user.id },
+    include: {
+      position: {
+        select: {
+          id: true,
+          title: true,
+          experienceLevel: true,
+        },
+      },
+    },
+  });
+
+  if (!quizRecord) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Quiz non trovato</p>
@@ -56,14 +75,26 @@ export default async function QuizDetailPage({
     );
   }
 
-  // Fetch position details
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("id, title, experience_level")
-    .eq("id", quiz.position_id)
-    .single<Position>();
+  const quiz = {
+    id: quizRecord.id,
+    title: quizRecord.title,
+    position_id: quizRecord.positionId,
+    time_limit: quizRecord.timeLimit,
+    questions: Array.isArray(quizRecord.questions)
+      ? (quizRecord.questions as Question[])
+      : [],
+    created_at: quizRecord.createdAt.toISOString(),
+  };
 
-  if (positionError || !position) {
+  const position: Position | null = quizRecord.position
+    ? {
+        id: quizRecord.position.id,
+        title: quizRecord.position.title,
+        experience_level: quizRecord.position.experienceLevel,
+      }
+    : null;
+
+  if (!position) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Posizione non trovata</p>

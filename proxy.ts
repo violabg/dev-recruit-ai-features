@@ -6,12 +6,11 @@ export async function proxy(request: NextRequest) {
   const session = await auth.api.getSession({
     headers: request.headers,
   });
-  console.log("🚀 ~ proxy ~ session:", session);
   const { pathname } = request.nextUrl;
 
-  if (!session?.user && !pathname.startsWith("/auth")) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
-  }
+  // if (!session?.user && !pathname.startsWith("/auth")) {
+  //   return NextResponse.redirect(new URL("/auth/login", request.url));
+  // }
 
   return NextResponse.next();
 }

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod/v4";
 import { requireUser } from "../auth-server";
+import prisma from "../prisma";
 import { convertToStrictQuestions, questionSchemas } from "../schemas";
 import { AIGenerationError, aiQuizService } from "../services/ai-service";
 import {
@@ -11,7 +12,6 @@ import {
   QuizErrorCode,
   QuizSystemError,
 } from "../services/error-handler";
-import { createClient } from "../supabase/server";
 import { revalidateQuizCache } from "../utils/cache";
 
 // Performance monitoring
@@ -64,20 +64,25 @@ export async function generateNewQuizAction({
   const monitor = new PerformanceMonitor("generateNewQuizAction");
 
   try {
-    const supabase = await createClient();
-
     // Validate user authentication
     const user = await requireUser();
 
     // Get position details with ownership check
-    const { data: position, error: positionError } = await supabase
-      .from("positions")
-      .select("id, title, experience_level, skills, description")
-      .eq("id", positionId)
-      .eq("created_by", user.id)
-      .single();
+    const position = await prisma.position.findFirst({
+      where: {
+        id: positionId,
+        createdBy: user.id,
+      },
+      select: {
+        id: true,
+        title: true,
+        experienceLevel: true,
+        skills: true,
+        description: true,
+      },
+    });
 
-    if (positionError || !position) {
+    if (!position) {
       throw new QuizSystemError(
         "Position not found or access denied",
         QuizErrorCode.POSITION_NOT_FOUND,
@@ -88,7 +93,7 @@ export async function generateNewQuizAction({
     // Generate quiz using AI service
     const quizData = await aiQuizService.generateQuiz({
       positionTitle: position.title,
-      experienceLevel: position.experience_level,
+      experienceLevel: position.experienceLevel,
       skills: position.skills,
       description: position.description || undefined,
       quizTitle,
@@ -163,11 +168,11 @@ export async function generateNewQuestionAction(
     }
 
     if (error instanceof z.ZodError) {
-      console.error("Question validation failed:", error.errors);
+      console.error("Question validation failed:", error.issues);
       throw new QuizSystemError(
         "Generated question failed validation",
         QuizErrorCode.INVALID_INPUT,
-        { zodErrors: error.errors }
+        { zodErrors: error.issues }
       );
     } else {
       console.error("Unknown error in generateNewQuestionAction:", error);
@@ -189,21 +194,22 @@ export async function deleteQuiz(formData: FormData) {
       );
     }
 
-    const supabase = await createClient();
+    const user = await requireUser();
 
-    // Delete quiz
-    const { error: deleteError } = await supabase
-      .from("quizzes")
-      .delete()
-      .eq("id", quizId);
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { createdBy: true },
+    });
 
-    if (deleteError) {
+    if (!quiz || quiz.createdBy !== user.id) {
       throw new QuizSystemError(
-        "Failed to delete quiz",
-        QuizErrorCode.DATABASE_ERROR,
-        { deleteError: deleteError.message }
+        "Quiz not found or access denied",
+        QuizErrorCode.QUIZ_NOT_FOUND,
+        { quizId }
       );
     }
+
+    await prisma.quiz.delete({ where: { id: quizId } });
 
     // Revalidate cache tags after deletion
     revalidateQuizCache(quizId);
@@ -236,7 +242,7 @@ export async function updateQuizAction(formData: FormData) {
   const monitor = new PerformanceMonitor("updateQuizAction");
 
   try {
-    const supabase = await createClient();
+    const user = await requireUser();
 
     // Parse form data
     const quizId = formData.get("quiz_id") as string;
@@ -286,23 +292,27 @@ export async function updateQuizAction(formData: FormData) {
       );
     }
 
-    // Update quiz
-    const { error: updateError } = await supabase
-      .from("quizzes")
-      .update({
-        title,
-        time_limit: timeLimit,
-        questions: strictQuestions,
-      })
-      .eq("id", quizId);
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { createdBy: true },
+    });
 
-    if (updateError) {
+    if (!quiz || quiz.createdBy !== user.id) {
       throw new QuizSystemError(
-        "Failed to update quiz",
-        QuizErrorCode.DATABASE_ERROR,
-        { updateError: updateError.message }
+        "Quiz not found or access denied",
+        QuizErrorCode.QUIZ_NOT_FOUND,
+        { quizId }
       );
     }
+
+    await prisma.quiz.update({
+      where: { id: quizId },
+      data: {
+        title,
+        timeLimit,
+        questions: strictQuestions,
+      },
+    });
 
     // Revalidate cache tags to get fresh data
     revalidateQuizCache(quizId);

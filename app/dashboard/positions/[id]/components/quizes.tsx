@@ -1,17 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { getQuizzesForPosition } from "@/lib/data/quiz-data";
 import { BrainCircuit, Link } from "lucide-react";
 
 export default async function Quizes({ id }: { id: string }) {
-  const supabase = await createClient();
-
-  // Fetch quizzes for this position
-  const { data: quizzes } = await supabase
-    .from("quizzes")
-    .select("*")
-    .eq("position_id", id)
-    .order("created_at", { ascending: false });
+  const quizzes = await getQuizzesForPosition(id);
 
   return (
     <>
@@ -25,7 +18,7 @@ export default async function Quizes({ id }: { id: string }) {
         </Button>
       </div>
 
-      {quizzes && quizzes.length > 0 ? (
+      {quizzes.length > 0 ? (
         <div className="gap-4 grid md:grid-cols-2">
           {quizzes.map((quiz) => (
             <Card key={quiz.id}>
@@ -36,7 +29,7 @@ export default async function Quizes({ id }: { id: string }) {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {Object.keys(quiz.questions).length} domande
+                      {quiz.questions.length} domande
                     </span>
                     <span className="text-muted-foreground">
                       {quiz.time_limit

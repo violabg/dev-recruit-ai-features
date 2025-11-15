@@ -1,67 +1,133 @@
-import { quizSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-server";
+import prisma from "@/lib/prisma";
+import { Question, quizSchema } from "@/lib/schemas";
 import { cache } from "react";
 
 /**
  * Cached function to fetch quiz data
  * Uses React's cache() for request-level deduplication
  */
-export const getQuizData = cache(async (quizId: string) => {
-  const supabase = await createClient();
+const getQuizDataCached = cache(async (quizId: string, userId: string) => {
+  const quiz = await prisma.quiz.findFirst({
+    where: { id: quizId, createdBy: userId },
+    include: {
+      position: {
+        select: {
+          id: true,
+          title: true,
+          experienceLevel: true,
+          skills: true,
+          description: true,
+        },
+      },
+    },
+  });
 
-  const { data: quiz, error } = await supabase
-    .from("quizzes")
-    .select("*")
-    .eq("id", quizId)
-    .single();
+  if (!quiz || !quiz.position) {
+    return null;
+  }
 
-  if (error || !quiz) return null;
+  const hydratedQuiz = {
+    id: quiz.id,
+    title: quiz.title,
+    position_id: quiz.positionId,
+    questions: Array.isArray(quiz.questions)
+      ? (quiz.questions as Question[])
+      : [],
+    time_limit: quiz.timeLimit,
+    created_at: quiz.createdAt.toISOString(),
+    created_by: quiz.createdBy,
+  } as const;
 
-  const { data: position } = await supabase
-    .from("positions")
-    .select("id, title, experience_level, skills")
-    .eq("id", quiz.position_id)
-    .single();
+  const parsedQuiz = quizSchema.safeParse(hydratedQuiz);
+  if (!parsedQuiz.success) {
+    return null;
+  }
 
-  if (!position) return null;
-
-  // Validate quiz data
-  const parsedQuiz = quizSchema.safeParse(quiz);
-  if (!parsedQuiz.success) return null;
+  const position = {
+    id: quiz.position.id,
+    title: quiz.position.title,
+    experience_level: quiz.position.experienceLevel,
+    skills: quiz.position.skills,
+    description: quiz.position.description,
+  };
 
   return { quiz: parsedQuiz.data, position };
 });
 
+export const getQuizData = async (quizId: string) => {
+  const user = await requireUser();
+  return getQuizDataCached(quizId, user.id);
+};
+
 /**
  * Cached function to fetch position data
  */
-export const getPositionData = cache(async (positionId: string) => {
-  const supabase = await createClient();
+const getPositionDataCached = cache(
+  async (positionId: string, userId: string) => {
+    const position = await prisma.position.findFirst({
+      where: { id: positionId, createdBy: userId },
+      select: {
+        id: true,
+        title: true,
+        experienceLevel: true,
+        skills: true,
+        description: true,
+      },
+    });
 
-  const { data: position, error } = await supabase
-    .from("positions")
-    .select("id, title, experience_level, skills, description")
-    .eq("id", positionId)
-    .single();
+    if (!position) {
+      return null;
+    }
 
-  if (error || !position) return null;
+    return {
+      id: position.id,
+      title: position.title,
+      experience_level: position.experienceLevel,
+      skills: position.skills,
+      description: position.description,
+    };
+  }
+);
 
-  return position;
-});
+export const getPositionData = async (positionId: string) => {
+  const user = await requireUser();
+  return getPositionDataCached(positionId, user.id);
+};
 
 /**
  * Cached function to fetch all quizzes for a position
  */
-export const getQuizzesForPosition = cache(async (positionId: string) => {
-  const supabase = await createClient();
+const getQuizzesForPositionCached = cache(
+  async (positionId: string, userId: string) => {
+    const quizzes = await prisma.quiz.findMany({
+      where: {
+        positionId,
+        createdBy: userId,
+      },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        timeLimit: true,
+        questions: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-  const { data: quizzes, error } = await supabase
-    .from("quizzes")
-    .select("id, title, created_at, time_limit")
-    .eq("position_id", positionId)
-    .order("created_at", { ascending: false });
+    return quizzes.map((quiz) => ({
+      id: quiz.id,
+      title: quiz.title,
+      created_at: quiz.createdAt.toISOString(),
+      time_limit: quiz.timeLimit,
+      questions: Array.isArray(quiz.questions)
+        ? (quiz.questions as Question[])
+        : [],
+    }));
+  }
+);
 
-  if (error) return [];
-
-  return quizzes || [];
-});
+export const getQuizzesForPosition = async (positionId: string) => {
+  const user = await requireUser();
+  return getQuizzesForPositionCached(positionId, user.id);
+};
