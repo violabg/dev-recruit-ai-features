@@ -13,15 +13,18 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Profile } from "@/lib/actions/profile";
 import { cn } from "@/lib/utils";
-import type { User } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Edit, Lock } from "lucide-react";
 import Link from "next/link";
 
 type AccountInfoProps = {
-  profile: Profile | null;
-  user: User | null;
+  profile: Profile;
+  user: {
+    id: string;
+    email: string | null;
+    name: string | null;
+  } | null;
   className?: string;
 } & React.ComponentPropsWithoutRef<"div">;
 
@@ -31,12 +34,12 @@ export const AccountInfo = ({
   className,
   ...props
 }: AccountInfoProps) => {
-  const createdAt = profile?.created_at
-    ? format(new Date(profile.created_at), "dd MMMM yyyy", { locale: it })
+  const createdAt = profile?.createdAt
+    ? format(new Date(profile.createdAt), "dd MMMM yyyy", { locale: it })
     : "Data non disponibile";
 
-  const lastUpdated = profile?.updated_at
-    ? format(new Date(profile.updated_at), "dd MMMM yyyy 'alle' HH:mm", {
+  const lastUpdated = profile?.updatedAt
+    ? format(new Date(profile.updatedAt), "dd MMMM yyyy 'alle' HH:mm", {
         locale: it,
       })
     : "Mai aggiornato";
@@ -55,15 +58,13 @@ export const AccountInfo = ({
             <CurrentUserAvatar />
             <div className="space-y-1">
               <h3 className="font-semibold text-lg">
-                {profile?.full_name ||
-                  user?.user_metadata?.full_name ||
+                {profile?.fullName ||
+                  user?.name ||
+                  user?.email ||
                   "Nome non disponibile"}
               </h3>
               <p className="text-muted-foreground text-sm">
-                @
-                {profile?.user_name ||
-                  user?.user_metadata?.user_name ||
-                  "username"}
+                @{profile?.userName || user?.email?.split("@")[0] || "username"}
               </p>
             </div>
           </div>

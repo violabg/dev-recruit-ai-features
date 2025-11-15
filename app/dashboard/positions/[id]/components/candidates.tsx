@@ -1,18 +1,19 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
+import { getCandidatesByPosition } from "@/lib/data/candidates";
 import { Plus, Users } from "lucide-react";
 import Link from "next/link";
 
 export default async function Candidates({ id }: { id: string }) {
-  const supabase = await createClient();
-  // Fetch candidates for this position
-  const { data: candidates } = await supabase
-    .from("candidates")
-    .select("*")
-    .eq("position_id", id)
-    .order("created_at", { ascending: false });
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const candidates = await getCandidatesByPosition(user.id, id);
 
   return (
     <>
@@ -26,7 +27,7 @@ export default async function Candidates({ id }: { id: string }) {
         </Button>
       </div>
 
-      {candidates && candidates.length > 0 ? (
+      {candidates.length > 0 ? (
         <div className="gap-4 grid md:grid-cols-2">
           {candidates.map((candidate) => (
             <Card key={candidate.id}>

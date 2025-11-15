@@ -258,7 +258,7 @@ type InterviewAnswer = string | { code: string } | null;
 export type InterviewByTokenResult = {
   interview: {
     token: string;
-    status: string;
+    status: "pending" | "in_progress" | "completed";
     answers: Record<string, InterviewAnswer> | null;
   };
   quiz: Quiz;
@@ -321,10 +321,17 @@ export const getInterviewByToken = async (
   const interviewAnswers =
     (interview.answers as Record<string, InterviewAnswer> | null) ?? null;
 
+  const status =
+    interview.status === "pending" ||
+    interview.status === "in_progress" ||
+    interview.status === "completed"
+      ? interview.status
+      : "pending";
+
   return {
     interview: {
       token: interview.token,
-      status: interview.status,
+      status,
       answers: interviewAnswers,
     },
     quiz,
@@ -340,7 +347,7 @@ export type InterviewDetailResult = {
   interview: {
     id: string;
     token: string;
-    status: string;
+    status: "pending" | "in_progress" | "completed";
     startedAt: string | null;
     completedAt: string | null;
     createdAt: string;
@@ -417,11 +424,18 @@ export const getInterviewDetail = async (
   const answers =
     (interview.answers as Record<string, InterviewAnswer> | null) ?? null;
 
+  const detailStatus =
+    interview.status === "pending" ||
+    interview.status === "in_progress" ||
+    interview.status === "completed"
+      ? interview.status
+      : "pending";
+
   return {
     interview: {
       id: interview.id,
       token: interview.token,
-      status: interview.status,
+      status: detailStatus,
       startedAt: interview.startedAt ? interview.startedAt.toISOString() : null,
       completedAt: interview.completedAt
         ? interview.completedAt.toISOString()

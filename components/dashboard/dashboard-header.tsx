@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSupabase } from "@/lib/supabase/supabase-provider";
+import { authClient } from "@/lib/auth-client";
 import { BrainCircuit, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -19,7 +19,8 @@ import { ThemeToggle } from "../theme-toggle";
 import Breadcrumbs from "./Breadcumbs";
 
 export function DashboardHeader() {
-  const { user, loading } = useSupabase();
+  const { data, isPending } = authClient.useSession();
+  const user = data?.user ?? null;
 
   return (
     <header className="top-0 z-30 sticky flex items-center gap-4 bg-background supports-backdrop-filter:bg-background/80 backdrop-blur-md px-6 border-b h-16">
@@ -34,7 +35,7 @@ export function DashboardHeader() {
       </div>
       <div className="flex items-center gap-4 ml-auto">
         <ThemeToggle />
-        {loading ? (
+        {isPending ? (
           <Loader2 className="mr-2 w-4 h-4 animate-spin" />
         ) : (
           <>

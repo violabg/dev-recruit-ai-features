@@ -17,13 +17,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useSupabase } from "@/lib/supabase/supabase-provider";
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
 import { LogoutButton } from "../auth/logout-button";
 
 export function NavUser() {
-  const { user } = useSupabase();
+  const { data } = authClient.useSession();
+  const user = data?.user ?? null;
   const { isMobile } = useSidebar();
 
   return (
@@ -38,7 +39,7 @@ export function NavUser() {
               <CurrentUserAvatar />
               <div className="flex-1 grid text-sm text-left leading-tight">
                 <span className="font-medium truncate">
-                  {user?.user_metadata.full_name}
+                  {user?.name ?? user?.email ?? ""}
                 </span>
                 <span className="text-xs truncate">{user?.email}</span>
               </div>
@@ -56,7 +57,7 @@ export function NavUser() {
                 <CurrentUserAvatar />
                 <div className="flex-1 grid text-sm text-left leading-tight">
                   <span className="font-medium truncate">
-                    {user?.user_metadata.full_name}
+                    {user?.name ?? user?.email ?? ""}
                   </span>
                   <span className="text-xs truncate">{user?.email}</span>
                 </div>
