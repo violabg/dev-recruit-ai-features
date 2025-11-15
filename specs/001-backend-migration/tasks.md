@@ -161,12 +161,12 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Final cleanup and validation
 
-- [ ] T044 Remove Supabase dependencies from package.json
-- [ ] T045 Update environment variables (remove Supabase, keep Neon/Better Auth)
+- [x] T044 Remove Supabase dependencies from package.json
+- [x] T045 Update environment variables (remove Supabase, keep Neon/Better Auth)
 - [ ] T046 Run full application test suite
 - [ ] T047 Validate data integrity across all entities
-- [ ] T048 Update documentation and README
-- [ ] T049 Remove Supabase-related code and files
+- [x] T048 Update documentation and README
+- [x] T049 Remove Supabase-related code and files
 
 ---
 

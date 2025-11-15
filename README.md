@@ -3,7 +3,9 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.0.2-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-2.49.4-green)](https://supabase.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.19.1-2D3748)](https://www.prisma.io/)
+[![Neon](https://img.shields.io/badge/Neon-Serverless%20Postgres-00E599)](https://neon.tech/)
+[![Better Auth](https://img.shields.io/badge/Better%20Auth-Latest-4A90E2)](https://www.better-auth.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1.4-38B2AC)](https://tailwindcss.com/)
 
 An advanced AI-powered technical recruitment platform that streamlines the hiring process through intelligent quiz generation, candidate assessment, and interview management.
@@ -102,13 +104,12 @@ An advanced AI-powered technical recruitment platform that streamlines the hirin
 
 ```mermaid
 graph TB
-    A[Next.js Frontend] --> B[API Routes]
-    B --> C[Server Actions]
-    C --> D[Supabase Database]
-    C --> E[Groq AI Models]
-    F[Authentication] --> D
-    G[File Storage] --> D
-    H[Real-time] --> D
+  A[Next.js Frontend] --> B[API Routes]
+  B --> C[Server Actions]
+  C --> D[Prisma Client]
+  D --> E[Neon PostgreSQL]
+  C --> F[Groq AI Models]
+  G[Better Auth] --> B
 ```
 
 ### Application Flow
@@ -119,7 +120,7 @@ sequenceDiagram
     participant F as Frontend
     participant A as API
     participant AI as Groq AI
-    participant DB as Supabase
+    participant DB as Neon
 
     U->>F: Create Position
     F->>DB: Store Position Data
@@ -139,8 +140,9 @@ sequenceDiagram
 
 - **Node.js** 18.0 or higher
 - **pnpm** (recommended) or npm/yarn
-- **Supabase account**
+- **Neon PostgreSQL** (or compatible Postgres) connection string
 - **Groq API key** for AI features
+- **GitHub OAuth app** for Better Auth social login (optional but recommended)
 
 ### Installation
 
@@ -151,160 +153,156 @@ sequenceDiagram
    cd dev-recruit-ai
    ```
 
-2. **Install dependencies**
+1. **Install dependencies**
 
    ```bash
    pnpm install
    ```
 
-3. **Environment Setup**
-   Create a `.env.local` file:
+1. **Environment Setup**
+   Copy `.env.example` to `.env` and update the values:
 
-   ```env
-   # Supabase Configuration
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```env
+DATABASE_URL="postgresql://user:password@host:5432/dev_recruit_ai"
+BETTER_AUTH_SECRET="replace-with-secure-secret"
+BETTER_AUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+GITHUB_CLIENT_ID="your-github-client-id"
+GITHUB_CLIENT_SECRET="your-github-client-secret"
+GROQ_API_KEY="your-groq-api-key"
+```
 
-   # AI Configuration
-   GROQ_API_KEY=your_groq_api_key
+1. **Database Setup**
 
-   # Next.js Configuration
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=your_nextauth_secret
-   ```
+```bash
+pnpm prisma migrate deploy
+```
 
-4. **Database Setup**
+For a local database during development you can instead run:
 
-   ```bash
-   # Run the database migrations in Supabase SQL Editor
-   # Copy and execute the contents of schema.sql
-   ```
+```bash
+pnpm prisma db push
+```
 
-5. **Start Development Server**
-   ```bash
-   pnpm dev
-   ```
+1. **Start Development Server**
+
+```bash
+pnpm dev
+```
 
 Visit [http://localhost:3000](http://localhost:3000) to access the application.
 
 ## 📊 Database Schema
 
-### Core Tables
+The relational schema lives in Neon PostgreSQL and is defined with Prisma. Migrations are tracked in `prisma/migrations` and applied with `pnpm prisma migrate deploy`.
 
-#### `profiles`
+### Prisma Overview
 
-Extends Supabase auth.users with additional profile information.
+- **Datasource** points at the `DATABASE_URL` environment variable.
+- **Generator** emits the client into `lib/prisma` for tree-shakable imports.
+- **Better Auth models** (`User`, `Session`, `Account`, `Verification`) co-exist with app-specific entities.
 
-```sql
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users,
-  name TEXT,
-  full_name TEXT,
-  user_name TEXT,
-  avatar_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+### Core Application Models
+
+#### `User` & `Profile`
+
+Better Auth manages authentication while the local `Profile` model stores recruiter metadata.
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile?
+  positions Position[]
+  candidates Candidate[]
+  quizzes   Quiz[]
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  fullName  String?
+  userName  String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 ```
 
-#### `positions`
+#### `Position`, `Candidate`, and `Quiz`
 
-Job position definitions with skills and requirements.
+These models power the recruiting workflows for planning, inviting, and assessing candidates.
 
-```sql
-CREATE TABLE positions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  description TEXT,
-  experience_level TEXT NOT NULL,
-  skills TEXT[] NOT NULL,
-  soft_skills TEXT[],
-  contract_type TEXT,
-  created_by UUID REFERENCES profiles(id),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+```prisma
+model Position {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  experienceLevel String
+  skills          String[]
+  softSkills      String[]
+  contractType    String?
+  createdBy       String
+  createdAt       DateTime @default(now())
+
+  candidates Candidate[]
+  quizzes    Quiz[]
+}
+
+model Candidate {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  positionId String
+  status     String   @default("pending")
+  resumeUrl  String?
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+}
+
+model Quiz {
+  id         String   @id @default(cuid())
+  title      String
+  positionId String
+  questions  Json
+  timeLimit  Int?
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+}
 ```
 
-#### `candidates`
+#### `Interview`
 
-Candidate information linked to positions.
+Interview records connect candidates to quizzes and store evaluation results.
 
-```sql
-CREATE TABLE candidates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  position_id UUID REFERENCES positions(id),
-  status TEXT DEFAULT 'pending',
-  resume_url TEXT,
-  created_by UUID REFERENCES profiles(id),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+```prisma
+model Interview {
+  id           String   @id @default(cuid())
+  candidateId  String
+  quizId       String
+  status       String   @default("pending")
+  startedAt    DateTime?
+  completedAt  DateTime?
+  score        Float?
+  answers      Json?
+  token        String   @unique
+  createdAt    DateTime @default(now())
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  quiz      Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
 ```
-
-#### `quizzes`
-
-AI-generated technical assessments.
-
-```sql
-CREATE TABLE quizzes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  position_id UUID REFERENCES positions(id),
-  questions JSONB NOT NULL,
-  time_limit INTEGER,
-  created_by UUID REFERENCES profiles(id),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-#### `interviews`
-
-Interview sessions with candidate responses and scoring.
-
-```sql
-CREATE TABLE interviews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  candidate_id UUID REFERENCES candidates(id),
-  quiz_id UUID REFERENCES quizzes(id),
-  status TEXT DEFAULT 'pending',
-  started_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ,
-  score FLOAT,
-  answers JSONB,
-  token TEXT UNIQUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-### Security Policies
-
-The application implements **Row Level Security (RLS)** to ensure data isolation:
-
-- **User Isolation**: Users can only access their own data
-- **Token Access**: Interviews accessible via secure tokens
-- **Position-based Access**: Candidates grouped by position ownership
-
-### Database Functions
-
-#### `generate_unique_token()`
-
-Generates cryptographically secure interview tokens for secure interview access.
-
-#### `get_candidates_for_quiz_assignment()`
-
-Returns assigned and unassigned candidates for quiz management, enabling efficient candidate-quiz assignment workflows.
-
-#### `search_interviews()`
-
-Advanced interview search with filtering capabilities including status, position, programming language, and text search.
-
-#### `get_candidate_quiz_data()`
-
-Retrieves comprehensive candidate data including available quizzes and assigned interviews for quiz assignment management.
-
-All database functions are defined in [`schema.sql`](schema.sql) with proper security policies and RLS implementation.
 
 ## 🔧 Technology Stack
 
@@ -316,9 +314,9 @@ All database functions are defined in [`schema.sql`](schema.sql) with proper sec
 
 ### Backend & Database
 
-- **[Supabase](https://supabase.com/)** - PostgreSQL database with real-time features
-- **[Supabase Auth](https://supabase.com/auth)** - Authentication and user management
-- **[Supabase Storage](https://supabase.com/storage)** - File storage for resumes
+- **[Prisma](https://www.prisma.io/)** - Type-safe ORM with schema migrations
+- **[Neon](https://neon.tech/)** - Serverless PostgreSQL with branching
+- **[Better Auth](https://www.better-auth.com/)** - Authentication and session management
 
 ### AI Integration
 
@@ -380,7 +378,7 @@ dev-recruit-ai/
 │   ├── data/                    # Cached data layer
 │   ├── schemas/                 # Zod validation schemas
 │   ├── services/                # AI service & error handling
-│   ├── supabase/               # Database configuration
+│   ├── lib/                    # Prisma client, Better Auth helpers, server utilities
 │   └── utils/                   # Utility functions
 ├── stories/                     # Storybook component stories
 └── public/                      # Static assets
@@ -601,99 +599,51 @@ Secure quiz saving with user authentication and validation.
 
 ## 🔒 Authentication & Security
 
-### Supabase Authentication
+### Better Auth Configuration
 
-The application uses **Supabase Auth** with multiple providers:
-
-- **Email/Password** authentication
-- **OAuth providers** (Google, GitHub)
-- **Magic link** authentication
-- **Password reset** functionality
-
-### Security Implementation
-
-#### Server-Side Authentication
-
-**[`lib/supabase/server.ts`](lib/supabase/server.ts)** handles server-side auth:
+Authentication is powered by **Better Auth** with email/password and optional GitHub OAuth. The configuration lives in [`lib/auth.ts`](lib/auth.ts) and couples Better Auth with Prisma for persistence.
 
 ```typescript
-export async function createClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-}
+export const auth = betterAuth({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  emailAndPassword: { enabled: true },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID || "",
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+    },
+  },
+  plugins: [admin()],
+});
 ```
 
-#### Middleware Protection
+### Server-Side Session Access
 
-**[`middleware.ts`](middleware.ts)** protects routes:
+Server actions use [`lib/auth-server.ts`](lib/auth-server.ts) helpers to fetch or require the current user.
 
 ```typescript
-export async function middleware(request: NextRequest) {
-  const { supabase, response } = await updateSession(request);
+export async function requireUser() {
+  const user = await getCurrentUser();
 
-  // Protected routes
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
-    }
+  if (!user) {
+    throw new Error("User not authenticated");
   }
 
-  return response;
+  return user;
 }
 ```
 
-#### Row Level Security Policies
+### Client Utilities
 
-**Profiles Policy:**
-
-```sql
-CREATE POLICY "Users can only access their own profile"
-ON profiles FOR ALL
-USING (auth.uid() = id);
-```
-
-**Positions Policy:**
-
-```sql
-CREATE POLICY "Users can manage their own positions"
-ON positions FOR ALL
-USING (auth.uid() = created_by);
-```
-
-**Interview Token Access:**
-
-```sql
-CREATE POLICY "Anyone can access interviews by token"
-ON interviews FOR SELECT
-USING (token IS NOT NULL);
-```
+Client components interact with Better Auth through [`lib/auth-client.ts`](lib/auth-client.ts), which exposes the generated client with admin plugin support.
 
 ### Data Protection
 
-- **User Isolation**: Each user only accesses their own data
-- **Token Security**: Interview tokens are cryptographically secure
-- **API Validation**: All inputs validated with Zod schemas
-- **CSRF Protection**: Built-in Next.js CSRF protection
+- **User isolation** enforced via Prisma relations and server-side checks
+- **Token security** maintained for interview access tokens stored in Neon
+- **Input validation** powered by Zod across actions and API routes
+- **CSRF protection** provided by Next.js App Router defaults
 
 ## 📊 Component System
 
@@ -982,7 +932,7 @@ const nextConfig = {
     optimizePackageImports: ["@radix-ui/react-icons"],
   },
   images: {
-    domains: ["supabase.co"],
+    domains: ["avatars.githubusercontent.com"],
   },
 };
 ```
@@ -1177,15 +1127,12 @@ expect(quizData.questions).toHaveLength(5);
 
 ### Database Testing
 
-**Supabase Testing:**
+**Prisma Testing:**
 
-```sql
--- Test RLS policies
-SET ROLE authenticated;
-SET request.jwt.claims TO '{"sub": "user-uuid"}';
-
--- Should return only user's data
-SELECT * FROM positions;
+```typescript
+// Ensure Prisma can reach Neon and basic queries work
+const totalPositions = await prisma.position.count();
+expect(totalPositions).toBeGreaterThanOrEqual(0);
 ```
 
 ### End-to-End Testing
@@ -1208,18 +1155,21 @@ SELECT * FROM positions;
    vercel --prod
    ```
 
-2. **Environment Variables**
+1. **Environment Variables**
    Set in Vercel dashboard:
 
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL
-   NEXT_PUBLIC_SUPABASE_ANON_KEY
-   SUPABASE_SERVICE_ROLE_KEY
-   GROQ_API_KEY
-   ```
+```env
+DATABASE_URL
+BETTER_AUTH_SECRET
+BETTER_AUTH_URL
+NEXT_PUBLIC_APP_URL
+GITHUB_CLIENT_ID
+GITHUB_CLIENT_SECRET
+GROQ_API_KEY
+```
 
-3. **Domain Configuration**
-   Update Supabase authentication settings with your domain.
+1. **Domain Configuration**
+   Configure Better Auth allowed origins and OAuth callback URLs.
 
 ### Docker Deployment
 
@@ -1253,11 +1203,11 @@ CMD ["npm", "start"]
 
 **Production Setup:**
 
-1. Create Supabase project
-2. Run [`schema.sql`](schema.sql:1) in SQL Editor
-3. Configure authentication providers
-4. Set up storage buckets for resumes
-5. Configure RLS policies
+1. Provision a Neon database branch
+1. Run `pnpm prisma migrate deploy`
+1. Seed baseline data if required via Prisma scripts
+1. Configure Better Auth providers (GitHub, email/password)
+1. Define any optional storage integrations
 
 ### Environment Configuration
 
@@ -1265,9 +1215,16 @@ CMD ["npm", "start"]
 
 ```env
 # Database
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+DATABASE_URL=postgresql://user:password@host:5432/dev_recruit_ai
+
+# Better Auth
+BETTER_AUTH_SECRET=replace-with-secure-secret
+BETTER_AUTH_URL=https://your-production-domain
+NEXT_PUBLIC_APP_URL=https://your-production-domain
+
+# OAuth Providers
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 
 # AI
 GROQ_API_KEY=your-groq-api-key
@@ -1293,7 +1250,7 @@ npm run dev -- --turbo
 
 - **Static assets**: CDN caching
 - **API responses**: Server-side caching
-- **Database queries**: Supabase edge caching
+- **Database queries**: Prisma + React cache deduplication
 
 ## 📖 Documentation
 
@@ -1493,7 +1450,9 @@ This project is licensed under the **MIT License** - see the [LICENSE.md](LICENS
 - **Documentation**: [GitHub Wiki](https://github.com/yourusername/dev-recruit-ai/wiki)
 - **Issues**: [GitHub Issues](https://github.com/yourusername/dev-recruit-ai/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/dev-recruit-ai/discussions)
-- **Supabase**: [https://supabase.com/](https://supabase.com/)
+- **Prisma**: [https://www.prisma.io/](https://www.prisma.io/)
+- **Neon**: [https://neon.tech/](https://neon.tech/)
+- **Better Auth**: [https://www.better-auth.com/](https://www.better-auth.com/)
 - **Groq**: [https://groq.com/](https://groq.com/)
 - **Next.js**: [https://nextjs.org/](https://nextjs.org/)
 - **Tailwind CSS**: [https://tailwindcss.com/](https://tailwindcss.com/)

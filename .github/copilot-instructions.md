@@ -8,7 +8,8 @@
   - @ai-sdk/groq, @ai-sdk/react, ai
   - @hookform/resolvers, react-hook-form
   - @radix-ui/react-\* (dialog, dropdown-menu, label, popover, select, slot)
-  - @supabase/supabase-js
+  - better-auth, @better-auth/next-js
+  - @prisma/client
   - class-variance-authority, clsx, lucide-react, next-themes, sonner, tailwind-merge, tw-animate-css, zod
 
 ## Styling
@@ -23,7 +24,7 @@
 - Use Zod for schema validation.
 - Use React Hook Form for form management.
 - Use Radix UI components.
-- Use Supabase for backend/database interactions.
+- Use Prisma (via `lib/prisma.ts`) for database interactions backed by Neon.
 - Use arrow functions for methods and new components.
 - Use types over interface# Copilot Instructions
 
@@ -37,7 +38,8 @@
   - AI: `@ai-sdk/groq`, `@ai-sdk/react`, `ai`
   - Forms: `react-hook-form`, `@hookform/resolvers`
   - UI: `@radix-ui/react-*` (dialog, dropdown-menu, label, popover, select, slot), `lucide-react`, `shadcn/ui`
-  - Backend: `@supabase/supabase-js`
+  - Auth: `better-auth`, `@better-auth/next-js`
+  - Database: `@prisma/client`, `@neondatabase/serverless`
   - Utilities: `class-variance-authority`, `clsx`, `next-themes`, `sonner`, `tailwind-merge`, `tw-animate-css`, `zod`
 
 ## Styling Guidelines
@@ -62,7 +64,7 @@
 - Use **Zod** for all schema validation.
 - Use **React Hook Form** for form management.
 - Use **Radix UI** components for UI primitives.
-- Use **Supabase** for backend/database interactions.
+- Use **Prisma** with Neon for backend/database interactions.
 - Use **server components** and **server actions** wherever possible.
 - In server pages, **always `await` params before using them**.
 

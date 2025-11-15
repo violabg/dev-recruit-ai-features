@@ -4,7 +4,7 @@ This document explains the cache implementation for the quiz edit page and relat
 
 ## Overview
 
-The implementation uses React's `cache()` function for request-level deduplication combined with Next.js `revalidatePath()` for cache invalidation. This approach avoids the limitations of `unstable_cache` with dynamic data sources like Supabase.
+The implementation uses React's `cache()` function for request-level deduplication combined with Next.js `revalidatePath()` for cache invalidation. This approach avoids the limitations of `unstable_cache` with dynamic data sources served through Prisma and Neon.
 
 ## Key Components
 
@@ -72,7 +72,7 @@ All quiz-modifying actions include cache revalidation:
 1. **Performance**: Request-level deduplication prevents redundant queries
 2. **Freshness**: Immediate cache invalidation after data changes
 3. **Simplicity**: No complex cache tag management
-4. **Compatibility**: Works seamlessly with Supabase and other dynamic data sources
+4. **Compatibility**: Works seamlessly with Prisma/Neon-backed dynamic data sources
 5. **Type Safety**: Full TypeScript support throughout the data layer
 
 ## Usage Flow

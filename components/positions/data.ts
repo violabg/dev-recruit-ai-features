@@ -40,7 +40,7 @@ export const databases = [
   "Redis",
   "Cassandra",
   "Firebase",
-  "Supabase",
+  "Neon",
 ];
 
 export const tools = [

@@ -1,4 +1,6 @@
-# Backend Migration Progress: Phase 3 Complete ✓
+# Backend Migration Progress: Phase 8 Cleanup ✓
+
+> **Status Update (2025-11-15)**: The migration to Prisma + Neon + Better Auth is complete. Supabase clients and credentials have been removed from the application. The historical notes below are retained for reference on how the migration unfolded.
 
 ## Migration Status
 
@@ -10,7 +12,7 @@
 
 **In Progress:**
 
-- Database migration (requires .env configuration)
+- Final validation (data integrity + end-to-end testing)
 
 ## What Was Implemented
 
@@ -58,9 +60,7 @@ BETTER_AUTH_SECRET="$(openssl rand -base64 32)"
 # For development
 BETTER_AUTH_URL="http://localhost:3000"
 
-# Keep until migration complete (optional)
-NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+# Legacy Supabase variables are no longer required
 ```
 
 ### 2. Push Schema to Database
@@ -76,6 +76,8 @@ pnpm db:generate
 ```
 
 ### 4. Migrate Data from Supabase (One-Time)
+
+> Historical note: This script was used during the initial cut-over. It is no longer required now that Prisma + Neon is the source of truth.
 
 Create `scripts/migrate-data.ts`:
 
@@ -182,15 +184,7 @@ const user = await requireUser(); // Already throws if no user
 
 ## Remaining Supabase Usage
 
-The app still uses Supabase for **data queries** (via `createClient()`):
-
-- Reading/writing positions, candidates, quizzes, interviews
-- Will migrate to Prisma in Phase 4 (optional)
-
-Password management functions still use Supabase temporarily:
-
-- `updatePassword()` in `profile.ts`
-- Can be updated to Better Auth password reset endpoints later
+✅ Supabase clients have been fully removed. All reads/writes now use Prisma, and Better Auth handles password management flows. The notes below are kept to document the original cut-over plan.
 
 ## Build Status
 
