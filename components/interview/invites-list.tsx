@@ -24,8 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { deleteInterview } from "@/lib/actions/interviews"; // InterviewsByQuiz might need adjustment based on the new function's return type
-import { AssignedInterview } from "@/lib/supabase/types";
+import { deleteInterview } from "@/lib/actions/interviews";
+import type { AssignedInterview } from "@/lib/types/interview";
 import { toast } from "sonner";
 
 interface InvitesListProps {
@@ -46,7 +46,7 @@ export function InvitesList({
   // Update interviews if the prop changes (e.g., after revalidation)
   useEffect(() => {
     setInterviews(
-      assignedInterviews.filter((interview) => interview.created_at !== null)
+      assignedInterviews.filter((interview) => interview.createdAt)
     );
   }, [assignedInterviews, refreshTrigger]);
 
@@ -135,13 +135,11 @@ export function InvitesList({
             {interviews.map((interview) => (
               <TableRow key={interview.id}>
                 <TableCell className="font-medium">
-                  {interview.candidate_name}
-                  {/* Use candidate_name from new type */}
+                  {interview.candidateName}
                 </TableCell>
-                <TableCell>{interview.quiz_title}</TableCell>
-                {/* Use quiz_title from new type */}
+                <TableCell>{interview.quizTitle}</TableCell>
                 <TableCell>{getStatusBadge(interview.status)}</TableCell>
-                <TableCell>{formatDate(interview.created_at)}</TableCell>
+                <TableCell>{formatDate(interview.createdAt)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button

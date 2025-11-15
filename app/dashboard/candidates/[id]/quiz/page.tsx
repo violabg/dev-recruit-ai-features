@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -13,48 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@/lib/supabase/server";
-import { CandidateQuizData } from "@/lib/supabase/types";
-import { SupabaseClient } from "@supabase/supabase-js";
-
-const getData = async (
-  candidateId: string,
-  userId: string,
-  supabase: SupabaseClient
-): Promise<CandidateQuizData> => {
-  try {
-    // Use the new database function to get all data in one call
-    const { data, error } = await supabase.rpc("get_candidate_quiz_data", {
-      p_candidate_id: candidateId,
-      p_user_id: userId,
-    });
-
-    if (error || !data) {
-      console.error("Database function error:", error);
-      throw new Error("Failed to load candidate and quiz data");
-    }
-
-    // Parse the JSON response
-    const result = data as CandidateQuizData;
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    return result;
-  } catch (error: unknown) {
-    let errorMessage = "Failed to load data";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    console.error("Error fetching data for CandidateQuizPage:", errorMessage);
-    return redirect(
-      `/dashboard/candidates/${candidateId}?error=${encodeURIComponent(
-        errorMessage
-      )}`
-    );
-  }
-};
+import { getCurrentUser } from "@/lib/auth-server";
+import { getCandidateQuizData } from "@/lib/data/interview-data";
 
 export default async function CandidateQuizPage({
   params,
@@ -62,19 +23,29 @@ export default async function CandidateQuizPage({
   params: { id: string };
 }) {
   const { id: candidateId } = await params;
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return redirect("/login");
+  if (!user) {
+    return redirect("/login" as Route);
   }
 
-  const { candidate, position, available_quizzes, assigned_interviews } =
-    await getData(candidateId, user.id, supabase);
+  const data = await getCandidateQuizData(candidateId);
+
+  if (!data) {
+    return redirect(
+      `/dashboard/candidates/${candidateId}?error=${encodeURIComponent(
+        "Failed to load candidate data"
+      )}` as Route
+    );
+  }
+
+  const { candidate, position, availableQuizzes, assignedInterviews } = data;
+  const normalizedAvailableQuizzes = availableQuizzes.map((quiz) => ({
+    id: quiz.id,
+    title: quiz.title,
+    createdAt: quiz.createdAt,
+    timeLimit: quiz.timeLimit,
+  }));
 
   if (!candidate || !position) {
     return (
@@ -123,7 +94,7 @@ export default async function CandidateQuizPage({
             <CardContent>
               <QuizSelectionForm
                 candidateId={candidate.id}
-                availableQuizzes={available_quizzes}
+                availableQuizzes={normalizedAvailableQuizzes}
               />
             </CardContent>
           </Card>
@@ -138,7 +109,7 @@ export default async function CandidateQuizPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InvitesList assignedInterviews={assigned_interviews} />
+              <InvitesList assignedInterviews={assignedInterviews} />
             </CardContent>
           </Card>
         </TabsContent>

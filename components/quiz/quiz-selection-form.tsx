@@ -27,8 +27,8 @@ type QuizSelectionValues = QuizSelection;
 interface Quiz {
   id: string;
   title: string;
-  created_at: string;
-  time_limit: number | null;
+  createdAt: string;
+  timeLimit: number | null;
 }
 
 interface QuizSelectionFormProps {
@@ -99,7 +99,7 @@ export function QuizSelectionForm({
   };
 
   const quizOptions = availableQuizzes.map((quiz) => ({
-    label: `${quiz.title}${quiz.time_limit ? ` (${quiz.time_limit} min)` : ""}`,
+    label: `${quiz.title}${quiz.timeLimit ? ` (${quiz.timeLimit} min)` : ""}`,
     value: quiz.id,
   }));
 

@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -13,53 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@/lib/supabase/server";
-import { SupabaseClient } from "@supabase/supabase-js";
-
-const getData = async (
-  quizId: string,
-  userId: string,
-  supabase: SupabaseClient
-) => {
-  try {
-    // Call the Supabase function to get assigned and unassigned candidates
-    const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "get_candidates_for_quiz_assignment",
-      { quiz_id_param: quizId, p_user_id: userId }
-    );
-
-    if (rpcError) {
-      console.error("RPC Error:", rpcError);
-      throw new Error(
-        rpcError.message || "Failed to load candidate assignment data"
-      );
-    }
-
-    if (rpcData && rpcData.error) {
-      console.error("RPC Function Error:", rpcData.error);
-      // Potentially redirect or show a specific error message based on rpcData.error
-      return redirect(
-        `/dashboard/quizzes/${quizId}?error=${encodeURIComponent(
-          rpcData.error
-        )}`
-      );
-    }
-
-    return rpcData;
-  } catch (error: unknown) {
-    let errorMessage = "Failed to load data";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    console.error(
-      "Error fetching data for InviteCandidatesPage:",
-      errorMessage
-    );
-    return redirect(
-      `/dashboard/quizzes/${quizId}?error=${encodeURIComponent(errorMessage)}`
-    );
-  }
-};
+import { getCurrentUser } from "@/lib/auth-server";
+import { getQuizAssignmentData } from "@/lib/data/interview-data";
 
 export default async function InviteCandidatesPage({
   params,
@@ -67,22 +23,15 @@ export default async function InviteCandidatesPage({
   params: { id: string };
 }) {
   const { id: quizId } = await params; // Destructure and rename id to quizId for clarity
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return redirect("/login");
+  if (!user) {
+    return redirect("/login" as Route);
   }
 
-  const { quiz, position, assigned_interviews, unassigned_candidates } =
-    await getData(quizId, user.id, supabase);
+  const data = await getQuizAssignmentData(quizId);
 
-  // This check is redundant due to earlier checks but kept for safety
-  if (!quiz || !position) {
+  if (!data || !data.quiz || !data.position) {
     return (
       <div className="flex flex-col justify-center items-center h-[400px]">
         <p className="font-medium text-lg">Quiz or Position not found</p>
@@ -92,6 +41,8 @@ export default async function InviteCandidatesPage({
       </div>
     );
   }
+
+  const { quiz, position, assignedInterviews, unassignedCandidates } = data;
 
   return (
     <div className="space-y-6">
@@ -108,7 +59,7 @@ export default async function InviteCandidatesPage({
         <h1 className="font-bold text-3xl">Assign quiz to candidates</h1>
         <p className="text-muted-foreground">
           Assign the quiz &quot;{quiz.title}&quot; for the position &quot;
-          {position.title}&quot; to candidates
+          {position?.title}&quot; to candidates
         </p>
       </div>
 
@@ -129,7 +80,7 @@ export default async function InviteCandidatesPage({
             <CardContent>
               <CandidateSelectionForm
                 quizId={quiz.id}
-                unassignedCandidates={unassigned_candidates}
+                unassignedCandidates={unassignedCandidates}
               />
             </CardContent>
           </Card>
@@ -144,7 +95,7 @@ export default async function InviteCandidatesPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InvitesList assignedInterviews={assigned_interviews} />
+              <InvitesList assignedInterviews={assignedInterviews} />
             </CardContent>
           </Card>
         </TabsContent>

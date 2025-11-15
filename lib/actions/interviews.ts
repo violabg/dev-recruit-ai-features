@@ -1,10 +1,14 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { candidateQuizSelectionSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
+
 import { requireUser } from "../auth-server";
-import { createClient } from "../supabase/server";
-import { Json } from "../supabase/types";
+import prisma from "../prisma";
+import { Prisma } from "../prisma/client";
+import type { AssignedInterview, InterviewListItem } from "../types/interview";
 
 export type InterviewsFilters = {
   search?: string;
@@ -15,10 +19,68 @@ export type InterviewsFilters = {
   limit?: number;
 };
 
-export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
-  const supabase = await createClient();
+type InterviewRecord = Prisma.InterviewGetPayload<{
+  include: {
+    candidate: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    quiz: {
+      select: {
+        id: true;
+        title: true;
+        positionId: true;
+        position: {
+          select: {
+            id: true;
+            title: true;
+            skills: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
-  // Get current user
+const mapInterviewRecord = (record: InterviewRecord): InterviewListItem => {
+  return {
+    id: record.id,
+    token: record.token,
+    status: record.status,
+    startedAt: record.startedAt?.toISOString() ?? null,
+    completedAt: record.completedAt?.toISOString() ?? null,
+    createdAt: record.createdAt.toISOString(),
+    score: record.score ?? null,
+    candidateId: record.candidateId,
+    candidateName: record.candidate.name ?? "",
+    candidateEmail: record.candidate.email ?? "",
+    quizId: record.quizId,
+    quizTitle: record.quiz.title,
+    positionId: record.quiz.position?.id ?? null,
+    positionTitle: record.quiz.position?.title ?? null,
+    positionSkills: record.quiz.position?.skills ?? [],
+  };
+};
+
+const generateInterviewToken = async (): Promise<string> => {
+  while (true) {
+    const token = randomUUID().replace(/-/g, "");
+
+    const existing = await prisma.interview.findUnique({
+      where: { token },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return token;
+    }
+  }
+};
+
+export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
   const user = await requireUser();
 
   const {
@@ -30,74 +92,186 @@ export async function fetchInterviewsData(filters: InterviewsFilters = {}) {
     limit = 10,
   } = filters;
 
-  // Call the RPC (cast result for type safety)
-  const { data: interviews, error } = await supabase.rpc("search_interviews", {
-    p_user_id: user.id,
-    p_search: search || null,
-    p_status: status !== "all" ? status : null,
-    p_position_id: positionId !== "all" ? positionId : null,
-    p_programming_language:
-      programmingLanguage !== "all" ? programmingLanguage : null,
-    p_page: page,
-    p_limit: limit,
+  const normalizedPage = Math.max(page ?? 1, 1);
+  const normalizedLimit = Math.max(limit ?? 10, 1);
+  const searchTerm = search.trim();
+
+  const whereClauses: Prisma.InterviewWhereInput[] = [
+    {
+      candidate: {
+        createdBy: user.id,
+      },
+    },
+  ];
+
+  if (status !== "all") {
+    whereClauses.push({ status });
+  }
+
+  if (positionId !== "all") {
+    whereClauses.push({ quiz: { positionId } });
+  }
+
+  if (programmingLanguage !== "all") {
+    whereClauses.push({
+      quiz: {
+        position: {
+          skills: {
+            has: programmingLanguage,
+          },
+        },
+      },
+    });
+  }
+
+  if (searchTerm) {
+    const searchFilter: Prisma.InterviewWhereInput = {
+      OR: [
+        {
+          candidate: {
+            name: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          candidate: {
+            email: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          quiz: {
+            title: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          quiz: {
+            position: {
+              title: {
+                contains: searchTerm,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+      ],
+    };
+
+    whereClauses.push(searchFilter);
+  }
+
+  const where: Prisma.InterviewWhereInput = whereClauses.length
+    ? { AND: whereClauses }
+    : {};
+
+  const interviewRecords = await prisma.interview.findMany({
+    where,
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      quiz: {
+        select: {
+          id: true,
+          title: true,
+          positionId: true,
+          position: {
+            select: {
+              id: true,
+              title: true,
+              skills: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: (normalizedPage - 1) * normalizedLimit,
+    take: normalizedLimit,
   });
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  const interviews = interviewRecords.map(mapInterviewRecord);
 
-  // Get positions for filter dropdown
-  const { data: positions, error: positionsError } = await supabase
-    .from("positions")
-    .select("id, title, skills")
-    .eq("created_by", user.id)
-    .order("title");
-
-  if (positionsError) {
-    throw new Error(positionsError.message);
-  }
-
-  // Get unique programming languages from all positions
-  const allSkills = positions?.flatMap((p) => p.skills || []) || [];
-  const programmingLanguages = [...new Set(allSkills)].sort();
-
-  // Status counts for filter badges (from returned data only)
   const statusCounts = interviews.reduce<Record<string, number>>(
-    (acc, interview) => {
-      acc[interview.status] = (acc[interview.status] || 0) + 1;
+    (acc, item) => {
+      acc[item.status] = (acc[item.status] ?? 0) + 1;
       return acc;
     },
     {}
   );
 
+  const totalCount = await prisma.interview.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / normalizedLimit));
+
+  const positions = await prisma.position.findMany({
+    where: {
+      createdBy: user.id,
+    },
+    select: {
+      id: true,
+      title: true,
+      skills: true,
+    },
+    orderBy: {
+      title: "asc",
+    },
+  });
+
+  const programmingLanguages = Array.from(
+    new Set(positions.flatMap((position) => position.skills ?? []))
+  ).sort((a, b) => a.localeCompare(b));
+
   return {
     interviews,
-    positions: positions || [],
+    positions,
     programmingLanguages,
     statusCounts,
-    totalCount: interviews.length,
-    currentPage: page,
-    totalPages: 1,
-    hasNextPage: false,
-    hasPrevPage: page > 1,
+    totalCount,
+    currentPage: normalizedPage,
+    totalPages,
+    hasNextPage: normalizedPage < totalPages,
+    hasPrevPage: normalizedPage > 1,
   };
 }
 
-// Interview actions
 export async function startInterview(token: string) {
-  const supabase = await createClient();
+  const interview = await prisma.interview.findUnique({
+    where: { token },
+    select: {
+      id: true,
+      status: true,
+      startedAt: true,
+    },
+  });
 
-  const { error } = await supabase
-    .from("interviews")
-    .update({
-      status: "in_progress",
-      started_at: new Date().toISOString(),
-    })
-    .eq("token", token);
-
-  if (error) {
-    throw new Error(error.message);
+  if (!interview) {
+    throw new Error("Interview not found");
   }
+
+  if (interview.status !== "pending") {
+    return { success: true };
+  }
+
+  await prisma.interview.update({
+    where: { id: interview.id },
+    data: {
+      status: "in_progress",
+      startedAt: new Date(),
+    },
+  });
 
   return { success: true };
 }
@@ -105,109 +279,121 @@ export async function startInterview(token: string) {
 export async function submitAnswer(
   token: string,
   questionId: string,
-  answer: string | number | boolean | object | Json[] // Use Json[] for array type
+  answer: Prisma.JsonValue
 ) {
-  const supabase = await createClient();
+  const interview = await prisma.interview.findUnique({
+    where: { token },
+    select: {
+      id: true,
+      answers: true,
+    },
+  });
 
-  // Get current interview
-  const { data: interview, error: fetchError } = await supabase
-    .from("interviews")
-    .select("id, answers") // Select id along with answers
-    .eq("token", token)
-    .single();
-
-  if (fetchError || !interview) {
-    throw new Error(fetchError?.message || "Interview not found");
+  if (!interview) {
+    throw new Error("Interview not found");
   }
 
-  // Get current answers
   const currentAnswers =
-    (interview.answers as Record<string, Json | Json[]>) || {}; // Type assertion for answers
+    (interview.answers as Record<string, Prisma.JsonValue>) ?? {};
 
-  // Update answers
   const updatedAnswers = {
     ...currentAnswers,
     [questionId]: answer,
   };
 
-  // Update interview with new answer
-  const { error } = await supabase
-    .from("interviews")
-    .update({
+  await prisma.interview.update({
+    where: { id: interview.id },
+    data: {
       answers: updatedAnswers,
-    })
-    .eq("id", interview.id); // Use interview.id here
-
-  if (error) {
-    throw new Error(error.message);
-  }
+    },
+  });
 
   return { success: true };
 }
 
 export async function completeInterview(token: string) {
-  const supabase = await createClient();
+  const interview = await prisma.interview.findUnique({
+    where: { token },
+    select: {
+      id: true,
+    },
+  });
 
-  const { error } = await supabase
-    .from("interviews")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-    })
-    .eq("token", token);
-
-  if (error) {
-    throw new Error(error.message);
+  if (!interview) {
+    throw new Error("Interview not found");
   }
+
+  await prisma.interview.update({
+    where: { id: interview.id },
+    data: {
+      status: "completed",
+      completedAt: new Date(),
+    },
+  });
 
   return { success: true };
 }
 
-export async function getInterviewsByQuiz(quizId: string) {
-  const supabase = await createClient();
+export async function getInterviewsByQuiz(
+  quizId: string
+): Promise<AssignedInterview[]> {
+  const interviews = await prisma.interview.findMany({
+    where: { quizId },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      quiz: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
-  const { data, error } = await supabase
-    .from("interviews")
-    .select(
-      `
-      id, 
-      token, 
-      status, 
-      created_at,
-      started_at,
-      completed_at,
-      candidate:candidates(id, name, email),
-      quiz:quizzes(id, title)
-    `
-    )
-    .eq("quiz_id", quizId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data || [];
+  return interviews.map((interview) => ({
+    id: interview.id,
+    token: interview.token,
+    status: interview.status,
+    createdAt: interview.createdAt.toISOString(),
+    startedAt: interview.startedAt?.toISOString() ?? null,
+    completedAt: interview.completedAt?.toISOString() ?? null,
+    candidateId: interview.candidateId,
+    candidateName: interview.candidate?.name ?? "",
+    candidateEmail: interview.candidate?.email ?? "",
+    quizId: interview.quizId,
+    quizTitle: interview.quiz?.title ?? "",
+  }));
 }
 
 export type InterviewsByQuiz = Awaited<ReturnType<typeof getInterviewsByQuiz>>;
 
 export async function deleteInterview(id: string) {
-  const supabase = await createClient();
+  const interview = await prisma.interview.findUnique({
+    where: { id },
+    select: {
+      quizId: true,
+    },
+  });
 
-  const { data, error } = await supabase
-    .from("interviews")
-    .delete()
-    .eq("id", id)
-    .select("quiz_id");
-
-  if (error) {
-    throw new Error(error.message);
+  if (!interview) {
+    throw new Error("Interview not found");
   }
 
-  if (data && data[0]) {
-    revalidatePath(`/dashboard/quizzes/${data[0].quiz_id}`);
-  }
+  await prisma.interview.delete({
+    where: { id },
+  });
+
+  revalidatePath("/dashboard/interviews");
+  revalidatePath(`/dashboard/quizzes/${interview.quizId}`);
 
   return { success: true };
 }
@@ -229,110 +415,140 @@ export type AssignCandidatesToQuizState = {
 };
 
 export async function assignCandidatesToQuiz(
-  prevState: AssignCandidatesToQuizState,
+  _prevState: AssignCandidatesToQuizState,
   formData: FormData
 ): Promise<AssignCandidatesToQuizState> {
-  const supabase = await createClient();
-  const candidateIds = formData.getAll("candidateIds").map(String);
-  const quizId = formData.get("quizId") as string;
+  const candidateIds = formData
+    .getAll("candidateIds")
+    .map((value) => String(value));
+  const quizId = formData.get("quizId");
 
-  const validatedFields = candidateQuizSelectionSchema.safeParse({
-    candidateIds: candidateIds,
-    quizId: quizId,
+  const validated = candidateQuizSelectionSchema.safeParse({
+    candidateIds,
+    quizId,
   });
 
-  if (!validatedFields.success) {
+  if (!validated.success) {
     return {
       message: "Invalid form data.",
-      errors: validatedFields.error.flatten().fieldErrors,
+      errors: validated.error.flatten().fieldErrors,
     };
   }
 
   const { candidateIds: validatedCandidateIds, quizId: validatedQuizId } =
-    validatedFields.data;
+    validated.data;
 
   const user = await requireUser();
 
-  // Verify quiz ownership
-  const { data: quiz, error: quizError } = await supabase
-    .from("quizzes")
-    .select("id, created_by")
-    .eq("id", validatedQuizId)
-    .single();
+  const quiz = await prisma.quiz.findUnique({
+    where: {
+      id: validatedQuizId,
+      createdBy: user.id,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
 
-  if (quizError || !quiz) {
+  if (!quiz) {
     return { message: "Quiz not found." };
   }
 
-  if (quiz.created_by !== user.id) {
-    return { message: "You do not have permission to assign this quiz." };
-  }
+  const candidates = await prisma.candidate.findMany({
+    where: {
+      id: {
+        in: validatedCandidateIds,
+      },
+      createdBy: user.id,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  });
 
-  // Get candidate information first
-  const { data: candidates, error: candidatesError } = await supabase
-    .from("candidates")
-    .select("id, name, email")
-    .in("id", validatedCandidateIds);
-
-  if (candidatesError) {
-    return { message: "Error fetching candidate information." };
-  }
-
-  const candidateMap = new Map(candidates?.map((c) => [c.id, c]) || []);
-
-  const createdInterviews: {
-    candidateId: string;
-    token: string;
-    candidateName: string;
-    candidateEmail: string;
-  }[] = [];
-  const errors: { candidateId: string; message: string }[] = [];
-
-  for (const candidateId of validatedCandidateIds) {
-    const candidate = candidateMap.get(candidateId);
-    if (!candidate) {
-      errors.push({ candidateId, message: "Candidate not found" });
-      continue;
-    }
-
-    // Generate unique token
-    const token =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-
-    const { data, error } = await supabase
-      .from("interviews")
-      .insert({
-        candidate_id: candidateId,
-        quiz_id: validatedQuizId,
-        status: "pending",
-        token,
-      })
-      .select("id, token");
-
-    if (error) {
-      errors.push({ candidateId, message: error.message });
-    } else if (data && data[0]) {
-      createdInterviews.push({
-        candidateId,
-        token: data[0].token,
-        candidateName: candidate.name,
-        candidateEmail: candidate.email,
-      });
-    }
-  }
-
-  if (errors.length > 0) {
+  if (candidates.length === 0) {
     return {
-      message: `Some interviews could not be created. (${errors.length} failures)`,
-      createdInterviews,
-      errors: { general: errors.map((e) => e.message) }, // Populate general errors
+      message: "No valid candidates found.",
+      errors: {
+        candidateIds: ["Nessun candidato valido selezionato."],
+      },
     };
   }
 
-  revalidatePath(`/dashboard/quizzes/${validatedQuizId}/invite`);
+  const candidateMap = new Map(
+    candidates.map((candidate) => [candidate.id, candidate])
+  );
+
+  const createdInterviews: NonNullable<
+    AssignCandidatesToQuizState["createdInterviews"]
+  > = [];
+  const generalErrors: string[] = [];
+
+  for (const candidateId of validatedCandidateIds) {
+    const candidate = candidateMap.get(candidateId);
+
+    if (!candidate) {
+      generalErrors.push("Candidato non trovato");
+      continue;
+    }
+
+    const existingInterview = await prisma.interview.findFirst({
+      where: {
+        quizId: quiz.id,
+        candidateId,
+      },
+      select: { id: true },
+    });
+
+    if (existingInterview) {
+      generalErrors.push(
+        `Un colloquio è già presente per ${
+          candidate.name ?? "il candidato selezionato"
+        }.`
+      );
+      continue;
+    }
+
+    const token = await generateInterviewToken();
+
+    const interview = await prisma.interview.create({
+      data: {
+        candidateId,
+        quizId: quiz.id,
+        status: "pending",
+        token,
+        answers: {},
+      },
+      select: {
+        token: true,
+      },
+    });
+
+    createdInterviews.push({
+      candidateId,
+      token: interview.token,
+      candidateName: candidate.name,
+      candidateEmail: candidate.email,
+    });
+  }
+
+  revalidatePath(`/dashboard/quizzes/${quiz.id}/invite`);
+
+  if (generalErrors.length > 0) {
+    return {
+      message: `Alcuni colloqui non sono stati creati (${generalErrors.length}).`,
+      createdInterviews,
+      errors: {
+        general: generalErrors,
+      },
+    };
+  }
+
   return {
-    message: "Interviews created successfully.",
+    message: "Colloqui creati con successo.",
     createdInterviews,
     success: true,
   };
