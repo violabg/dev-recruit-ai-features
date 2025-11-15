@@ -10,22 +10,34 @@ datasource db {
 }
 
 // Better Auth models
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id String @id @default(cuid())
 
-  accounts  Account[]
-  sessions  Session[]
-  profile   Profile?
+  name          String
+  firstName     String?
+  lastName      String?
+  email         String
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
-  positions Position[]
-  candidates Candidate[]
-  quizzes Quiz[]
+  role       String    @default("user")
+  banned     Boolean   @default(false)
+  banReason  String?
+  banExpires DateTime?
 
+  sessions   Session[]
+  accounts   Account[]
+  profile    Profile?
+  positions  Position[]  @relation("UserPositions")
+  candidates Candidate[] @relation("UserCandidates")
+  quizzes    Quiz[]      @relation("UserQuizzes")
+
+  isAnonymous Boolean?
+
+  @@unique([email])
   @@map("user")
 }
 
@@ -109,9 +121,9 @@ model Position {
   createdBy       String
   createdAt       DateTime @default(now())
 
-  creator   User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  creator    User        @relation("UserPositions", fields: [createdBy], references: [id], onDelete: Cascade)
   candidates Candidate[]
-  quizzes   Quiz[]
+  quizzes    Quiz[]
 
   @@map("positions")
 }
@@ -126,8 +138,8 @@ model Candidate {
   createdBy  String
   createdAt  DateTime @default(now())
 
-  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  creator  User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  position   Position    @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  creator    User        @relation("UserCandidates", fields: [createdBy], references: [id], onDelete: Cascade)
   interviews Interview[]
 
   @@map("candidates")
@@ -142,24 +154,24 @@ model Quiz {
   createdBy  String
   createdAt  DateTime @default(now())
 
-  position  Position   @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  creator   User       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  position   Position    @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  creator    User        @relation("UserQuizzes", fields: [createdBy], references: [id], onDelete: Cascade)
   interviews Interview[]
 
   @@map("quizzes")
 }
 
 model Interview {
-  id           String   @id @default(cuid())
-  candidateId  String
-  quizId       String
-  status       String   @default("pending")
-  startedAt    DateTime?
-  completedAt  DateTime?
-  score        Float?
-  answers      Json?
-  token        String   @unique
-  createdAt    DateTime @default(now())
+  id          String    @id @default(cuid())
+  candidateId String
+  quizId      String
+  status      String    @default("pending")
+  startedAt   DateTime?
+  completedAt DateTime?
+  score       Float?
+  answers     Json?
+  token       String    @unique
+  createdAt   DateTime  @default(now())
 
   candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   quiz      Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
